@@ -1824,7 +1824,6 @@ function ImageWithBoxes({
   if (activeChunk) {
     const [x1, y1, x2, y2] = activeChunk.bbox;
     const bw = Math.max(1, x2 - x1 + 20); // 左右各加 10px
-    const bh = Math.max(1, y2 - y1);
     const fx = (x1 + x2) / 2 / w;
     const fy = (y1 + y2) / 2 / h;
     // 以所选框宽度 + 20px 作为可视宽度限制，按容器宽度缩放
