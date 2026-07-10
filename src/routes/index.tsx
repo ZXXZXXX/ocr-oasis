@@ -1836,45 +1836,50 @@ function ImageWithBoxes({
     <div className="flex h-full w-full max-w-full flex-col overflow-hidden rounded-lg border border-border bg-background">
       <div className="flex-1 flex items-center justify-center overflow-auto p-4">
         <div
-          className="relative max-w-full overflow-hidden transition-transform duration-500 ease-out"
-          style={{ transform, transformOrigin: "50% 50%" }}
+          className="relative w-full max-w-full overflow-hidden"
+          style={{ aspectRatio: `${w} / ${h}` }}
         >
-          <img
-            src={image.url}
-            alt={image.name}
-            className="block h-auto max-w-full"
-          />
-          <div className="absolute inset-0">
-            {page.chunks.map((c) => {
-              const [x1, y1, x2, y2] = c.bbox;
-              const tone = confidenceTone(c.confidence);
-              const isActive = c.id === activeChunkId;
-              const color =
-                tone === "low"
-                  ? "border-[color:var(--warning)] bg-[color:var(--warning)]/15"
-                  : tone === "mid"
-                  ? "border-primary bg-primary/10"
-                  : "border-[color:var(--success)]/70 bg-[color:var(--success)]/5";
-              return (
-                <button
-                  type="button"
-                  key={c.id}
-                  onClick={() => onSelect(c.id)}
-                  className={cn(
-                    "absolute cursor-pointer border transition-all hover:z-10 hover:shadow-md",
-                    color,
-                    isActive && "z-20 ring-2 ring-primary ring-offset-1",
-                  )}
-                  style={{
-                    left: `${(x1 / w) * 100}%`,
-                    top: `${(y1 / h) * 100}%`,
-                    width: `${((x2 - x1) / w) * 100}%`,
-                    height: `${((y2 - y1) / h) * 100}%`,
-                  }}
-                  title={`${c.label}${c.confidence != null ? ` · ${Math.round(c.confidence * 100)}%` : ""}`}
-                />
-              );
-            })}
+          <div
+            className="absolute inset-0 transition-transform duration-500 ease-out"
+            style={{ transform, transformOrigin: "50% 50%" }}
+          >
+            <img
+              src={image.url}
+              alt={image.name}
+              className="absolute inset-0 h-full w-full object-contain"
+            />
+            <div className="absolute inset-0">
+              {page.chunks.map((c) => {
+                const [x1, y1, x2, y2] = c.bbox;
+                const tone = confidenceTone(c.confidence);
+                const isActive = c.id === activeChunkId;
+                const color =
+                  tone === "low"
+                    ? "border-[color:var(--warning)] bg-[color:var(--warning)]/15"
+                    : tone === "mid"
+                    ? "border-primary bg-primary/10"
+                    : "border-[color:var(--success)]/70 bg-[color:var(--success)]/5";
+                return (
+                  <button
+                    type="button"
+                    key={c.id}
+                    onClick={() => onSelect(c.id)}
+                    className={cn(
+                      "absolute cursor-pointer border transition-all hover:z-10 hover:shadow-md",
+                      color,
+                      isActive && "z-20 ring-2 ring-primary ring-offset-1",
+                    )}
+                    style={{
+                      left: `${(x1 / w) * 100}%`,
+                      top: `${(y1 / h) * 100}%`,
+                      width: `${((x2 - x1) / w) * 100}%`,
+                      height: `${((y2 - y1) / h) * 100}%`,
+                    }}
+                    title={`${c.label}${c.confidence != null ? ` · ${Math.round(c.confidence * 100)}%` : ""}`}
+                  />
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
