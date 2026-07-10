@@ -772,6 +772,15 @@ function Workbench() {
     }));
   }
 
+  function replaceResults(
+    recordId: string,
+    results: NonNullable<OcrRecord["results"]>,
+  ) {
+    setRecords((prev) =>
+      prev.map((r) => (r.id === recordId ? { ...r, results } : r)),
+    );
+  }
+
   function buildExport(r: OcrRecord) {
     if (!r.results) return {};
     const documents = (Object.entries(r.results) as [DocType, DocPage[]][])
