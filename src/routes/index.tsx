@@ -1530,16 +1530,7 @@ function DetailView({
                 <X className="size-4" />
               </Button>
             </SheetClose>
-            {editing ? (
-              <>
-                <Button variant="outline" onClick={cancelEdit} className="gap-2">
-                  <X className="size-4" /> 取消
-                </Button>
-                <Button onClick={submitEdit} className="gap-2">
-                  <CheckCircle2 className="size-4" /> 提交
-                </Button>
-              </>
-            ) : (
+            {!editing && (
               <>
                 <Button
                   variant="outline"
