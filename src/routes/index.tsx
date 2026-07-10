@@ -35,6 +35,16 @@ import {
   SheetFooter,
 } from "@/components/ui/sheet";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -558,6 +568,7 @@ function Workbench() {
   const [progressMinimized, setProgressMinimized] = useState(false);
   const [progressDismissed, setProgressDismissed] = useState(true);
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   // Filters
   const [filterOpen, setFilterOpen] = useState(false);
@@ -1210,9 +1221,10 @@ function Workbench() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => deleteRecord(r.id)}
+                                className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                                onClick={() => setDeleteId(r.id)}
                               >
-                                <Trash2 className="size-4 text-muted-foreground" />
+                                <Trash2 className="size-4" />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>删除</TooltipContent>
@@ -1226,6 +1238,39 @@ function Workbench() {
             </Table>
           </div>
         </main>
+
+        <AlertDialog
+          open={!!deleteId}
+          onOpenChange={(o) => !o && setDeleteId(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>确认删除</AlertDialogTitle>
+              <AlertDialogDescription>
+                {(() => {
+                  const r = records.find((rec) => rec.id === deleteId);
+                  return r
+                    ? `确认删除任务 #${r.id} 吗？删除后无法恢复。`
+                    : "确认删除该识别任务吗？删除后无法恢复。";
+                })()}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setDeleteId(null)}>
+                取消
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => {
+                  if (deleteId) deleteRecord(deleteId);
+                  setDeleteId(null);
+                }}
+              >
+                删除
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         <Sheet open={createOpen} onOpenChange={setCreateOpen}>
           <SheetContent
