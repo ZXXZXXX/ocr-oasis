@@ -1717,30 +1717,33 @@ function ChunkEditor({
   active,
   onFocus,
   onChange,
+  onConfirm,
 }: {
   chunk: Chunk;
   active: boolean;
   onFocus: () => void;
   onChange: (newContent: string) => void;
+  onConfirm: () => void;
 }) {
   const tone = confidenceTone(chunk.confidence);
-  const mustEdit =
+  const isLow =
     chunk.label !== "Image" &&
     chunk.confidence != null &&
-    chunk.confidence < LOW_CONF_THRESHOLD &&
-    !chunk.edited;
+    chunk.confidence < LOW_CONF_THRESHOLD;
+  const needsReview = isLow && !chunk.edited && !chunk.confirmed;
 
   const meta = LABEL_META[chunk.label];
   const Icon = meta.icon;
 
-  const borderCls =
-    tone === "low"
-      ? "border-[color:var(--warning)]/60"
-      : tone === "mid"
-      ? "border-primary/40"
-      : "border-border";
+  const borderCls = needsReview
+    ? "border-[color:var(--warning)]/70"
+    : tone === "low"
+    ? "border-[color:var(--warning)]/40"
+    : tone === "mid"
+    ? "border-primary/40"
+    : "border-border";
 
-  const bgCls = mustEdit ? "bg-[color:var(--warning)]/5" : "bg-card";
+  const bgCls = needsReview ? "bg-[color:var(--warning)]/5" : "bg-card";
 
   return (
     <div
@@ -1779,11 +1782,16 @@ function ChunkEditor({
               <Pencil className="size-2.5" /> 已修改
             </span>
           )}
+          {chunk.confirmed && !chunk.edited && (
+            <span className="inline-flex items-center gap-1 rounded bg-[color:var(--success)]/15 px-1.5 py-0.5 text-[color:var(--success)]">
+              <CheckCircle2 className="size-2.5" /> 已确认
+            </span>
+          )}
           {chunk.confidence != null ? (
             <span
               className={cn(
                 "tabular-nums",
-                mustEdit
+                needsReview
                   ? "text-[color:var(--warning-foreground)]"
                   : tone === "mid"
                   ? "text-primary"
@@ -1791,7 +1799,7 @@ function ChunkEditor({
               )}
             >
               置信度 {Math.round(chunk.confidence * 100)}%
-              {mustEdit && " · 需人工确认"}
+              {needsReview && " · 待人工核验"}
             </span>
           ) : (
             <span className="text-muted-foreground">未评分</span>
@@ -1799,11 +1807,41 @@ function ChunkEditor({
         </div>
       </div>
 
-      <ChunkContentEditor chunk={chunk} onChange={onChange} mustEdit={mustEdit} />
+      <ChunkContentEditor
+        chunk={chunk}
+        onChange={onChange}
+        mustEdit={needsReview}
+      />
+
+      {isLow && chunk.label !== "Image" && (
+        <div className="mt-2 flex items-center justify-between gap-2 text-[11px]">
+          <span className="text-muted-foreground">
+            {needsReview
+              ? "若识别结果正确，可直接确认；如有错误请在上方修改。"
+              : chunk.edited
+              ? "已通过修改。"
+              : "已确认无需修改。"}
+          </span>
+          <Button
+            type="button"
+            size="sm"
+            variant={chunk.confirmed && !chunk.edited ? "secondary" : "outline"}
+            className="h-7 gap-1 px-2 text-[11px]"
+            onClick={(e) => {
+              e.stopPropagation();
+              onConfirm();
+            }}
+            disabled={chunk.edited}
+          >
+            <CheckCircle2 className="size-3" />
+            {chunk.confirmed && !chunk.edited ? "取消确认" : "确认无需修改"}
+          </Button>
+        </div>
+      )}
 
       {chunk.lastEdit && (
         <div className="mt-1.5 text-[11px] text-muted-foreground">
-          最近修改：{fmtEditLog(chunk.lastEdit)}
+          {chunk.edited ? "最近修改" : "确认于"}：{fmtEditLog(chunk.lastEdit)}
         </div>
       )}
     </div>
