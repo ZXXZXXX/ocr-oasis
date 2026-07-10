@@ -1221,9 +1221,10 @@ function Workbench() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => deleteRecord(r.id)}
+                                className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                                onClick={() => setDeleteId(r.id)}
                               >
-                                <Trash2 className="size-4 text-muted-foreground" />
+                                <Trash2 className="size-4" />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>删除</TooltipContent>
