@@ -1526,6 +1526,9 @@ function DetailView({
                 onChange={(pageIdx, chunkId, v) =>
                   onChange(dt, pageIdx, chunkId, v)
                 }
+                onConfirm={(pageIdx, chunkId) =>
+                  onConfirm(dt, pageIdx, chunkId)
+                }
               />
             </TabsContent>
           );
