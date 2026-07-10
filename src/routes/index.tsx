@@ -1823,12 +1823,11 @@ function ImageWithBoxes({
   let transform = "translate(0%, 0%) scale(1)";
   if (activeChunk) {
     const [x1, y1, x2, y2] = activeChunk.bbox;
-    const bw = Math.max(1, x2 - x1);
-    const bh = Math.max(1, y2 - y1);
+    const bw = Math.max(1, x2 - x1 + 20); // 左右各加 10px
     const fx = (x1 + x2) / 2 / w;
     const fy = (y1 + y2) / 2 / h;
-    // target: bbox占容器约60%，避免过度放大
-    const scale = Math.min(4, Math.max(1.4, Math.min((w / bw) * 0.6, (h / bh) * 0.6)));
+    // 以所选框宽度 + 20px 作为可视宽度限制，按容器宽度缩放
+    const scale = Math.min(4, Math.max(1, w / bw));
     const tx = (0.5 - fx) * 100;
     const ty = (0.5 - fy) * 100;
     transform = `translate(${tx}%, ${ty}%) scale(${scale})`;
