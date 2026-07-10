@@ -176,7 +176,8 @@ function pendingLowConf(r: OcrRecord): number {
       c.label !== "Image" &&
       c.confidence != null &&
       c.confidence < LOW_CONF_THRESHOLD &&
-      !c.edited,
+      !c.edited &&
+      !c.confirmed,
   ).length;
 }
 
