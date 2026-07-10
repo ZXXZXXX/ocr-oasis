@@ -2081,16 +2081,16 @@ function ChunkContentEditor({
   if (chunk.label === "Table") {
     return (
       <div className="space-y-2">
-        <div className="max-h-60 overflow-auto rounded border border-border bg-background p-2 text-xs [&_table]:w-full [&_td]:border [&_td]:border-border [&_td]:px-1.5 [&_td]:py-1 [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-1.5 [&_th]:py-1">
-          <div
-            /* biome-ignore lint: OCR output is trusted for demo */
-            dangerouslySetInnerHTML={{ __html: chunk.content }}
-          />
-        </div>
+        <EditableTableHtml
+          html={chunk.content}
+          readOnly={!!readOnly}
+          mustEdit={mustEdit}
+          onChange={onChange}
+        />
         {!readOnly && (
           <details>
             <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground">
-              编辑表格 HTML
+              编辑表格 HTML 源码
             </summary>
             <AutoResizeTextarea
               value={chunk.content}
@@ -2102,6 +2102,7 @@ function ChunkContentEditor({
       </div>
     );
   }
+
 
   // Section-Header / Text: edit plain text; store back as <p>...</p>
   const text = htmlToText(chunk.content);
@@ -2124,3 +2125,48 @@ function ChunkContentEditor({
     />
   );
 }
+
+function EditableTableHtml({
+  html,
+  readOnly,
+  mustEdit,
+  onChange,
+}: {
+  html: string;
+  readOnly: boolean;
+  mustEdit: boolean;
+  onChange: (v: string) => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  // 仅在外部 html 与当前 DOM 不一致时同步，避免编辑中光标跳动
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (el.innerHTML !== html) el.innerHTML = html;
+  }, [html]);
+
+  return (
+    <div
+      className={cn(
+        "max-h-60 overflow-auto rounded border bg-background p-2 text-xs outline-none transition-colors",
+        "[&_table]:w-full [&_td]:border [&_td]:border-border [&_td]:px-1.5 [&_td]:py-1 [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-1.5 [&_th]:py-1",
+        readOnly
+          ? "border-border"
+          : mustEdit
+          ? "border-[color:var(--warning)] focus-within:ring-2 focus-within:ring-[color:var(--warning)]"
+          : "border-border focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/30",
+        !readOnly && "[&_td]:cursor-text [&_th]:cursor-text",
+      )}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div
+        ref={ref}
+        contentEditable={!readOnly}
+        suppressContentEditableWarning
+        spellCheck={false}
+        onInput={(e) => onChange((e.currentTarget as HTMLDivElement).innerHTML)}
+      />
+    </div>
+  );
+}
+
