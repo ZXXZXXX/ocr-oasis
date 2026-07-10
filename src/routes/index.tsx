@@ -1819,48 +1819,64 @@ function ImageWithBoxes({
   onSelect: (id: string) => void;
 }) {
   const [w, h] = [page.pageBox[2] || image.width, page.pageBox[3] || image.height];
+  const activeChunk = page.chunks.find((c) => c.id === activeChunkId);
+  let transform = "translate(0%, 0%) scale(1)";
+  if (activeChunk) {
+    const [x1, y1, x2, y2] = activeChunk.bbox;
+    const bw = Math.max(1, x2 - x1);
+    const bh = Math.max(1, y2 - y1);
+    const fx = (x1 + x2) / 2 / w;
+    const fy = (y1 + y2) / 2 / h;
+    // target: bbox占容器约60%，避免过度放大
+    const scale = Math.min(4, Math.max(1.4, Math.min((w / bw) * 0.6, (h / bh) * 0.6)));
+    const tx = (0.5 - fx) * 100;
+    const ty = (0.5 - fy) * 100;
+    transform = `translate(${tx}%, ${ty}%) scale(${scale})`;
+  }
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-background">
-      <div
-        className="relative w-full"
-        style={{ aspectRatio: `${w} / ${h}` }}
-      >
-        <img
-          src={image.url}
-          alt={image.name}
-          className="absolute inset-0 h-full w-full object-contain"
-        />
-        <div className="absolute inset-0">
-          {page.chunks.map((c) => {
-            const [x1, y1, x2, y2] = c.bbox;
-            const tone = confidenceTone(c.confidence);
-            const isActive = c.id === activeChunkId;
-            const color =
-              tone === "low"
-                ? "border-[color:var(--warning)] bg-[color:var(--warning)]/15"
-                : tone === "mid"
-                ? "border-primary bg-primary/10"
-                : "border-[color:var(--success)]/70 bg-[color:var(--success)]/5";
-            return (
-              <button
-                type="button"
-                key={c.id}
-                onClick={() => onSelect(c.id)}
-                className={cn(
-                  "absolute cursor-pointer border transition-all hover:z-10 hover:shadow-md",
-                  color,
-                  isActive && "z-20 ring-2 ring-primary ring-offset-1",
-                )}
-                style={{
-                  left: `${(x1 / w) * 100}%`,
-                  top: `${(y1 / h) * 100}%`,
-                  width: `${((x2 - x1) / w) * 100}%`,
-                  height: `${((y2 - y1) / h) * 100}%`,
-                }}
-                title={`${c.label}${c.confidence != null ? ` · ${Math.round(c.confidence * 100)}%` : ""}`}
-              />
-            );
-          })}
+      <div className="relative w-full overflow-hidden" style={{ aspectRatio: `${w} / ${h}` }}>
+        <div
+          className="absolute inset-0 transition-transform duration-500 ease-out"
+          style={{ transform, transformOrigin: "50% 50%" }}
+        >
+          <img
+            src={image.url}
+            alt={image.name}
+            className="absolute inset-0 h-full w-full object-contain"
+          />
+          <div className="absolute inset-0">
+            {page.chunks.map((c) => {
+              const [x1, y1, x2, y2] = c.bbox;
+              const tone = confidenceTone(c.confidence);
+              const isActive = c.id === activeChunkId;
+              const color =
+                tone === "low"
+                  ? "border-[color:var(--warning)] bg-[color:var(--warning)]/15"
+                  : tone === "mid"
+                  ? "border-primary bg-primary/10"
+                  : "border-[color:var(--success)]/70 bg-[color:var(--success)]/5";
+              return (
+                <button
+                  type="button"
+                  key={c.id}
+                  onClick={() => onSelect(c.id)}
+                  className={cn(
+                    "absolute cursor-pointer border transition-all hover:z-10 hover:shadow-md",
+                    color,
+                    isActive && "z-20 ring-2 ring-primary ring-offset-1",
+                  )}
+                  style={{
+                    left: `${(x1 / w) * 100}%`,
+                    top: `${(y1 / h) * 100}%`,
+                    width: `${((x2 - x1) / w) * 100}%`,
+                    height: `${((y2 - y1) / h) * 100}%`,
+                  }}
+                  title={`${c.label}${c.confidence != null ? ` · ${Math.round(c.confidence * 100)}%` : ""}`}
+                />
+              );
+            })}
+          </div>
         </div>
       </div>
       <div className="border-t border-border px-3 py-1.5 text-xs text-muted-foreground">
@@ -1869,6 +1885,7 @@ function ImageWithBoxes({
     </div>
   );
 }
+
 
 function fmtEditLog(e: EditLog) {
   const d = new Date(e.at);
