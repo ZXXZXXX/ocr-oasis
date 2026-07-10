@@ -1907,6 +1907,7 @@ function ChunkEditor({
         chunk={chunk}
         onChange={onChange}
         mustEdit={needsReview}
+        readOnly={!editing}
       />
 
       {isLow && chunk.label !== "Image" && (
