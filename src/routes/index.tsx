@@ -532,7 +532,7 @@ function seedRecords(): OcrRecord[] {
     });
     const allPages = Object.values(results).flat() as DocPage[];
     return {
-      id: uid(),
+      id: `seed-${idx}`,
       createdAt: now - s.minutesAgo * 60_000,
       status: "done" as Status,
       progress: 100,
