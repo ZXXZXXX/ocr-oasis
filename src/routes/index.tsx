@@ -1910,7 +1910,7 @@ function ChunkEditor({
         readOnly={!editing}
       />
 
-      {isLow && chunk.label !== "Image" && (
+      {isLow && chunk.label !== "Image" && editing && (
         <div className="mt-2 flex items-center justify-between gap-2 text-[11px]">
           <span className="text-muted-foreground">
             {needsReview
