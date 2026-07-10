@@ -1741,7 +1741,7 @@ function DocPanel({
             ))}
           </div>
         )}
-        <div className="flex-1 overflow-auto p-4">
+        <div className="flex-1 flex items-center justify-center overflow-auto p-4">
           {image && page ? (
             <ImageWithBoxes
               image={image}
