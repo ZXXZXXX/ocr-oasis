@@ -544,12 +544,13 @@ function seedRecords(): OcrRecord[] {
       const img = images.find((i) => i.docType === dt)!;
       const rawChunks =
         dt === "delivery_note" ? mockDeliveryChunks() : mockShippingChunks();
+      const rand = createRand(idx + 1 + s.docTypes.indexOf(dt));
       results[dt] = [
         {
           imageId: img.id,
           sourceImage: img.name,
           pageBox: [0, 0, img.width, img.height],
-          chunks: adjustChunkConfidences(rawChunks, s.mode),
+          chunks: adjustChunkConfidences(rawChunks, s.mode, rand),
         },
       ];
     });
