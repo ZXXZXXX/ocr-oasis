@@ -1949,14 +1949,17 @@ function ChunkContentEditor({
   chunk,
   onChange,
   mustEdit,
+  readOnly,
 }: {
   chunk: Chunk;
   onChange: (v: string) => void;
   mustEdit: boolean;
+  readOnly?: boolean;
 }) {
   const ring = mustEdit
     ? "border-[color:var(--warning)] focus-visible:ring-[color:var(--warning)]"
     : "";
+  const roCls = readOnly ? "cursor-default bg-muted/40" : "";
 
   if (chunk.label === "Image") {
     return (
