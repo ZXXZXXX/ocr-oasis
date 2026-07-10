@@ -2016,7 +2016,7 @@ function ChunkEditor({
             disabled={chunk.edited}
           >
             <CheckCircle2 className="size-3" />
-            {chunk.confirmed && !chunk.edited ? "取消确认" : "确认无需修改"}
+            {chunk.confirmed && !chunk.edited ? "取消确认" : "标记为无需更改"}
           </Button>
         </div>
       )}
