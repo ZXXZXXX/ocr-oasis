@@ -1428,6 +1428,7 @@ function ConfidenceBadge({ score }: { score: number }) {
 function DetailView({
   record,
   onChange,
+  onConfirm,
   onDownload,
   buildExport,
 }: {
@@ -1438,6 +1439,7 @@ function DetailView({
     chunkId: string,
     value: string,
   ) => void;
+  onConfirm: (docType: DocType, pageIdx: number, chunkId: string) => void;
   onDownload: () => void;
   buildExport: (r: OcrRecord) => unknown;
 }) {
