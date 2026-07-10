@@ -1336,7 +1336,7 @@ function Workbench() {
         >
           <SheetContent
             side="right"
-            className="flex w-full flex-col gap-0 p-0 sm:max-w-[1180px]"
+            className="flex w-[75vw] max-w-[75vw] flex-col gap-0 p-0 [&>button]:hidden"
           >
             {detailRecord && detailRecord.results && (
               <DetailView
