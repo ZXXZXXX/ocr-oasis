@@ -1520,16 +1520,6 @@ function DetailView({
             </SheetDescription>
           </div>
           <div className="flex items-center gap-2">
-            <SheetClose asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                className="shrink-0"
-                aria-label="关闭"
-              >
-                <X className="size-4" />
-              </Button>
-            </SheetClose>
             {!editing && (
               <>
                 <Button
@@ -1548,6 +1538,16 @@ function DetailView({
                 </Button>
               </>
             )}
+            <SheetClose asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="shrink-0"
+                aria-label="关闭"
+              >
+                <X className="size-4" />
+              </Button>
+            </SheetClose>
           </div>
         </div>
       </SheetHeader>
