@@ -1520,6 +1520,16 @@ function DetailView({
             </SheetDescription>
           </div>
           <div className="flex items-center gap-2">
+            <SheetClose asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="shrink-0"
+                aria-label="关闭"
+              >
+                <X className="size-4" />
+              </Button>
+            </SheetClose>
             {editing ? (
               <>
                 <Button variant="outline" onClick={cancelEdit} className="gap-2">
