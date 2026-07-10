@@ -328,6 +328,7 @@ function Workbench() {
   const [detailId, setDetailId] = useState<string | null>(null);
 
   // Filters
+  const [filterOpen, setFilterOpen] = useState(false);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [confRange, setConfRange] = useState<[number, number]>([0, 100]);
