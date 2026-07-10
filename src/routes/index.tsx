@@ -1329,6 +1329,9 @@ function Workbench() {
                 onChange={(docType, pageIdx, chunkId, val) =>
                   updateChunk(detailRecord.id, docType, pageIdx, chunkId, val)
                 }
+                onConfirm={(docType, pageIdx, chunkId) =>
+                  confirmChunk(detailRecord.id, docType, pageIdx, chunkId)
+                }
                 onDownload={() => downloadJson(detailRecord)}
                 buildExport={buildExport}
               />
