@@ -568,6 +568,7 @@ function Workbench() {
   const [progressMinimized, setProgressMinimized] = useState(false);
   const [progressDismissed, setProgressDismissed] = useState(true);
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   // Filters
   const [filterOpen, setFilterOpen] = useState(false);
