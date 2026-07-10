@@ -1833,16 +1833,16 @@ function ImageWithBoxes({
     transform = `translate(${tx}%, ${ty}%) scale(${scale})`;
   }
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-background">
-      <div className="relative w-full overflow-hidden" style={{ aspectRatio: `${w} / ${h}` }}>
+    <div className="flex h-full w-full max-w-full flex-col overflow-hidden rounded-lg border border-border bg-background">
+      <div className="flex-1 flex items-center justify-center overflow-auto p-4">
         <div
-          className="absolute inset-0 transition-transform duration-500 ease-out"
+          className="relative max-w-full overflow-hidden transition-transform duration-500 ease-out"
           style={{ transform, transformOrigin: "50% 50%" }}
         >
           <img
             src={image.url}
             alt={image.name}
-            className="absolute inset-0 h-full w-full object-contain"
+            className="block h-auto max-w-full"
           />
           <div className="absolute inset-0">
             {page.chunks.map((c) => {
@@ -1878,8 +1878,9 @@ function ImageWithBoxes({
           </div>
         </div>
       </div>
-      <div className="border-t border-border px-3 py-1.5 text-xs text-muted-foreground">
-        {image.name} · {w} × {h}
+      <div className="flex items-center justify-center gap-2 border-t border-primary/20 bg-primary/5 px-3 py-1.5 text-xs text-primary">
+        <span className="truncate font-medium">{image.name}</span>
+        <span className="text-primary/70">· {w} × {h}</span>
       </div>
     </div>
   );
