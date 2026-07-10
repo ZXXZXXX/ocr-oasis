@@ -1827,7 +1827,7 @@ function ImageWithBoxes({
   image: UploadedImage;
   page: DocPage;
   activeChunkId: string | null;
-  onSelect: (id: string) => void;
+  onSelect: (id: string | null) => void;
 }) {
   const [w, h] = [page.pageBox[2] || image.width, page.pageBox[3] || image.height];
   const activeChunk = page.chunks.find((c) => c.id === activeChunkId);
@@ -1894,9 +1894,21 @@ function ImageWithBoxes({
           </div>
         </div>
       </div>
-      <div className="flex items-center justify-center gap-2 border-t border-primary/20 bg-primary/5 px-3 py-1.5 text-xs text-primary">
-        <span className="truncate font-medium">{image.name}</span>
-        <span className="text-primary/70">· {w} × {h}</span>
+      <div className="flex items-center justify-between gap-2 border-t border-primary/20 bg-primary/5 px-3 py-1.5 text-xs text-primary">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="truncate font-medium">{image.name}</span>
+          <span className="text-primary/70">· {w} × {h}</span>
+        </div>
+        {activeChunkId && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-6 gap-1 border-primary/30 px-2 text-xs text-primary hover:bg-primary/10"
+            onClick={() => onSelect(null)}
+          >
+            <Minimize2 className="size-3" /> 取消聚焦
+          </Button>
+        )}
       </div>
     </div>
   );
