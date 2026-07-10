@@ -1551,11 +1551,13 @@ function DocPanel({
   pages,
   images,
   onChange,
+  onConfirm,
 }: {
   docType: DocType;
   pages: DocPage[];
   images: UploadedImage[];
   onChange: (pageIdx: number, chunkId: string, value: string) => void;
+  onConfirm: (pageIdx: number, chunkId: string) => void;
 }) {
   const [pageIdx, setPageIdx] = useState(0);
   const [activeChunkId, setActiveChunkId] = useState<string | null>(null);
