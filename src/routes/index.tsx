@@ -772,6 +772,15 @@ function Workbench() {
     }));
   }
 
+  function replaceResults(
+    recordId: string,
+    results: NonNullable<OcrRecord["results"]>,
+  ) {
+    setRecords((prev) =>
+      prev.map((r) => (r.id === recordId ? { ...r, results } : r)),
+    );
+  }
+
   function buildExport(r: OcrRecord) {
     if (!r.results) return {};
     const documents = (Object.entries(r.results) as [DocType, DocPage[]][])
@@ -1337,6 +1346,9 @@ function Workbench() {
                 onConfirm={(docType, pageIdx, chunkId) =>
                   confirmChunk(detailRecord.id, docType, pageIdx, chunkId)
                 }
+                onReplaceResults={(results) =>
+                  replaceResults(detailRecord.id, results)
+                }
                 onDownload={() => downloadJson(detailRecord)}
                 buildExport={buildExport}
               />
@@ -1434,6 +1446,7 @@ function DetailView({
   record,
   onChange,
   onConfirm,
+  onReplaceResults,
   onDownload,
   buildExport,
 }: {
@@ -1445,6 +1458,7 @@ function DetailView({
     value: string,
   ) => void;
   onConfirm: (docType: DocType, pageIdx: number, chunkId: string) => void;
+  onReplaceResults: (results: NonNullable<OcrRecord["results"]>) => void;
   onDownload: () => void;
   buildExport: (r: OcrRecord) => unknown;
 }) {
@@ -1453,6 +1467,28 @@ function DetailView({
   const [activeTab, setActiveTab] = useState<DocType | "json">(
     availableDocTypes[0] ?? "json",
   );
+  const [editing, setEditing] = useState(false);
+  // snapshot taken on entering edit mode — used to cancel
+  const snapshotRef = useRef<NonNullable<OcrRecord["results"]> | null>(null);
+
+  function startEdit() {
+    // deep-clone current results so cancel can restore
+    snapshotRef.current = JSON.parse(
+      JSON.stringify(record.results ?? {}),
+    ) as NonNullable<OcrRecord["results"]>;
+    setEditing(true);
+  }
+  function cancelEdit() {
+    if (snapshotRef.current) onReplaceResults(snapshotRef.current);
+    snapshotRef.current = null;
+    setEditing(false);
+    toast.info("已取消本次修改");
+  }
+  function submitEdit() {
+    snapshotRef.current = null;
+    setEditing(false);
+    toast.success("修改已提交");
+  }
 
   return (
     <>
@@ -1462,7 +1498,11 @@ function DetailView({
             <SheetTitle className="flex flex-wrap items-center gap-2">
               识别结果
               <ConfidenceBadge score={record.confidence ?? 0} />
-              {pending > 0 ? (
+              {editing ? (
+                <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
+                  <Pencil className="size-3" /> 编辑中
+                </span>
+              ) : pending > 0 ? (
                 <span className="inline-flex items-center gap-1 text-xs text-[color:var(--warning-foreground)]">
                   <AlertTriangle className="size-3" />
                   尚有 {pending} 个低置信度分块需人工核验后才能下载
@@ -1478,13 +1518,35 @@ function DetailView({
               #{record.id} · {fmtTime(record.createdAt)}
             </SheetDescription>
           </div>
-          <Button
-            onClick={onDownload}
-            disabled={pending > 0}
-            className="gap-2"
-          >
-            <Download className="size-4" /> 下载 JSON
-          </Button>
+          <div className="flex items-center gap-2">
+            {editing ? (
+              <>
+                <Button variant="outline" onClick={cancelEdit} className="gap-2">
+                  <X className="size-4" /> 取消
+                </Button>
+                <Button onClick={submitEdit} className="gap-2">
+                  <CheckCircle2 className="size-4" /> 提交
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={startEdit}
+                  className="gap-2"
+                >
+                  <Pencil className="size-4" /> 编辑
+                </Button>
+                <Button
+                  onClick={onDownload}
+                  disabled={pending > 0}
+                  className="gap-2"
+                >
+                  <Download className="size-4" /> 下载 JSON
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </SheetHeader>
 
@@ -1528,6 +1590,7 @@ function DetailView({
                 docType={dt}
                 pages={pages}
                 images={imgs}
+                editing={editing}
                 onChange={(pageIdx, chunkId, v) =>
                   onChange(dt, pageIdx, chunkId, v)
                 }
@@ -1555,12 +1618,14 @@ function DetailView({
 function DocPanel({
   pages,
   images,
+  editing,
   onChange,
   onConfirm,
 }: {
   docType: DocType;
   pages: DocPage[];
   images: UploadedImage[];
+  editing: boolean;
   onChange: (pageIdx: number, chunkId: string, value: string) => void;
   onConfirm: (pageIdx: number, chunkId: string) => void;
 }) {
@@ -1568,6 +1633,18 @@ function DocPanel({
   const [activeChunkId, setActiveChunkId] = useState<string | null>(null);
   const page = pages[pageIdx];
   const image = images.find((i) => i.id === page?.imageId) ?? images[pageIdx];
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const chunkRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  // scroll active chunk to the top of the right pane when selected via bbox
+  useEffect(() => {
+    if (!activeChunkId) return;
+    const el = chunkRefs.current[activeChunkId];
+    const container = scrollRef.current;
+    if (!el || !container) return;
+    const top = el.offsetTop - 12;
+    container.scrollTo({ top, behavior: "smooth" });
+  }, [activeChunkId, pageIdx]);
 
   return (
     <div className="grid h-full grid-cols-1 overflow-hidden md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
@@ -1612,13 +1689,18 @@ function DocPanel({
       </div>
 
       {/* Chunks editor */}
-      <div className="flex flex-col overflow-y-auto">
+      <div ref={scrollRef} className="flex flex-col overflow-y-auto">
         <div className="space-y-3 px-5 py-5">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium text-foreground">
               识别分块 · {page?.chunks.length ?? 0}
             </h3>
             <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+              {!editing && (
+                <span className="text-muted-foreground">
+                  点击顶部「编辑」进入编辑态
+                </span>
+              )}
               <span className="inline-flex items-center gap-1">
                 <span className="size-2 rounded-sm bg-[color:var(--success)]" />
                 高
@@ -1634,14 +1716,21 @@ function DocPanel({
             </div>
           </div>
           {page?.chunks.map((c) => (
-            <ChunkEditor
+            <div
               key={c.id}
-              chunk={c}
-              active={activeChunkId === c.id}
-              onFocus={() => setActiveChunkId(c.id)}
-              onChange={(v) => onChange(pageIdx, c.id, v)}
-              onConfirm={() => onConfirm(pageIdx, c.id)}
-            />
+              ref={(el) => {
+                chunkRefs.current[c.id] = el;
+              }}
+            >
+              <ChunkEditor
+                chunk={c}
+                active={activeChunkId === c.id}
+                editing={editing}
+                onFocus={() => setActiveChunkId(c.id)}
+                onChange={(v) => onChange(pageIdx, c.id, v)}
+                onConfirm={() => onConfirm(pageIdx, c.id)}
+              />
+            </div>
           ))}
         </div>
       </div>
@@ -1720,12 +1809,14 @@ function fmtEditLog(e: EditLog) {
 function ChunkEditor({
   chunk,
   active,
+  editing,
   onFocus,
   onChange,
   onConfirm,
 }: {
   chunk: Chunk;
   active: boolean;
+  editing: boolean;
   onFocus: () => void;
   onChange: (newContent: string) => void;
   onConfirm: () => void;
@@ -1816,9 +1907,10 @@ function ChunkEditor({
         chunk={chunk}
         onChange={onChange}
         mustEdit={needsReview}
+        readOnly={!editing}
       />
 
-      {isLow && chunk.label !== "Image" && (
+      {isLow && chunk.label !== "Image" && editing && (
         <div className="mt-2 flex items-center justify-between gap-2 text-[11px]">
           <span className="text-muted-foreground">
             {needsReview
@@ -1857,14 +1949,17 @@ function ChunkContentEditor({
   chunk,
   onChange,
   mustEdit,
+  readOnly,
 }: {
   chunk: Chunk;
   onChange: (v: string) => void;
   mustEdit: boolean;
+  readOnly?: boolean;
 }) {
   const ring = mustEdit
     ? "border-[color:var(--warning)] focus-visible:ring-[color:var(--warning)]"
     : "";
+  const roCls = readOnly ? "cursor-default bg-muted/40" : "";
 
   if (chunk.label === "Image") {
     return (
@@ -1884,16 +1979,18 @@ function ChunkContentEditor({
             dangerouslySetInnerHTML={{ __html: chunk.content }}
           />
         </div>
-        <details>
-          <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground">
-            编辑表格 HTML
-          </summary>
-          <Textarea
-            value={chunk.content}
-            onChange={(e) => onChange(e.target.value)}
-            className={cn("mt-1.5 min-h-32 font-mono text-[11px]", ring)}
-          />
-        </details>
+        {!readOnly && (
+          <details>
+            <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground">
+              编辑表格 HTML
+            </summary>
+            <Textarea
+              value={chunk.content}
+              onChange={(e) => onChange(e.target.value)}
+              className={cn("mt-1.5 min-h-32 font-mono text-[11px]", ring)}
+            />
+          </details>
+        )}
       </div>
     );
   }
@@ -1906,14 +2003,16 @@ function ChunkContentEditor({
   return isMulti ? (
     <Textarea
       value={text}
+      readOnly={readOnly}
       onChange={(e) => handle(e.target.value)}
-      className={cn("min-h-16 resize-none", ring)}
+      className={cn("min-h-16 resize-none", ring, roCls)}
     />
   ) : (
     <Input
       value={text}
+      readOnly={readOnly}
       onChange={(e) => handle(e.target.value)}
-      className={ring}
+      className={cn(ring, roCls)}
     />
   );
 }
