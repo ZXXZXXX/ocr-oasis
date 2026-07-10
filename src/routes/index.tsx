@@ -18,6 +18,10 @@ import {
   Filter,
   RotateCcw,
   Pencil,
+  Type,
+  Heading,
+  Table as TableIcon,
+  Image as ImageIcon,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -60,16 +64,28 @@ export const Route = createFileRoute("/")({
   component: Workbench,
 });
 
-// ---------- Constants / current user ----------
+// ---------- Constants ----------
 const CURRENT_USER = "审核员 · 李婷";
+const LOW_CONF_THRESHOLD = 0.8;
 
 // ---------- Types ----------
 type DocType = "delivery_note" | "shipping_slip";
 type Status = "recognizing" | "done" | "failed";
+type ChunkLabel = "Section-Header" | "Text" | "Table" | "Image";
 
 const DOC_LABEL: Record<DocType, string> = {
   delivery_note: "送货单",
   shipping_slip: "出货传票",
+};
+
+const LABEL_META: Record<
+  ChunkLabel,
+  { text: string; icon: React.ComponentType<{ className?: string }> }
+> = {
+  "Section-Header": { text: "标题", icon: Heading },
+  Text: { text: "文本", icon: Type },
+  Table: { text: "表格", icon: TableIcon },
+  Image: { text: "图像", icon: ImageIcon },
 };
 
 interface UploadedImage {
@@ -77,6 +93,9 @@ interface UploadedImage {
   name: string;
   url: string;
   docType: DocType;
+  // natural dimensions used for bbox scaling (mocked)
+  width: number;
+  height: number;
 }
 
 interface EditLog {
@@ -84,43 +103,35 @@ interface EditLog {
   at: string; // ISO
 }
 
-interface FieldValue {
-  value: string;
-  confidence: number; // 0-1
+interface Chunk {
+  id: string;
+  bbox: [number, number, number, number]; // x1,y1,x2,y2 in source image coords
+  label: ChunkLabel;
+  content: string; // HTML string, matches algorithm output
+  confidence?: number; // 0-1, may be absent
   edited?: boolean;
   original?: string;
   lastEdit?: EditLog;
 }
 
-interface LineItem {
-  materialCode: FieldValue;
-  materialName: FieldValue;
-  spec: FieldValue;
-  quantity: FieldValue;
-  unit: FieldValue;
-}
-
-interface DocResult {
-  fields: {
-    documentNo: FieldValue;
-    documentDate: FieldValue;
-    customerName: FieldValue;
-    deliveryAddress: FieldValue;
-    contact: FieldValue;
-  };
-  items: LineItem[];
+interface DocPage {
+  imageId: string;
+  sourceImage: string;
+  pageBox: [number, number, number, number];
+  chunks: Chunk[];
 }
 
 interface OcrRecord {
   id: string;
-  createdAt: number; // timestamp
+  createdAt: number;
   status: Status;
   progress: number;
-  confidence?: number;
+  confidence?: number; // 0-100
   deliveryCount: number;
   shippingCount: number;
   images: UploadedImage[];
-  results?: Partial<Record<DocType, DocResult>>;
+  // one page per source image, grouped by doc type
+  results?: Partial<Record<DocType, DocPage[]>>;
 }
 
 // ---------- Helpers ----------
@@ -129,96 +140,237 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 const fmtTime = (t: number) =>
   new Date(t).toLocaleString("zh-CN", { hour12: false });
 
-function randomField(pool: string[], forceLow = false): FieldValue {
-  const value = pool[Math.floor(Math.random() * pool.length)];
-  const confidence = forceLow
-    ? 0.5 + Math.random() * 0.25
-    : Math.random() < 0.3
-    ? 0.55 + Math.random() * 0.3
-    : 0.88 + Math.random() * 0.11;
-  return { value, confidence: Math.min(0.99, confidence) };
-}
-
-function fabricateDoc(): DocResult {
-  const customers = [
-    "招商局物流集团",
-    "顺丰供应链有限公司",
-    "京东物流华南分公司",
-    "深圳华强科技",
-  ];
-  const addresses = [
-    "深圳市南山区科技园南区T3栋",
-    "广州市黄埔区开发大道128号",
-    "东莞市松山湖大学路9号",
-  ];
-  const contacts = [
-    "李经理 13800000000",
-    "王主管 13911112222",
-    "张先生 13566667777",
-  ];
-  const materials: [string, string, string][] = [
-    ["A1001", "六角螺丝", "M3x10"],
-    ["A1002", "垫片", "M4"],
-    ["B2001", "铝合金外壳", "200x120"],
-    ["C3050", "PCB主板", "V2.1"],
-  ];
-  const fields = {
-    documentNo: randomField(["DN20260710001", "SH20260710A22", "DN20260709088"]),
-    documentDate: randomField(["2026-07-10", "2026-07-09", "2026-07-08"]),
-    customerName: randomField(customers, Math.random() < 0.5),
-    deliveryAddress: randomField(addresses, Math.random() < 0.4),
-    contact: randomField(contacts),
-  };
-  const itemCount = 2 + Math.floor(Math.random() * 3);
-  const items: LineItem[] = Array.from({ length: itemCount }).map(() => {
-    const m = materials[Math.floor(Math.random() * materials.length)];
-    return {
-      materialCode: randomField([m[0]]),
-      materialName: randomField([m[1]]),
-      spec: randomField([m[2]]),
-      quantity: randomField(
-        [String(1 + Math.floor(Math.random() * 50))],
-        Math.random() < 0.2,
-      ),
-      unit: randomField(["箱", "件", "个", "套"]),
-    };
-  });
-  return { fields, items };
-}
-
-function fabricateResult(images: UploadedImage[]) {
-  const results: Partial<Record<DocType, DocResult>> = {};
-  const hasDelivery = images.some((i) => i.docType === "delivery_note");
-  const hasShipping = images.some((i) => i.docType === "shipping_slip");
-  if (hasDelivery) results.delivery_note = fabricateDoc();
-  if (hasShipping) results.shipping_slip = fabricateDoc();
-  const all: FieldValue[] = [];
-  (Object.values(results) as DocResult[]).forEach((d) => {
-    all.push(...Object.values(d.fields));
-    d.items.forEach((it) => all.push(...Object.values(it)));
-  });
-  const avg = all.reduce((s, f) => s + f.confidence, 0) / all.length;
-  return { results, confidence: Math.round(avg * 100) };
-}
-
-function confidenceTone(c: number) {
+function confidenceTone(c?: number) {
+  if (c == null) return "high"; // absent = treat as clean
   if (c >= 0.9) return "high";
-  if (c >= 0.8) return "mid";
+  if (c >= LOW_CONF_THRESHOLD) return "mid";
   return "low";
 }
 
-function collectFields(r: OcrRecord): FieldValue[] {
+// Compute overall record confidence: average of scored chunks. Unscored counted as 1.0.
+function averageConfidence(pages: DocPage[]): number {
+  const scores: number[] = [];
+  pages.forEach((p) =>
+    p.chunks.forEach((c) => {
+      if (c.label === "Image") return; // images not scored
+      scores.push(c.confidence ?? 1);
+    }),
+  );
+  if (scores.length === 0) return 100;
+  return Math.round((scores.reduce((s, n) => s + n, 0) / scores.length) * 100);
+}
+
+function collectChunks(r: OcrRecord): Chunk[] {
   if (!r.results) return [];
-  const arr: FieldValue[] = [];
-  (Object.values(r.results) as DocResult[]).forEach((d) => {
-    arr.push(...Object.values(d.fields));
-    d.items.forEach((it) => arr.push(...Object.values(it)));
-  });
-  return arr;
+  const out: Chunk[] = [];
+  (Object.values(r.results) as DocPage[][]).forEach((pages) =>
+    pages.forEach((p) => out.push(...p.chunks)),
+  );
+  return out;
 }
 
 function pendingLowConf(r: OcrRecord): number {
-  return collectFields(r).filter((f) => f.confidence < 0.8 && !f.edited).length;
+  return collectChunks(r).filter(
+    (c) =>
+      c.label !== "Image" &&
+      c.confidence != null &&
+      c.confidence < LOW_CONF_THRESHOLD &&
+      !c.edited,
+  ).length;
+}
+
+// Extract plain text from a simple HTML string (handles <p>, <br>, entities)
+function htmlToText(html: string): string {
+  return html
+    .replace(/<br\s*\/?\s*>/gi, "\n")
+    .replace(/<\/p>\s*<p>/gi, "\n")
+    .replace(/<\/?p[^>]*>/gi, "")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&")
+    .replace(/&nbsp;/g, " ")
+    .trim();
+}
+
+function textToHtml(text: string): string {
+  const escaped = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  return `<p>${escaped.replace(/\n/g, "<br/>")}</p>`;
+}
+
+// ---------- Mock chunk generators (mimic algorithm output) ----------
+
+// Delivery-note template modeled directly on the sample the user uploaded
+function mockDeliveryChunks(): Chunk[] {
+  const raw: Omit<Chunk, "id">[] = [
+    {
+      bbox: [867, 24, 1116, 73],
+      label: "Section-Header",
+      content: "<p>快驴送货入库单</p>",
+      confidence: 1.0,
+    },
+    {
+      bbox: [51, 77, 429, 111],
+      label: "Text",
+      content: "<p>来源单号: CG202604170000180543745</p>",
+    },
+    {
+      bbox: [51, 105, 356, 135],
+      label: "Text",
+      content: "<p>入库单号: R2026041756153123</p>",
+    },
+    {
+      bbox: [47, 130, 399, 166],
+      label: "Text",
+      content: "<p>送货方: 福州统一企业有限公司</p>",
+      confidence: 0.72,
+    },
+    {
+      bbox: [44, 158, 280, 186],
+      label: "Text",
+      content: "<p>货主: 泉州中小B</p>",
+    },
+    {
+      bbox: [988, 77, 1285, 111],
+      label: "Text",
+      content: "<p>入库仓库: 泉州禾富批市仓</p>",
+    },
+    {
+      bbox: [988, 111, 1124, 139],
+      label: "Text",
+      content: "<p>预计到货时间:</p>",
+      confidence: 0.61,
+    },
+    {
+      bbox: [988, 135, 1235, 166],
+      label: "Text",
+      content: "<p>入库完成日期: 2026-04-21</p>",
+    },
+    {
+      bbox: [23, 186, 1915, 540],
+      label: "Table",
+      content:
+        '<table border="1"><thead><tr><th>序号</th><th>SKU编码</th><th>品牌</th><th>品名</th><th>规格</th><th>生产批次</th><th>单位</th><th>应收</th><th>实收</th><th>金额(元)</th><th>备注</th></tr></thead><tbody><tr><td>1</td><td>10028007</td><td>统一</td><td>冰红茶1L</td><td>8瓶/箱</td><td>2026-03-30</td><td>箱</td><td>2</td><td>2</td><td>0.00</td><td>常温</td></tr><tr><td>2</td><td>10028003</td><td>统一</td><td>冰红茶500ml</td><td>15瓶/箱</td><td>2026-04-11</td><td>箱</td><td>2</td><td>2</td><td>0.00</td><td>常温</td></tr><tr><td>3</td><td>10028005</td><td>统一</td><td>绿茶1L</td><td>8瓶/箱</td><td>2026-03-26</td><td>箱</td><td>2</td><td>2</td><td>0.00</td><td>常温</td></tr><tr><td>4</td><td>10028002</td><td>统一</td><td>绿茶500ml</td><td>15瓶/箱</td><td>2026-03-30</td><td>箱</td><td>2</td><td>2</td><td>0.00</td><td>常温</td></tr></tbody></table>',
+      confidence: 0.68,
+    },
+    {
+      bbox: [23, 558, 186, 584],
+      label: "Text",
+      content: "<p>制单人: 林诗涛</p>",
+    },
+    {
+      bbox: [527, 558, 615, 584],
+      label: "Text",
+      content: '<p>仓库签字: &lt;img alt="Signature of warehouse staff"/&gt;</p>',
+    },
+    {
+      bbox: [992, 558, 1103, 584],
+      label: "Text",
+      content: '<p>送货方签字: &lt;img alt="Signature of supplier"/&gt;</p>',
+    },
+    {
+      bbox: [1448, 551, 1548, 575],
+      label: "Text",
+      content: "<p>财务签字:</p>",
+    },
+    {
+      bbox: [17, 597, 1573, 633],
+      label: "Text",
+      content:
+        "<p>注:该送货物流为供应商指定物流,供应商认可该物流司机签字确认的《快驴采购入库单》。</p>",
+      confidence: 1.0,
+    },
+    {
+      bbox: [598, 481, 867, 678],
+      label: "Image",
+      content:
+        '<img alt="Red circular stamp of \'统一企业有限公司\' with the number \'0058\' in the center."/>',
+    },
+  ];
+  return raw.map((c) => ({ ...c, id: uid() }));
+}
+
+function mockShippingChunks(): Chunk[] {
+  const raw: Omit<Chunk, "id">[] = [
+    {
+      bbox: [780, 20, 1180, 78],
+      label: "Section-Header",
+      content: "<p>出货传票</p>",
+      confidence: 1.0,
+    },
+    {
+      bbox: [50, 90, 480, 122],
+      label: "Text",
+      content: "<p>传票编号: SH20260421-00873</p>",
+    },
+    {
+      bbox: [50, 122, 420, 154],
+      label: "Text",
+      content: "<p>客户名称: 泉州禾富商贸有限公司</p>",
+      confidence: 0.74,
+    },
+    {
+      bbox: [50, 154, 520, 186],
+      label: "Text",
+      content: "<p>送货地址: 泉州市丰泽区华大街道禾富仓储中心 A3 库</p>",
+      confidence: 0.66,
+    },
+    {
+      bbox: [980, 90, 1300, 122],
+      label: "Text",
+      content: "<p>出库日期: 2026-04-21</p>",
+    },
+    {
+      bbox: [980, 122, 1280, 154],
+      label: "Text",
+      content: "<p>承运方: 顺达物流</p>",
+    },
+    {
+      bbox: [20, 200, 1900, 520],
+      label: "Table",
+      content:
+        '<table border="1"><thead><tr><th>序号</th><th>SKU</th><th>品名</th><th>规格</th><th>数量</th><th>单位</th><th>备注</th></tr></thead><tbody><tr><td>1</td><td>10028007</td><td>冰红茶1L</td><td>8瓶/箱</td><td>2</td><td>箱</td><td>常温</td></tr><tr><td>2</td><td>10028003</td><td>冰红茶500ml</td><td>15瓶/箱</td><td>2</td><td>箱</td><td>常温</td></tr><tr><td>3</td><td>10028005</td><td>绿茶1L</td><td>8瓶/箱</td><td>2</td><td>箱</td><td>常温</td></tr></tbody></table>',
+      confidence: 0.71,
+    },
+    {
+      bbox: [30, 560, 320, 596],
+      label: "Text",
+      content: "<p>装车人: 陈志强</p>",
+    },
+    {
+      bbox: [980, 560, 1280, 596],
+      label: "Text",
+      content: "<p>司机签字: 王建国</p>",
+    },
+  ];
+  return raw.map((c) => ({ ...c, id: uid() }));
+}
+
+function fabricateResult(images: UploadedImage[]) {
+  const results: Partial<Record<DocType, DocPage[]>> = {};
+  const deliveryImgs = images.filter((i) => i.docType === "delivery_note");
+  const shippingImgs = images.filter((i) => i.docType === "shipping_slip");
+
+  if (deliveryImgs.length) {
+    results.delivery_note = deliveryImgs.map((img) => ({
+      imageId: img.id,
+      sourceImage: img.name,
+      pageBox: [0, 0, img.width, img.height],
+      chunks: mockDeliveryChunks(),
+    }));
+  }
+  if (shippingImgs.length) {
+    results.shipping_slip = shippingImgs.map((img) => ({
+      imageId: img.id,
+      sourceImage: img.name,
+      pageBox: [0, 0, img.width, img.height],
+      chunks: mockShippingChunks(),
+    }));
+  }
+  const allPages = Object.values(results).flat() as DocPage[];
+  return { results, confidence: averageConfidence(allPages) };
 }
 
 // ---------- Upload zone ----------
@@ -341,7 +493,6 @@ function Workbench() {
 
   const detailRecord = records.find((r) => r.id === detailId) ?? null;
 
-  // Simulate progress
   useEffect(() => {
     if (activeRecords.length === 0) return;
     const t = setInterval(() => {
@@ -375,7 +526,6 @@ function Workbench() {
         if (r.confidence < confRange[0] || r.confidence > confRange[1])
           return false;
       } else {
-        // recognizing/failed records: exclude when range is narrowed away from full
         if (confRange[0] > 0 || confRange[1] < 100) return false;
       }
       return true;
@@ -415,25 +565,49 @@ function Workbench() {
       target === "delivery_note" ? setDeliveryImgs : setShippingImgs;
     const remaining = 6 - bucket.length;
     const arr = Array.from(files).slice(0, remaining);
-    const valid: UploadedImage[] = [];
-    for (const f of arr) {
-      if (!/image\/(jpeg|png)/.test(f.type)) {
-        toast.error(`${f.name}：仅支持 JPG / PNG`);
-        continue;
-      }
-      if (f.size > 3 * 1024 * 1024) {
-        toast.error(`${f.name}：超过 3MB`);
-        continue;
-      }
-      valid.push({
-        id: uid(),
-        name: f.name,
-        url: URL.createObjectURL(f),
-        docType: target,
-      });
-    }
-    if (arr.length < files.length) toast.warning("单个类型最多 6 张，已截断");
-    setter([...bucket, ...valid]);
+    const additions: Promise<UploadedImage | null>[] = arr.map(
+      (f) =>
+        new Promise((resolve) => {
+          if (!/image\/(jpeg|png)/.test(f.type)) {
+            toast.error(`${f.name}：仅支持 JPG / PNG`);
+            resolve(null);
+            return;
+          }
+          if (f.size > 3 * 1024 * 1024) {
+            toast.error(`${f.name}：超过 3MB`);
+            resolve(null);
+            return;
+          }
+          const url = URL.createObjectURL(f);
+          const im = new window.Image();
+          im.onload = () => {
+            resolve({
+              id: uid(),
+              name: f.name,
+              url,
+              docType: target,
+              width: im.naturalWidth || 1920,
+              height: im.naturalHeight || 1080,
+            });
+          };
+          im.onerror = () =>
+            resolve({
+              id: uid(),
+              name: f.name,
+              url,
+              docType: target,
+              width: 1920,
+              height: 1080,
+            });
+          im.src = url;
+        }),
+    );
+    Promise.all(additions).then((results) => {
+      const valid = results.filter((v): v is UploadedImage => v !== null);
+      if (arr.length < files.length)
+        toast.warning("单个类型最多 6 张，已截断");
+      setter((prev) => [...prev, ...valid]);
+    });
   }
 
   function startOcr() {
@@ -460,103 +634,82 @@ function Workbench() {
     toast.success("识别任务已创建");
   }
 
-  function updateField(
+  function updateChunk(
     recordId: string,
     docType: DocType,
-    path: string, // "field.customerName" or "item.0.materialCode"
-    value: string,
+    pageIdx: number,
+    chunkId: string,
+    newContent: string,
   ) {
     setRecords((prev) =>
       prev.map((r) => {
         if (r.id !== recordId || !r.results) return r;
-        const doc = r.results[docType];
-        if (!doc) return r;
-        const editLog: EditLog = {
-          by: CURRENT_USER,
-          at: new Date().toISOString(),
-        };
-        const [scope, key, sub] = path.split(".");
-        if (scope === "field") {
-          const f = doc.fields[key as keyof DocResult["fields"]];
-          if (f.value === value) return r;
-          const newDoc: DocResult = {
-            ...doc,
-            fields: {
-              ...doc.fields,
-              [key]: {
-                ...f,
-                value,
+        const pages = r.results[docType];
+        if (!pages) return r;
+        const newPages = pages.map((p, i) => {
+          if (i !== pageIdx) return p;
+          return {
+            ...p,
+            chunks: p.chunks.map((c) => {
+              if (c.id !== chunkId) return c;
+              if (c.content === newContent) return c;
+              return {
+                ...c,
+                content: newContent,
                 edited: true,
-                original: f.original ?? f.value,
-                lastEdit: editLog,
-              },
-            },
+                original: c.original ?? c.content,
+                lastEdit: {
+                  by: CURRENT_USER,
+                  at: new Date().toISOString(),
+                },
+              };
+            }),
           };
-          return { ...r, results: { ...r.results, [docType]: newDoc } };
-        }
-        if (scope === "item") {
-          const idx = Number(key);
-          const items = doc.items.map((it, i) => {
-            if (i !== idx) return it;
-            const f = it[sub as keyof LineItem];
-            if (f.value === value) return it;
-            return {
-              ...it,
-              [sub]: {
-                ...f,
-                value,
-                edited: true,
-                original: f.original ?? f.value,
-                lastEdit: editLog,
-              },
-            };
-          });
-          const newDoc: DocResult = { ...doc, items };
-          return { ...r, results: { ...r.results, [docType]: newDoc } };
-        }
-        return r;
+        });
+        return {
+          ...r,
+          results: { ...r.results, [docType]: newPages },
+        };
       }),
     );
   }
 
   function buildExport(r: OcrRecord) {
     if (!r.results) return {};
-    const docs = (Object.entries(r.results) as [DocType, DocResult][]).map(
-      ([docType, d]) => ({
-        documentType: docType,
-        fields: Object.fromEntries(
-          Object.entries(d.fields).map(([k, v]) => [
-            k,
-            {
-              value: v.value,
-              confidence: Number(v.confidence.toFixed(3)),
-              edited: !!v.edited,
-              lastEdit: v.lastEdit ?? null,
-            },
-          ]),
-        ),
-        items: d.items.map((it, i) => ({
-          lineNo: i + 1,
-          materialCode: it.materialCode.value,
-          materialName: it.materialName.value,
-          specification: it.spec.value,
-          quantity: Number(it.quantity.value) || it.quantity.value,
-          unit: it.unit.value,
+    const documents = (Object.entries(r.results) as [DocType, DocPage[]][])
+      .map(([docType, pages]) =>
+        pages.map((p) => ({
+          documentType: docType,
+          source_image: p.sourceImage,
+          page_box: p.pageBox,
+          chunks: p.chunks.map((c) => ({
+            bbox: c.bbox,
+            label: c.label,
+            content: c.content,
+            ...(c.confidence != null ? { confidence: c.confidence } : {}),
+            ...(c.edited
+              ? {
+                  edited: true,
+                  original: c.original,
+                  lastEdit: c.lastEdit ?? null,
+                }
+              : {}),
+          })),
         })),
-      }),
-    );
+      )
+      .flat();
     return {
       taskId: r.id,
       createdAt: new Date(r.createdAt).toISOString(),
       overallConfidence: (r.confidence ?? 0) / 100,
-      documents: docs,
+      documents,
     };
   }
 
   function downloadJson(r: OcrRecord) {
     const pending = pendingLowConf(r);
     if (pending > 0) {
-      toast.error(`还有 ${pending} 项低置信度字段未修改，无法导出`);
+      toast.error(`还有 ${pending} 项低置信度分块未确认，无法导出`);
       return;
     }
     const blob = new Blob([JSON.stringify(buildExport(r), null, 2)], {
@@ -579,7 +732,7 @@ function Workbench() {
     const stillPending = targets.filter((r) => pendingLowConf(r) > 0);
     if (stillPending.length > 0) {
       toast.error(
-        `其中 ${stillPending.length} 条记录仍有低置信度字段未核验，无法批量下载`,
+        `其中 ${stillPending.length} 条记录仍有低置信度分块未核验，无法批量下载`,
       );
       return;
     }
@@ -622,7 +775,6 @@ function Workbench() {
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-background text-foreground">
-        {/* Top bar */}
         <header className="sticky top-0 z-30 border-b border-border/70 bg-background/80 backdrop-blur">
           <div className="mx-auto flex max-w-[1400px] items-center justify-between px-6 py-4">
             <div className="flex items-center gap-3">
@@ -646,7 +798,6 @@ function Workbench() {
         </header>
 
         <main className="mx-auto max-w-[1400px] px-6 py-6">
-          {/* Stat strip */}
           <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
             <StatCard label="识别任务" value={records.length} />
             <StatCard
@@ -663,15 +814,12 @@ function Workbench() {
               label="待核验"
               value={
                 records.filter(
-                  (r) => r.status === "done" && (r.confidence ?? 100) < 80,
+                  (r) => r.status === "done" && pendingLowConf(r) > 0,
                 ).length
               }
               accent="warning"
             />
           </div>
-
-
-
 
           <div className="overflow-hidden rounded-xl border border-border bg-card">
             <div className="flex items-center justify-between border-b border-border px-5 py-3">
@@ -911,11 +1059,7 @@ function Workbench() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <StatusBadge
-                          status={r.status}
-                          lowConf={(r.confidence ?? 100) < 80}
-                          pending={pending}
-                        />
+                        <StatusBadge status={r.status} pending={pending} />
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
@@ -967,7 +1111,6 @@ function Workbench() {
           </div>
         </main>
 
-        {/* Create drawer */}
         <Sheet open={createOpen} onOpenChange={setCreateOpen}>
           <SheetContent
             side="right"
@@ -1019,7 +1162,6 @@ function Workbench() {
           </SheetContent>
         </Sheet>
 
-        {/* Progress floating card */}
         {!progressDismissed && activeRecords.length > 0 && (
           <div
             className={cn(
@@ -1075,20 +1217,19 @@ function Workbench() {
           </div>
         )}
 
-        {/* Detail drawer */}
         <Sheet
           open={!!detailRecord}
           onOpenChange={(o) => !o && setDetailId(null)}
         >
           <SheetContent
             side="right"
-            className="flex w-full flex-col gap-0 p-0 sm:max-w-[1080px]"
+            className="flex w-full flex-col gap-0 p-0 sm:max-w-[1180px]"
           >
             {detailRecord && detailRecord.results && (
               <DetailView
                 record={detailRecord}
-                onChange={(docType, path, val) =>
-                  updateField(detailRecord.id, docType, path, val)
+                onChange={(docType, pageIdx, chunkId, val) =>
+                  updateChunk(detailRecord.id, docType, pageIdx, chunkId, val)
                 }
                 onDownload={() => downloadJson(detailRecord)}
                 buildExport={buildExport}
@@ -1133,11 +1274,9 @@ function StatCard({
 
 function StatusBadge({
   status,
-  lowConf,
   pending,
 }: {
   status: Status;
-  lowConf: boolean;
   pending: number;
 }) {
   if (status === "recognizing")
@@ -1156,12 +1295,6 @@ function StatusBadge({
     return (
       <Badge className="gap-1 border-0 bg-[color:var(--warning)]/25 font-normal text-[color:var(--warning-foreground)]">
         <AlertTriangle className="size-3" /> 待核验 · {pending}
-      </Badge>
-    );
-  if (lowConf)
-    return (
-      <Badge className="gap-1 border-0 bg-[color:var(--success)]/15 font-normal text-[color:var(--success)]">
-        <CheckCircle2 className="size-3" /> 已核验
       </Badge>
     );
   return (
@@ -1198,12 +1331,17 @@ function DetailView({
   buildExport,
 }: {
   record: OcrRecord;
-  onChange: (docType: DocType, path: string, value: string) => void;
+  onChange: (
+    docType: DocType,
+    pageIdx: number,
+    chunkId: string,
+    value: string,
+  ) => void;
   onDownload: () => void;
   buildExport: (r: OcrRecord) => unknown;
 }) {
   const pending = pendingLowConf(record);
-  const availableDocTypes = (Object.keys(record.results ?? {}) as DocType[]);
+  const availableDocTypes = Object.keys(record.results ?? {}) as DocType[];
   const [activeTab, setActiveTab] = useState<DocType | "json">(
     availableDocTypes[0] ?? "json",
   );
@@ -1219,7 +1357,7 @@ function DetailView({
               {pending > 0 ? (
                 <span className="inline-flex items-center gap-1 text-xs text-[color:var(--warning-foreground)]">
                   <AlertTriangle className="size-3" />
-                  尚有 {pending} 项低置信度字段需要人工核验后才能下载
+                  尚有 {pending} 个低置信度分块需人工核验后才能下载
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1 text-xs text-[color:var(--success)]">
@@ -1250,7 +1388,7 @@ function DetailView({
         <div className="border-b border-border bg-muted/20 px-6 py-2">
           <TabsList>
             {availableDocTypes.map((dt) => {
-              const imgs = record.images.filter((i) => i.docType === dt);
+              const pages = record.results![dt]!;
               return (
                 <TabsTrigger key={dt} value={dt} className="gap-2">
                   {dt === "delivery_note" ? (
@@ -1260,7 +1398,7 @@ function DetailView({
                   )}
                   {DOC_LABEL[dt]}
                   <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] tabular-nums text-muted-foreground">
-                    {imgs.length}
+                    {pages.length}
                   </span>
                 </TabsTrigger>
               );
@@ -1270,7 +1408,7 @@ function DetailView({
         </div>
 
         {availableDocTypes.map((dt) => {
-          const doc = record.results![dt]!;
+          const pages = record.results![dt]!;
           const imgs = record.images.filter((i) => i.docType === dt);
           return (
             <TabsContent
@@ -1280,9 +1418,11 @@ function DetailView({
             >
               <DocPanel
                 docType={dt}
-                doc={doc}
+                pages={pages}
                 images={imgs}
-                onChange={(path, v) => onChange(dt, path, v)}
+                onChange={(pageIdx, chunkId, v) =>
+                  onChange(dt, pageIdx, chunkId, v)
+                }
               />
             </TabsContent>
           );
@@ -1302,45 +1442,55 @@ function DetailView({
 }
 
 function DocPanel({
-  docType,
-  doc,
+  pages,
   images,
   onChange,
 }: {
   docType: DocType;
-  doc: DocResult;
+  pages: DocPage[];
   images: UploadedImage[];
-  onChange: (path: string, value: string) => void;
+  onChange: (pageIdx: number, chunkId: string, value: string) => void;
 }) {
+  const [pageIdx, setPageIdx] = useState(0);
+  const [activeChunkId, setActiveChunkId] = useState<string | null>(null);
+  const page = pages[pageIdx];
+  const image = images.find((i) => i.id === page?.imageId) ?? images[pageIdx];
+
   return (
-    <div className="grid h-full grid-cols-1 overflow-hidden md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-      {/* Preview */}
-      <div className="overflow-y-auto border-r border-border bg-muted/30 p-4">
-        <div className="mb-2 flex items-center justify-between">
-          <div className="text-xs font-medium text-muted-foreground">
-            {DOC_LABEL[docType]}原图
+    <div className="grid h-full grid-cols-1 overflow-hidden md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
+      {/* Preview with bbox overlay */}
+      <div className="flex flex-col overflow-hidden border-r border-border bg-muted/30">
+        {pages.length > 1 && (
+          <div className="flex items-center gap-1 border-b border-border bg-background/60 px-3 py-2">
+            {pages.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => {
+                  setPageIdx(i);
+                  setActiveChunkId(null);
+                }}
+                className={cn(
+                  "rounded px-2 py-0.5 text-xs",
+                  i === pageIdx
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-accent",
+                )}
+              >
+                第 {i + 1} 页
+              </button>
+            ))}
           </div>
-          <span className="text-[11px] text-muted-foreground">
-            {images.length} 张
-          </span>
-        </div>
-        <div className="space-y-3">
-          {images.map((img) => (
-            <div
-              key={img.id}
-              className="overflow-hidden rounded-lg border border-border bg-background"
-            >
-              <img
-                src={img.url}
-                alt={img.name}
-                className="w-full object-contain"
-              />
-              <div className="border-t border-border px-3 py-1.5 text-xs text-muted-foreground">
-                {img.name}
-              </div>
-            </div>
-          ))}
-          {images.length === 0 && (
+        )}
+        <div className="flex-1 overflow-auto p-4">
+          {image && page ? (
+            <ImageWithBoxes
+              image={image}
+              page={page}
+              activeChunkId={activeChunkId}
+              onSelect={setActiveChunkId}
+            />
+          ) : (
             <div className="rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
               未上传该类别的图片
             </div>
@@ -1348,88 +1498,101 @@ function DocPanel({
         </div>
       </div>
 
-      {/* Fields + items */}
+      {/* Chunks editor */}
       <div className="flex flex-col overflow-y-auto">
-        <div className="space-y-4 px-5 py-5">
-          <section>
-            <h3 className="mb-3 text-sm font-medium text-foreground">
-              基础信息
+        <div className="space-y-3 px-5 py-5">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-medium text-foreground">
+              识别分块 · {page?.chunks.length ?? 0}
             </h3>
-            <div className="space-y-3">
-              <EditableField
-                label="单据编号"
-                field={doc.fields.documentNo}
-                onChange={(v) => onChange("field.documentNo", v)}
-              />
-              <EditableField
-                label="日期"
-                field={doc.fields.documentDate}
-                onChange={(v) => onChange("field.documentDate", v)}
-              />
-              <EditableField
-                label="客户名称"
-                field={doc.fields.customerName}
-                onChange={(v) => onChange("field.customerName", v)}
-              />
-              <EditableField
-                label="送货地址"
-                field={doc.fields.deliveryAddress}
-                multiline
-                onChange={(v) => onChange("field.deliveryAddress", v)}
-              />
-              <EditableField
-                label="联系人"
-                field={doc.fields.contact}
-                onChange={(v) => onChange("field.contact", v)}
-              />
+            <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+              <span className="inline-flex items-center gap-1">
+                <span className="size-2 rounded-sm bg-[color:var(--success)]" />
+                高
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="size-2 rounded-sm bg-primary" />
+                中
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="size-2 rounded-sm bg-[color:var(--warning)]" />
+                低 &lt; 80
+              </span>
             </div>
-          </section>
-
-          <section>
-            <h3 className="mb-3 text-sm font-medium text-foreground">
-              明细信息
-            </h3>
-            <div className="overflow-hidden rounded-lg border border-border">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50 text-xs text-muted-foreground">
-                  <tr>
-                    <th className="px-2 py-2 text-left">序</th>
-                    <th className="px-2 py-2 text-left">物料编码</th>
-                    <th className="px-2 py-2 text-left">品名</th>
-                    <th className="px-2 py-2 text-left">规格</th>
-                    <th className="px-2 py-2 text-left">数量</th>
-                    <th className="px-2 py-2 text-left">单位</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {doc.items.map((it, idx) => (
-                    <tr key={idx} className="border-t border-border align-top">
-                      <td className="px-2 py-1.5 text-xs text-muted-foreground">
-                        {idx + 1}
-                      </td>
-                      {(
-                        [
-                          "materialCode",
-                          "materialName",
-                          "spec",
-                          "quantity",
-                          "unit",
-                        ] as const
-                      ).map((k) => (
-                        <td key={k} className="px-1.5 py-1">
-                          <CellInput
-                            field={it[k]}
-                            onChange={(v) => onChange(`item.${idx}.${k}`, v)}
-                          />
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
+          </div>
+          {page?.chunks.map((c) => (
+            <ChunkEditor
+              key={c.id}
+              chunk={c}
+              active={activeChunkId === c.id}
+              onFocus={() => setActiveChunkId(c.id)}
+              onChange={(v) => onChange(pageIdx, c.id, v)}
+            />
+          ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function ImageWithBoxes({
+  image,
+  page,
+  activeChunkId,
+  onSelect,
+}: {
+  image: UploadedImage;
+  page: DocPage;
+  activeChunkId: string | null;
+  onSelect: (id: string) => void;
+}) {
+  const [w, h] = [page.pageBox[2] || image.width, page.pageBox[3] || image.height];
+  return (
+    <div className="overflow-hidden rounded-lg border border-border bg-background">
+      <div
+        className="relative w-full"
+        style={{ aspectRatio: `${w} / ${h}` }}
+      >
+        <img
+          src={image.url}
+          alt={image.name}
+          className="absolute inset-0 h-full w-full object-contain"
+        />
+        <div className="absolute inset-0">
+          {page.chunks.map((c) => {
+            const [x1, y1, x2, y2] = c.bbox;
+            const tone = confidenceTone(c.confidence);
+            const isActive = c.id === activeChunkId;
+            const color =
+              tone === "low"
+                ? "border-[color:var(--warning)] bg-[color:var(--warning)]/15"
+                : tone === "mid"
+                ? "border-primary bg-primary/10"
+                : "border-[color:var(--success)]/70 bg-[color:var(--success)]/5";
+            return (
+              <button
+                type="button"
+                key={c.id}
+                onClick={() => onSelect(c.id)}
+                className={cn(
+                  "absolute cursor-pointer border transition-all hover:z-10 hover:shadow-md",
+                  color,
+                  isActive && "z-20 ring-2 ring-primary ring-offset-1",
+                )}
+                style={{
+                  left: `${(x1 / w) * 100}%`,
+                  top: `${(y1 / h) * 100}%`,
+                  width: `${((x2 - x1) / w) * 100}%`,
+                  height: `${((y2 - y1) / h) * 100}%`,
+                }}
+                title={`${c.label}${c.confidence != null ? ` · ${Math.round(c.confidence * 100)}%` : ""}`}
+              />
+            );
+          })}
+        </div>
+      </div>
+      <div className="border-t border-border px-3 py-1.5 text-xs text-muted-foreground">
+        {image.name} · {w} × {h}
       </div>
     </div>
   );
@@ -1437,123 +1600,168 @@ function DocPanel({
 
 function fmtEditLog(e: EditLog) {
   const d = new Date(e.at);
-  const t = d.toLocaleString("zh-CN", { hour12: false });
-  return `${e.by} · ${t}`;
+  return `${e.by} · ${d.toLocaleString("zh-CN", { hour12: false })}`;
 }
 
-function EditableField({
-  label,
-  field,
-  multiline,
+function ChunkEditor({
+  chunk,
+  active,
+  onFocus,
   onChange,
 }: {
-  label: string;
-  field: FieldValue;
-  multiline?: boolean;
-  onChange: (v: string) => void;
+  chunk: Chunk;
+  active: boolean;
+  onFocus: () => void;
+  onChange: (newContent: string) => void;
 }) {
-  const tone = confidenceTone(field.confidence);
-  const mustEdit = tone === "low" && !field.edited;
-  const ringCls = mustEdit
-    ? "border-[color:var(--warning)] bg-[color:var(--warning)]/10 focus-visible:ring-[color:var(--warning)]"
-    : tone === "low"
-    ? "border-[color:var(--warning)]/60"
-    : tone === "mid"
-    ? "border-primary/40"
-    : "";
+  const tone = confidenceTone(chunk.confidence);
+  const mustEdit =
+    chunk.label !== "Image" &&
+    chunk.confidence != null &&
+    chunk.confidence < LOW_CONF_THRESHOLD &&
+    !chunk.edited;
+
+  const meta = LABEL_META[chunk.label];
+  const Icon = meta.icon;
+
+  const borderCls =
+    tone === "low"
+      ? "border-[color:var(--warning)]/60"
+      : tone === "mid"
+      ? "border-primary/40"
+      : "border-border";
+
+  const bgCls = mustEdit ? "bg-[color:var(--warning)]/5" : "bg-card";
+
   return (
-    <div>
-      <div className="mb-1 flex items-center justify-between gap-2">
-        <Label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          {label}
-          {mustEdit && (
-            <span className="text-[color:var(--warning-foreground)]">*</span>
-          )}
-        </Label>
+    <div
+      onClick={onFocus}
+      className={cn(
+        "rounded-lg border p-3 transition-all",
+        borderCls,
+        bgCls,
+        active && "ring-2 ring-primary ring-offset-1",
+      )}
+    >
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium",
+              chunk.label === "Section-Header"
+                ? "bg-primary/10 text-primary"
+                : chunk.label === "Table"
+                ? "bg-accent text-accent-foreground"
+                : chunk.label === "Image"
+                ? "bg-muted text-muted-foreground"
+                : "bg-secondary text-secondary-foreground",
+            )}
+          >
+            <Icon className="size-3" />
+            {meta.text}
+          </span>
+          <span className="font-mono text-[10px] text-muted-foreground">
+            [{chunk.bbox.join(", ")}]
+          </span>
+        </div>
         <div className="flex items-center gap-2 text-[11px]">
-          {field.edited && (
+          {chunk.edited && (
             <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-primary">
               <Pencil className="size-2.5" /> 已修改
             </span>
           )}
-          <span
-            className={cn(
-              "tabular-nums",
-              mustEdit
-                ? "text-[color:var(--warning-foreground)]"
-                : tone === "mid"
-                ? "text-primary"
-                : "text-muted-foreground",
-            )}
-          >
-            置信度 {Math.round(field.confidence * 100)}%
-            {mustEdit && " · 需人工确认"}
-          </span>
+          {chunk.confidence != null ? (
+            <span
+              className={cn(
+                "tabular-nums",
+                mustEdit
+                  ? "text-[color:var(--warning-foreground)]"
+                  : tone === "mid"
+                  ? "text-primary"
+                  : "text-muted-foreground",
+              )}
+            >
+              置信度 {Math.round(chunk.confidence * 100)}%
+              {mustEdit && " · 需人工确认"}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">未评分</span>
+          )}
         </div>
       </div>
-      {multiline ? (
-        <Textarea
-          value={field.value}
-          onChange={(e) => onChange(e.target.value)}
-          className={cn("min-h-16 resize-none", ringCls)}
-        />
-      ) : (
-        <Input
-          value={field.value}
-          onChange={(e) => onChange(e.target.value)}
-          className={ringCls}
-        />
-      )}
-      {field.lastEdit && (
-        <div className="mt-1 text-[11px] text-muted-foreground">
-          最近修改：{fmtEditLog(field.lastEdit)}
-          {field.original !== undefined && field.original !== field.value && (
-            <span className="ml-2 text-muted-foreground/70">
-              原值：{field.original}
-            </span>
-          )}
+
+      <ChunkContentEditor chunk={chunk} onChange={onChange} mustEdit={mustEdit} />
+
+      {chunk.lastEdit && (
+        <div className="mt-1.5 text-[11px] text-muted-foreground">
+          最近修改：{fmtEditLog(chunk.lastEdit)}
         </div>
       )}
     </div>
   );
 }
 
-function CellInput({
-  field,
+function ChunkContentEditor({
+  chunk,
   onChange,
+  mustEdit,
 }: {
-  field: FieldValue;
+  chunk: Chunk;
   onChange: (v: string) => void;
+  mustEdit: boolean;
 }) {
-  const tone = confidenceTone(field.confidence);
-  const mustEdit = tone === "low" && !field.edited;
-  return (
-    <div className="relative">
-      <input
-        value={field.value}
-        onChange={(e) => onChange(e.target.value)}
-        className={cn(
-          "w-full rounded-md border bg-background px-2 py-1.5 text-sm outline-none transition-colors focus:border-primary",
-          mustEdit
-            ? "border-[color:var(--warning)] bg-[color:var(--warning)]/10 pr-10"
-            : field.edited
-            ? "border-primary/40"
-            : "border-transparent hover:border-border",
-        )}
-      />
-      {mustEdit && (
-        <span className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] font-medium text-[color:var(--warning-foreground)]">
-          {Math.round(field.confidence * 100)}%
-        </span>
-      )}
-      {field.edited && (
-        <div
-          className="mt-0.5 truncate text-[10px] text-muted-foreground"
-          title={field.lastEdit ? fmtEditLog(field.lastEdit) : ""}
-        >
-          {field.lastEdit ? `✎ ${fmtEditLog(field.lastEdit)}` : "已修改"}
+  const ring = mustEdit
+    ? "border-[color:var(--warning)] focus-visible:ring-[color:var(--warning)]"
+    : "";
+
+  if (chunk.label === "Image") {
+    return (
+      <div className="rounded border border-dashed border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+        <div className="mb-1 font-medium text-foreground">图像分块（不参与文本编辑）</div>
+        <div className="font-mono">{chunk.content.trim()}</div>
+      </div>
+    );
+  }
+
+  if (chunk.label === "Table") {
+    return (
+      <div className="space-y-2">
+        <div className="max-h-60 overflow-auto rounded border border-border bg-background p-2 text-xs [&_table]:w-full [&_td]:border [&_td]:border-border [&_td]:px-1.5 [&_td]:py-1 [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-1.5 [&_th]:py-1">
+          <div
+            /* biome-ignore lint: OCR output is trusted for demo */
+            dangerouslySetInnerHTML={{ __html: chunk.content }}
+          />
         </div>
-      )}
-    </div>
+        <details>
+          <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground">
+            编辑表格 HTML
+          </summary>
+          <Textarea
+            value={chunk.content}
+            onChange={(e) => onChange(e.target.value)}
+            className={cn("mt-1.5 min-h-32 font-mono text-[11px]", ring)}
+          />
+        </details>
+      </div>
+    );
+  }
+
+  // Section-Header / Text: edit plain text; store back as <p>...</p>
+  const text = htmlToText(chunk.content);
+  const isMulti = text.length > 60 || text.includes("\n");
+  const handle = (v: string) => onChange(textToHtml(v));
+
+  return isMulti ? (
+    <Textarea
+      value={text}
+      onChange={(e) => handle(e.target.value)}
+      className={cn("min-h-16 resize-none", ring)}
+    />
+  ) : (
+    <Input
+      value={text}
+      onChange={(e) => handle(e.target.value)}
+      className={ring}
+    />
   );
 }
