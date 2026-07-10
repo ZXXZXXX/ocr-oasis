@@ -1979,16 +1979,18 @@ function ChunkContentEditor({
             dangerouslySetInnerHTML={{ __html: chunk.content }}
           />
         </div>
-        <details>
-          <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground">
-            编辑表格 HTML
-          </summary>
-          <Textarea
-            value={chunk.content}
-            onChange={(e) => onChange(e.target.value)}
-            className={cn("mt-1.5 min-h-32 font-mono text-[11px]", ring)}
-          />
-        </details>
+        {!readOnly && (
+          <details>
+            <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground">
+              编辑表格 HTML
+            </summary>
+            <Textarea
+              value={chunk.content}
+              onChange={(e) => onChange(e.target.value)}
+              className={cn("mt-1.5 min-h-32 font-mono text-[11px]", ring)}
+            />
+          </details>
+        )}
       </div>
     );
   }
