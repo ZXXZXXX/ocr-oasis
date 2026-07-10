@@ -1635,6 +1635,7 @@ function DocPanel({
               active={activeChunkId === c.id}
               onFocus={() => setActiveChunkId(c.id)}
               onChange={(v) => onChange(pageIdx, c.id, v)}
+              onConfirm={() => onConfirm(pageIdx, c.id)}
             />
           ))}
         </div>
