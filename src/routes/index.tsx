@@ -470,7 +470,7 @@ function UploadZone({
 
 // ---------- Main Workbench ----------
 function Workbench() {
-  const [records, setRecords] = useState<OcrRecord[]>([]);
+  const [records, setRecords] = useState<OcrRecord[]>(() => seedRecords());
   const [createOpen, setCreateOpen] = useState(false);
   const [deliveryImgs, setDeliveryImgs] = useState<UploadedImage[]>([]);
   const [shippingImgs, setShippingImgs] = useState<UploadedImage[]>([]);
