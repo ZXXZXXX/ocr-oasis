@@ -110,6 +110,7 @@ interface Chunk {
   content: string; // HTML string, matches algorithm output
   confidence?: number; // 0-1, may be absent
   edited?: boolean;
+  confirmed?: boolean; // user reviewed low-conf chunk and confirmed OCR was correct
   original?: string;
   lastEdit?: EditLog;
 }
