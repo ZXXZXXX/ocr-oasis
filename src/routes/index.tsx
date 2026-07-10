@@ -1239,6 +1239,39 @@ function Workbench() {
           </div>
         </main>
 
+        <AlertDialog
+          open={!!deleteId}
+          onOpenChange={(o) => !o && setDeleteId(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>确认删除</AlertDialogTitle>
+              <AlertDialogDescription>
+                {(() => {
+                  const r = records.find((rec) => rec.id === deleteId);
+                  return r
+                    ? `确认删除任务 #${r.id} 吗？删除后无法恢复。`
+                    : "确认删除该识别任务吗？删除后无法恢复。";
+                })()}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setDeleteId(null)}>
+                取消
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => {
+                  if (deleteId) deleteRecord(deleteId);
+                  setDeleteId(null);
+                }}
+              >
+                删除
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         <Sheet open={createOpen} onOpenChange={setCreateOpen}>
           <SheetContent
             side="right"
