@@ -27,6 +27,7 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetHeader,
   SheetTitle,
@@ -504,7 +505,7 @@ function seedRecords(): OcrRecord[] {
   ];
   return seeds.map((s, idx) => {
     const images: UploadedImage[] = s.docTypes.map((dt) => ({
-      id: uid(),
+      id: `img-${idx}-${dt}`,
       name: `${dt === "delivery_note" ? "delivery" : "shipping"}_sample_${idx + 1}.jpg`,
       url: placeholderImg(
         1920,
@@ -531,7 +532,7 @@ function seedRecords(): OcrRecord[] {
     });
     const allPages = Object.values(results).flat() as DocPage[];
     return {
-      id: uid(),
+      id: `seed-${idx}`,
       createdAt: now - s.minutesAgo * 60_000,
       status: "done" as Status,
       progress: 100,
@@ -1335,7 +1336,7 @@ function Workbench() {
         >
           <SheetContent
             side="right"
-            className="flex w-full flex-col gap-0 p-0 sm:max-w-[1180px]"
+            className="flex w-[75vw] flex-col gap-0 p-0 sm:max-w-[75vw] [&>button]:hidden"
           >
             {detailRecord && detailRecord.results && (
               <DetailView
@@ -1519,6 +1520,16 @@ function DetailView({
             </SheetDescription>
           </div>
           <div className="flex items-center gap-2">
+            <SheetClose asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="shrink-0"
+                aria-label="关闭"
+              >
+                <X className="size-4" />
+              </Button>
+            </SheetClose>
             {editing ? (
               <>
                 <Button variant="outline" onClick={cancelEdit} className="gap-2">
