@@ -505,7 +505,7 @@ function seedRecords(): OcrRecord[] {
   ];
   return seeds.map((s, idx) => {
     const images: UploadedImage[] = s.docTypes.map((dt) => ({
-      id: uid(),
+      id: `img-${idx}-${dt}`,
       name: `${dt === "delivery_note" ? "delivery" : "shipping"}_sample_${idx + 1}.jpg`,
       url: placeholderImg(
         1920,
