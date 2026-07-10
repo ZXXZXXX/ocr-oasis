@@ -710,12 +710,12 @@ function Workbench() {
     toast.success("识别任务已创建");
   }
 
-  function updateChunk(
+  function mutateChunk(
     recordId: string,
     docType: DocType,
     pageIdx: number,
     chunkId: string,
-    newContent: string,
+    mut: (c: Chunk) => Chunk | null,
   ) {
     setRecords((prev) =>
       prev.map((r) => {
@@ -728,26 +728,48 @@ function Workbench() {
             ...p,
             chunks: p.chunks.map((c) => {
               if (c.id !== chunkId) return c;
-              if (c.content === newContent) return c;
-              return {
-                ...c,
-                content: newContent,
-                edited: true,
-                original: c.original ?? c.content,
-                lastEdit: {
-                  by: CURRENT_USER,
-                  at: new Date().toISOString(),
-                },
-              };
+              return mut(c) ?? c;
             }),
           };
         });
-        return {
-          ...r,
-          results: { ...r.results, [docType]: newPages },
-        };
+        return { ...r, results: { ...r.results, [docType]: newPages } };
       }),
     );
+  }
+
+  function updateChunk(
+    recordId: string,
+    docType: DocType,
+    pageIdx: number,
+    chunkId: string,
+    newContent: string,
+  ) {
+    mutateChunk(recordId, docType, pageIdx, chunkId, (c) => {
+      if (c.content === newContent) return null;
+      return {
+        ...c,
+        content: newContent,
+        edited: true,
+        confirmed: false,
+        original: c.original ?? c.content,
+        lastEdit: { by: CURRENT_USER, at: new Date().toISOString() },
+      };
+    });
+  }
+
+  function confirmChunk(
+    recordId: string,
+    docType: DocType,
+    pageIdx: number,
+    chunkId: string,
+  ) {
+    mutateChunk(recordId, docType, pageIdx, chunkId, (c) => ({
+      ...c,
+      confirmed: !c.confirmed,
+      lastEdit: !c.confirmed
+        ? { by: CURRENT_USER, at: new Date().toISOString() }
+        : c.lastEdit,
+    }));
   }
 
   function buildExport(r: OcrRecord) {
