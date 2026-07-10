@@ -1636,15 +1636,17 @@ function DocPanel({
   const scrollRef = useRef<HTMLDivElement>(null);
   const chunkRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  // scroll active chunk to the top of the right pane when selected via bbox
   useEffect(() => {
     if (!activeChunkId) return;
     const el = chunkRefs.current[activeChunkId];
     const container = scrollRef.current;
     if (!el || !container) return;
-    const top = el.offsetTop - 12;
-    container.scrollTo({ top, behavior: "smooth" });
+    const elRect = el.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    const delta = elRect.top - containerRect.top - 12;
+    container.scrollTo({ top: container.scrollTop + delta, behavior: "smooth" });
   }, [activeChunkId, pageIdx]);
+
 
   return (
     <div className="grid h-full grid-cols-1 overflow-hidden md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
