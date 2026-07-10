@@ -1809,12 +1809,14 @@ function fmtEditLog(e: EditLog) {
 function ChunkEditor({
   chunk,
   active,
+  editing,
   onFocus,
   onChange,
   onConfirm,
 }: {
   chunk: Chunk;
   active: boolean;
+  editing: boolean;
   onFocus: () => void;
   onChange: (newContent: string) => void;
   onConfirm: () => void;
