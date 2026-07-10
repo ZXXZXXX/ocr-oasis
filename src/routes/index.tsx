@@ -2003,14 +2003,16 @@ function ChunkContentEditor({
   return isMulti ? (
     <Textarea
       value={text}
+      readOnly={readOnly}
       onChange={(e) => handle(e.target.value)}
-      className={cn("min-h-16 resize-none", ring)}
+      className={cn("min-h-16 resize-none", ring, roCls)}
     />
   ) : (
     <Input
       value={text}
+      readOnly={readOnly}
       onChange={(e) => handle(e.target.value)}
-      className={ring}
+      className={cn(ring, roCls)}
     />
   );
 }
