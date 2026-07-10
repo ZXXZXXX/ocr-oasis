@@ -140,7 +140,10 @@ interface OcrRecord {
 const uid = () => Math.random().toString(36).slice(2, 10);
 
 const fmtTime = (t: number) =>
-  new Date(t).toLocaleString("zh-CN", { hour12: false });
+  new Date(t).toLocaleString("zh-CN", {
+    hour12: false,
+    timeZone: "Asia/Shanghai",
+  });
 
 function confidenceTone(c?: number) {
   if (c == null) return "high"; // absent = treat as clean
@@ -1520,16 +1523,6 @@ function DetailView({
             </SheetDescription>
           </div>
           <div className="flex items-center gap-2">
-            <SheetClose asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                className="shrink-0"
-                aria-label="关闭"
-              >
-                <X className="size-4" />
-              </Button>
-            </SheetClose>
             {!editing && (
               <>
                 <Button
@@ -1548,6 +1541,16 @@ function DetailView({
                 </Button>
               </>
             )}
+            <SheetClose asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="shrink-0"
+                aria-label="关闭"
+              >
+                <X className="size-4" />
+              </Button>
+            </SheetClose>
           </div>
         </div>
       </SheetHeader>
