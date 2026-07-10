@@ -2046,19 +2046,12 @@ function ChunkContentEditor({
   const isMulti = text.length > 60 || text.includes("\n");
   const handle = (v: string) => onChange(textToHtml(v));
 
-  return isMulti ? (
-    <Textarea
+  return (
+    <AutoResizeTextarea
       value={text}
       readOnly={readOnly}
       onChange={(e) => handle(e.target.value)}
-      className={cn("min-h-16 resize-none", ring, roCls)}
-    />
-  ) : (
-    <Input
-      value={text}
-      readOnly={readOnly}
-      onChange={(e) => handle(e.target.value)}
-      className={cn(ring, roCls)}
+      className={cn("min-h-16", ring, roCls)}
     />
   );
 }
