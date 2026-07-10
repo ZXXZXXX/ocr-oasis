@@ -16,6 +16,7 @@ import {
   Trash2,
   Eye,
   Filter,
+  ChevronDown,
   RotateCcw,
   Pencil,
 } from "lucide-react";
@@ -327,6 +328,7 @@ function Workbench() {
   const [detailId, setDetailId] = useState<string | null>(null);
 
   // Filters
+  const [filterOpen, setFilterOpen] = useState(false);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [confRange, setConfRange] = useState<[number, number]>([0, 100]);
@@ -668,68 +670,115 @@ function Workbench() {
             />
           </div>
 
-          {/* Filter bar */}
-          <div className="mb-4 rounded-xl border border-border bg-card px-5 py-4">
-            <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
+          {/* Filter bar - collapsible */}
+          <div className="mb-4 rounded-xl border border-border bg-card">
+            <button
+              type="button"
+              onClick={() => setFilterOpen((v) => !v)}
+              className="flex w-full items-center justify-between px-5 py-3 text-left"
+            >
               <div className="flex items-center gap-2 text-sm font-medium">
                 <Filter className="size-4 text-primary" />
                 筛选
-              </div>
-              <div className="flex flex-col gap-1">
-                <Label className="text-xs text-muted-foreground">
-                  创建时间范围
-                </Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="date"
-                    value={dateFrom}
-                    onChange={(e) => setDateFrom(e.target.value)}
-                    className="h-9 w-[150px]"
-                  />
-                  <span className="text-xs text-muted-foreground">至</span>
-                  <Input
-                    type="date"
-                    value={dateTo}
-                    onChange={(e) => setDateTo(e.target.value)}
-                    className="h-9 w-[150px]"
-                  />
-                </div>
-              </div>
-              <div className="flex min-w-[260px] flex-1 flex-col gap-1">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs text-muted-foreground">
-                    置信度评分范围
-                  </Label>
-                  <span className="text-xs tabular-nums text-foreground">
-                    {confRange[0]} – {confRange[1]}
+                {filterActive && (
+                  <Badge variant="secondary" className="ml-1 h-5 gap-1 font-normal">
+                    已启用
+                  </Badge>
+                )}
+                {filterActive && !filterOpen && (
+                  <span className="ml-1 truncate text-xs font-normal text-muted-foreground">
+                    {dateFrom || dateTo
+                      ? `${dateFrom || "…"} 至 ${dateTo || "…"}`
+                      : ""}
+                    {(dateFrom || dateTo) &&
+                      (confRange[0] > 0 || confRange[1] < 100) &&
+                      " · "}
+                    {(confRange[0] > 0 || confRange[1] < 100) &&
+                      `置信度 ${confRange[0]}–${confRange[1]}`}
                   </span>
-                </div>
-                <div className="px-1 pt-2">
-                  <Slider
-                    min={0}
-                    max={100}
-                    step={1}
-                    value={confRange}
-                    onValueChange={(v) =>
-                      setConfRange([v[0] ?? 0, v[1] ?? 100] as [number, number])
-                    }
-                  />
-                </div>
+                )}
               </div>
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={resetFilters}
-                  disabled={!filterActive}
-                  className="gap-1"
-                >
-                  <RotateCcw className="size-3.5" />
-                  重置
-                </Button>
+                {filterActive && (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      resetFilters();
+                    }}
+                    className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+                  >
+                    <RotateCcw className="size-3.5" />
+                    重置
+                  </span>
+                )}
+                <ChevronDown
+                  className={cn(
+                    "size-4 text-muted-foreground transition-transform",
+                    filterOpen && "rotate-180",
+                  )}
+                />
               </div>
-            </div>
+            </button>
+            {filterOpen && (
+              <div className="border-t border-border px-5 py-4">
+                <div className="flex flex-wrap items-end gap-x-6 gap-y-4">
+                  <div className="flex flex-col gap-1">
+                    <Label className="text-xs text-muted-foreground">
+                      创建时间范围
+                    </Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="date"
+                        value={dateFrom}
+                        onChange={(e) => setDateFrom(e.target.value)}
+                        className="h-9 w-[160px]"
+                      />
+                      <span className="text-xs text-muted-foreground">至</span>
+                      <Input
+                        type="date"
+                        value={dateTo}
+                        onChange={(e) => setDateTo(e.target.value)}
+                        className="h-9 w-[160px]"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex min-w-[280px] flex-1 flex-col gap-1">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs text-muted-foreground">
+                        置信度评分范围
+                      </Label>
+                      <span className="text-xs tabular-nums text-foreground">
+                        {confRange[0]} – {confRange[1]}
+                      </span>
+                    </div>
+                    <div className="px-1 pt-3">
+                      <Slider
+                        min={0}
+                        max={100}
+                        step={1}
+                        minStepsBetweenThumbs={1}
+                        value={confRange}
+                        onValueChange={(v) =>
+                          setConfRange([
+                            v[0] ?? 0,
+                            v[1] ?? 100,
+                          ] as [number, number])
+                        }
+                      />
+                      <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
+                        <span>0</span>
+                        <span>50</span>
+                        <span>100</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
+
 
           <div className="overflow-hidden rounded-xl border border-border bg-card">
             <div className="flex items-center justify-between border-b border-border px-5 py-3">
