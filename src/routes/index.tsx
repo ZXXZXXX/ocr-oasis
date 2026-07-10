@@ -1969,6 +1969,28 @@ function ChunkEditor({
   );
 }
 
+function AutoResizeTextarea({
+  value,
+  className,
+  ...props
+}: React.ComponentProps<"textarea">) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [value]);
+  return (
+    <Textarea
+      ref={ref}
+      value={value}
+      className={cn("resize-none overflow-hidden", className)}
+      {...props}
+    />
+  );
+}
+
 function ChunkContentEditor({
   chunk,
   onChange,
