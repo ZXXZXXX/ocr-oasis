@@ -1827,7 +1827,7 @@ function ImageWithBoxes({
   image: UploadedImage;
   page: DocPage;
   activeChunkId: string | null;
-  onSelect: (id: string) => void;
+  onSelect: (id: string | null) => void;
 }) {
   const [w, h] = [page.pageBox[2] || image.width, page.pageBox[3] || image.height];
   const activeChunk = page.chunks.find((c) => c.id === activeChunkId);
