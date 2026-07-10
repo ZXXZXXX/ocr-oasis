@@ -468,6 +468,80 @@ function UploadZone({
   );
 }
 
+// ---------- Seed demo records ----------
+function placeholderImg(w: number, h: number, label: string): string {
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${w} ${h}'><rect width='100%' height='100%' fill='%23f8fafc'/><rect x='20' y='20' width='${w - 40}' height='${h - 40}' fill='none' stroke='%23cbd5e1' stroke-width='2' stroke-dasharray='8 6'/><text x='50%' y='50%' font-family='sans-serif' font-size='48' fill='%2394a3b8' text-anchor='middle' dominant-baseline='middle'>${label}</text></svg>`;
+  return `data:image/svg+xml;utf8,${svg.replace(/#/g, "%23")}`;
+}
+
+function adjustChunkConfidences(
+  chunks: Chunk[],
+  mode: "high" | "mid" | "low",
+): Chunk[] {
+  return chunks.map((c) => {
+    if (c.label === "Image") return c;
+    let base = c.confidence ?? 0.95;
+    if (mode === "high") base = Math.min(0.99, Math.max(0.9, base + 0.2));
+    else if (mode === "mid") base = 0.82 + Math.random() * 0.1;
+    else base = 0.55 + Math.random() * 0.2;
+    return { ...c, confidence: Number(base.toFixed(2)) };
+  });
+}
+
+function seedRecords(): OcrRecord[] {
+  const now = Date.now();
+  type Seed = {
+    minutesAgo: number;
+    mode: "high" | "mid" | "low";
+    docTypes: DocType[];
+  };
+  const seeds: Seed[] = [
+    { minutesAgo: 4, mode: "high", docTypes: ["delivery_note", "shipping_slip"] },
+    { minutesAgo: 45, mode: "mid", docTypes: ["delivery_note"] },
+    { minutesAgo: 180, mode: "low", docTypes: ["delivery_note", "shipping_slip"] },
+  ];
+  return seeds.map((s, idx) => {
+    const images: UploadedImage[] = s.docTypes.map((dt) => ({
+      id: uid(),
+      name: `${dt === "delivery_note" ? "delivery" : "shipping"}_sample_${idx + 1}.jpg`,
+      url: placeholderImg(
+        1920,
+        720,
+        dt === "delivery_note" ? "送货单示例" : "出货传票示例",
+      ),
+      docType: dt,
+      width: 1920,
+      height: 720,
+    }));
+    const results: Partial<Record<DocType, DocPage[]>> = {};
+    s.docTypes.forEach((dt) => {
+      const img = images.find((i) => i.docType === dt)!;
+      const rawChunks =
+        dt === "delivery_note" ? mockDeliveryChunks() : mockShippingChunks();
+      results[dt] = [
+        {
+          imageId: img.id,
+          sourceImage: img.name,
+          pageBox: [0, 0, img.width, img.height],
+          chunks: adjustChunkConfidences(rawChunks, s.mode),
+        },
+      ];
+    });
+    const allPages = Object.values(results).flat() as DocPage[];
+    return {
+      id: uid(),
+      createdAt: now - s.minutesAgo * 60_000,
+      status: "done" as Status,
+      progress: 100,
+      confidence: averageConfidence(allPages),
+      deliveryCount: images.filter((i) => i.docType === "delivery_note").length,
+      shippingCount: images.filter((i) => i.docType === "shipping_slip").length,
+      images,
+      results,
+    };
+  });
+}
+
 // ---------- Main Workbench ----------
 function Workbench() {
   const [records, setRecords] = useState<OcrRecord[]>(() => seedRecords());
