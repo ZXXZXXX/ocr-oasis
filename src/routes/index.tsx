@@ -1969,6 +1969,28 @@ function ChunkEditor({
   );
 }
 
+function AutoResizeTextarea({
+  value,
+  className,
+  ...props
+}: React.ComponentProps<"textarea">) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [value]);
+  return (
+    <Textarea
+      ref={ref}
+      value={value}
+      className={cn("resize-none overflow-hidden", className)}
+      {...props}
+    />
+  );
+}
+
 function ChunkContentEditor({
   chunk,
   onChange,
@@ -2008,7 +2030,7 @@ function ChunkContentEditor({
             <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground">
               编辑表格 HTML
             </summary>
-            <Textarea
+            <AutoResizeTextarea
               value={chunk.content}
               onChange={(e) => onChange(e.target.value)}
               className={cn("mt-1.5 min-h-32 font-mono text-[11px]", ring)}
@@ -2025,18 +2047,18 @@ function ChunkContentEditor({
   const handle = (v: string) => onChange(textToHtml(v));
 
   return isMulti ? (
-    <Textarea
+    <AutoResizeTextarea
       value={text}
       readOnly={readOnly}
       onChange={(e) => handle(e.target.value)}
-      className={cn("min-h-16 resize-none", ring, roCls)}
+      className={cn("min-h-16", ring, roCls)}
     />
   ) : (
-    <Input
+    <AutoResizeTextarea
       value={text}
       readOnly={readOnly}
       onChange={(e) => handle(e.target.value)}
-      className={cn(ring, roCls)}
+      className={cn("min-h-9", ring, roCls)}
     />
   );
 }
