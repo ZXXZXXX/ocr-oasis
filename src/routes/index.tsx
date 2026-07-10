@@ -2030,7 +2030,7 @@ function ChunkContentEditor({
             <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground">
               编辑表格 HTML
             </summary>
-            <Textarea
+            <AutoResizeTextarea
               value={chunk.content}
               onChange={(e) => onChange(e.target.value)}
               className={cn("mt-1.5 min-h-32 font-mono text-[11px]", ring)}
