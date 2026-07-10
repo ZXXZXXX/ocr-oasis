@@ -1147,7 +1147,7 @@ function Workbench() {
                       <TableCell className="font-mono text-xs text-foreground">
                         #{r.id}
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
+                      <TableCell className="text-sm text-muted-foreground" suppressHydrationWarning>
                         {fmtTime(r.createdAt)}
                       </TableCell>
                       <TableCell className="text-sm">
