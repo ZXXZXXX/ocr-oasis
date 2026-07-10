@@ -490,16 +490,26 @@ function placeholderImg(w: number, h: number, label: string): string {
   return `data:image/svg+xml;utf8,${svg.replace(/#/g, "%23")}`;
 }
 
+function createRand(seed: number): () => number {
+  return () => {
+    let t = (seed += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 function adjustChunkConfidences(
   chunks: Chunk[],
   mode: "high" | "mid" | "low",
+  rand: () => number = Math.random,
 ): Chunk[] {
   return chunks.map((c) => {
     if (c.label === "Image") return c;
     let base = c.confidence ?? 0.95;
     if (mode === "high") base = Math.min(0.99, Math.max(0.9, base + 0.2));
-    else if (mode === "mid") base = 0.82 + Math.random() * 0.1;
-    else base = 0.55 + Math.random() * 0.2;
+    else if (mode === "mid") base = 0.82 + rand() * 0.1;
+    else base = 0.55 + rand() * 0.2;
     return { ...c, confidence: Number(base.toFixed(2)) };
   });
 }
@@ -534,12 +544,13 @@ function seedRecords(): OcrRecord[] {
       const img = images.find((i) => i.docType === dt)!;
       const rawChunks =
         dt === "delivery_note" ? mockDeliveryChunks() : mockShippingChunks();
+      const rand = createRand(idx + 1 + s.docTypes.indexOf(dt));
       results[dt] = [
         {
           imageId: img.id,
           sourceImage: img.name,
           pageBox: [0, 0, img.width, img.height],
-          chunks: adjustChunkConfidences(rawChunks, s.mode),
+          chunks: adjustChunkConfidences(rawChunks, s.mode, rand),
         },
       ];
     });
@@ -1147,7 +1158,7 @@ function Workbench() {
                       <TableCell className="font-mono text-xs text-foreground">
                         #{r.id}
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
+                      <TableCell className="text-sm text-muted-foreground" suppressHydrationWarning>
                         {fmtTime(r.createdAt)}
                       </TableCell>
                       <TableCell className="text-sm">
@@ -1741,7 +1752,7 @@ function DocPanel({
             ))}
           </div>
         )}
-        <div className="flex-1 overflow-auto p-4">
+        <div className="flex-1 flex items-center justify-center overflow-auto p-4">
           {image && page ? (
             <ImageWithBoxes
               image={image}
@@ -1833,53 +1844,59 @@ function ImageWithBoxes({
     transform = `translate(${tx}%, ${ty}%) scale(${scale})`;
   }
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-background">
-      <div className="relative w-full overflow-hidden" style={{ aspectRatio: `${w} / ${h}` }}>
+    <div className="flex h-full w-full max-w-full flex-col overflow-hidden rounded-lg border border-border bg-background">
+      <div className="flex-1 flex items-center justify-center overflow-auto p-4">
         <div
-          className="absolute inset-0 transition-transform duration-500 ease-out"
-          style={{ transform, transformOrigin: "50% 50%" }}
+          className="relative w-full max-w-full overflow-hidden"
+          style={{ aspectRatio: `${w} / ${h}` }}
         >
-          <img
-            src={image.url}
-            alt={image.name}
-            className="absolute inset-0 h-full w-full object-contain"
-          />
-          <div className="absolute inset-0">
-            {page.chunks.map((c) => {
-              const [x1, y1, x2, y2] = c.bbox;
-              const tone = confidenceTone(c.confidence);
-              const isActive = c.id === activeChunkId;
-              const color =
-                tone === "low"
-                  ? "border-[color:var(--warning)] bg-[color:var(--warning)]/15"
-                  : tone === "mid"
-                  ? "border-primary bg-primary/10"
-                  : "border-[color:var(--success)]/70 bg-[color:var(--success)]/5";
-              return (
-                <button
-                  type="button"
-                  key={c.id}
-                  onClick={() => onSelect(c.id)}
-                  className={cn(
-                    "absolute cursor-pointer border transition-all hover:z-10 hover:shadow-md",
-                    color,
-                    isActive && "z-20 ring-2 ring-primary ring-offset-1",
-                  )}
-                  style={{
-                    left: `${(x1 / w) * 100}%`,
-                    top: `${(y1 / h) * 100}%`,
-                    width: `${((x2 - x1) / w) * 100}%`,
-                    height: `${((y2 - y1) / h) * 100}%`,
-                  }}
-                  title={`${c.label}${c.confidence != null ? ` · ${Math.round(c.confidence * 100)}%` : ""}`}
-                />
-              );
-            })}
+          <div
+            className="absolute inset-0 transition-transform duration-500 ease-out"
+            style={{ transform, transformOrigin: "50% 50%" }}
+          >
+            <img
+              src={image.url}
+              alt={image.name}
+              className="absolute inset-0 h-full w-full object-contain"
+            />
+            <div className="absolute inset-0">
+              {page.chunks.map((c) => {
+                const [x1, y1, x2, y2] = c.bbox;
+                const tone = confidenceTone(c.confidence);
+                const isActive = c.id === activeChunkId;
+                const color =
+                  tone === "low"
+                    ? "border-[color:var(--warning)] bg-[color:var(--warning)]/15"
+                    : tone === "mid"
+                    ? "border-primary bg-primary/10"
+                    : "border-[color:var(--success)]/70 bg-[color:var(--success)]/5";
+                return (
+                  <button
+                    type="button"
+                    key={c.id}
+                    onClick={() => onSelect(c.id)}
+                    className={cn(
+                      "absolute cursor-pointer border transition-all hover:z-10 hover:shadow-md",
+                      color,
+                      isActive && "z-20 ring-2 ring-primary ring-offset-1",
+                    )}
+                    style={{
+                      left: `${(x1 / w) * 100}%`,
+                      top: `${(y1 / h) * 100}%`,
+                      width: `${((x2 - x1) / w) * 100}%`,
+                      height: `${((y2 - y1) / h) * 100}%`,
+                    }}
+                    title={`${c.label}${c.confidence != null ? ` · ${Math.round(c.confidence * 100)}%` : ""}`}
+                  />
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
-      <div className="border-t border-border px-3 py-1.5 text-xs text-muted-foreground">
-        {image.name} · {w} × {h}
+      <div className="flex items-center justify-center gap-2 border-t border-primary/20 bg-primary/5 px-3 py-1.5 text-xs text-primary">
+        <span className="truncate font-medium">{image.name}</span>
+        <span className="text-primary/70">· {w} × {h}</span>
       </div>
     </div>
   );
