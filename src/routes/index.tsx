@@ -1346,6 +1346,9 @@ function Workbench() {
                 onConfirm={(docType, pageIdx, chunkId) =>
                   confirmChunk(detailRecord.id, docType, pageIdx, chunkId)
                 }
+                onReplaceResults={(results) =>
+                  replaceResults(detailRecord.id, results)
+                }
                 onDownload={() => downloadJson(detailRecord)}
                 buildExport={buildExport}
               />
