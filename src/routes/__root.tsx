@@ -77,14 +77,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "OCR 识别工作台" },
+      { name: "description", content: "送货单与出货传票 OCR 识别、校验与 JSON 导出工作台" },
+      { name: "author", content: "OCR Studio" },
+      { property: "og:title", content: "OCR 识别工作台" },
+      { property: "og:description", content: "送货单与出货传票 OCR 识别、校验与 JSON 导出工作台" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
+
     ],
     links: [
       {
