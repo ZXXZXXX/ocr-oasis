@@ -140,7 +140,10 @@ interface OcrRecord {
 const uid = () => Math.random().toString(36).slice(2, 10);
 
 const fmtTime = (t: number) =>
-  new Date(t).toLocaleString("zh-CN", { hour12: false });
+  new Date(t).toLocaleString("zh-CN", {
+    hour12: false,
+    timeZone: "Asia/Shanghai",
+  });
 
 function confidenceTone(c?: number) {
   if (c == null) return "high"; // absent = treat as clean
