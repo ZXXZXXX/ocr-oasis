@@ -490,16 +490,26 @@ function placeholderImg(w: number, h: number, label: string): string {
   return `data:image/svg+xml;utf8,${svg.replace(/#/g, "%23")}`;
 }
 
+function createRand(seed: number): () => number {
+  return () => {
+    let t = (seed += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 function adjustChunkConfidences(
   chunks: Chunk[],
   mode: "high" | "mid" | "low",
+  rand: () => number = Math.random,
 ): Chunk[] {
   return chunks.map((c) => {
     if (c.label === "Image") return c;
     let base = c.confidence ?? 0.95;
     if (mode === "high") base = Math.min(0.99, Math.max(0.9, base + 0.2));
-    else if (mode === "mid") base = 0.82 + Math.random() * 0.1;
-    else base = 0.55 + Math.random() * 0.2;
+    else if (mode === "mid") base = 0.82 + rand() * 0.1;
+    else base = 0.55 + rand() * 0.2;
     return { ...c, confidence: Number(base.toFixed(2)) };
   });
 }
