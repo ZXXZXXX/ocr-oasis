@@ -791,6 +791,11 @@ function Workbench() {
                   original: c.original,
                   lastEdit: c.lastEdit ?? null,
                 }
+              : c.confirmed
+              ? {
+                  confirmed: true,
+                  reviewedBy: c.lastEdit ?? null,
+                }
               : {}),
           })),
         })),
