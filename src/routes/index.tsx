@@ -684,10 +684,109 @@ function Workbench() {
               </div>
               <div className="flex items-center gap-2">
                 {selected.size > 0 && (
-                  <span className="text-xs text-muted-foreground">
+                  <span className="mr-1 text-xs text-muted-foreground">
                     已选 {selected.size}
                   </span>
                 )}
+                <Popover open={filterOpen} onOpenChange={setFilterOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={cn(
+                        "gap-1",
+                        filterActive && "border-primary/60 text-primary",
+                      )}
+                    >
+                      <Filter className="size-3.5" />
+                      筛选
+                      {filterActive && (
+                        <span className="ml-0.5 rounded-full bg-primary/15 px-1.5 text-[10px] font-medium text-primary">
+                          已启用
+                        </span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-[360px] p-0">
+                    <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <Filter className="size-4 text-primary" />
+                        筛选条件
+                      </div>
+                      <button
+                        type="button"
+                        onClick={resetFilters}
+                        disabled={!filterActive}
+                        className={cn(
+                          "inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground",
+                          !filterActive && "opacity-50 hover:bg-transparent",
+                        )}
+                      >
+                        <RotateCcw className="size-3" />
+                        重置
+                      </button>
+                    </div>
+                    <div className="space-y-4 px-4 py-4">
+                      <div className="flex flex-col gap-1.5">
+                        <Label className="text-xs text-muted-foreground">
+                          创建时间范围
+                        </Label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="date"
+                            value={dateFrom}
+                            onChange={(e) => setDateFrom(e.target.value)}
+                            className="h-9 flex-1"
+                          />
+                          <span className="text-xs text-muted-foreground">
+                            至
+                          </span>
+                          <Input
+                            type="date"
+                            value={dateTo}
+                            onChange={(e) => setDateTo(e.target.value)}
+                            className="h-9 flex-1"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs text-muted-foreground">
+                            置信度评分范围
+                          </Label>
+                          <span className="text-xs tabular-nums text-foreground">
+                            {confRange[0]} – {confRange[1]}
+                          </span>
+                        </div>
+                        <div className="px-1 pt-3">
+                          <Slider
+                            min={0}
+                            max={100}
+                            step={1}
+                            minStepsBetweenThumbs={1}
+                            value={confRange}
+                            onValueChange={(v) =>
+                              setConfRange([
+                                v[0] ?? 0,
+                                v[1] ?? 100,
+                              ] as [number, number])
+                            }
+                          />
+                          <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
+                            <span>0</span>
+                            <span>50</span>
+                            <span>100</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex justify-end border-t border-border bg-muted/30 px-4 py-2">
+                      <Button size="sm" onClick={() => setFilterOpen(false)}>
+                        完成
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
                 <Button
                   variant="outline"
                   size="sm"
