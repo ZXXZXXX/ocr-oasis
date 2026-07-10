@@ -1613,6 +1613,23 @@ function DetailView({
           </pre>
         </TabsContent>
       </Tabs>
+
+      {editing && (
+        <div className="shrink-0 border-t border-border bg-muted/30 px-6 py-3">
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={cancelEdit}
+              className="gap-2"
+            >
+              <X className="size-4" /> 取消
+            </Button>
+            <Button onClick={submitEdit} className="gap-2">
+              <CheckCircle2 className="size-4" /> 提交
+            </Button>
+          </div>
+        </div>
+      )}
     </>
   );
 }
