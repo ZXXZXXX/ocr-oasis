@@ -2047,17 +2047,16 @@ function ImageWithBoxes({
           <span className="truncate font-medium">{image.name}</span>
           <span className="text-primary/70">
             · {w} × {h}
-            {view.rot !== 0 && ` · 旋转 ${view.rot}°`}
           </span>
         </div>
-        {activeChunkId && (
+        {view.manual && (
           <Button
             variant="outline"
             size="sm"
             className="h-6 gap-1 border-primary/30 px-2 text-xs text-primary hover:bg-primary/10"
-            onClick={() => onSelect(null)}
+            onClick={resetView}
           >
-            <Minimize2 className="size-3" /> 取消聚焦
+            <Minimize2 className="size-3" /> 重置视图
           </Button>
         )}
       </div>
