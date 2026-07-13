@@ -194,6 +194,7 @@ interface OcrRecord {
   plateNo: string;
   signatureStatus: SignatureStatus;
   aiVerdict?: AiVerdict; // 识别完成后由AI给出
+  aiRejectionReason?: string; // AI 不通过原因
   verifiedAt?: number; // 人工提交验收结论时间
   verifiedBy?: string;
   shippingSlipNo?: string; // 出货传票单号，用于搜索
