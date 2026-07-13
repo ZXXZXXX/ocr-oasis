@@ -1351,14 +1351,6 @@ function Workbench() {
                   const pending = !inProgress && r.status !== "failed" ? pendingLowConf(r) : 0;
                   return (
                     <TableRow key={r.id} className="hover:bg-muted/30">
-                      <TableCell>
-                        <Checkbox
-                          checked={selected.has(r.id)}
-                          disabled={!canSelect}
-                          onCheckedChange={() => toggleSelect(r.id)}
-                          aria-label="选择"
-                        />
-                      </TableCell>
                       <TableCell className="font-mono text-xs text-foreground">{r.id}</TableCell>
                       <TableCell className="text-sm text-muted-foreground" suppressHydrationWarning>
                         {fmtTime(r.createdAt)}
