@@ -2050,6 +2050,18 @@ function DetailView({
         </div>
       </SheetHeader>
 
+      {record.status === "pending_review" &&
+        record.aiVerdict === "fail" &&
+        record.aiRejectionReason && (
+          <div className="mx-6 mt-4 flex items-start gap-3 rounded-xl border border-[color:var(--destructive)]/20 bg-[color:var(--destructive)]/10 px-4 py-3 text-xs text-[color:var(--destructive)]">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+            <div className="flex-1 leading-relaxed">
+              <span className="font-semibold">AI 预审不通过原因：</span>
+              {record.aiRejectionReason}
+            </div>
+          </div>
+        )}
+
       <DocPanel
         deliveryPages={deliveryPages}
         deliveryImages={deliveryImages}
