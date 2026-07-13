@@ -1591,7 +1591,7 @@ function Workbench() {
               <TableBody>
                 {filteredRecords.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} className="py-16 text-center">
+                    <TableCell colSpan={7} className="py-16 text-center">
 
                       <div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground">
                         <div className="grid size-12 place-items-center rounded-full bg-secondary">
