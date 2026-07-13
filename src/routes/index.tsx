@@ -1108,7 +1108,10 @@ function Workbench() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [confRange, setConfRange] = useState<[number, number]>([0, 100]);
+  const [selectedConfidenceTones, setSelectedConfidenceTones] = useState<Set<"high" | "mid" | "low">>(
+    new Set(["high", "mid", "low"]),
+  );
+  const [aiVerdictFilter, setAiVerdictFilter] = useState<"all" | "pass" | "fail">("all");
   const [quickStatus, setQuickStatus] = useState<"all" | "pending_review">("all");
   const [searchQuery, setSearchQuery] = useState("");
   
