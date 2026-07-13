@@ -1832,64 +1832,7 @@ function DocPanel({
               </button>
             )}
           </div>
-          {!showingShipping && (
-            <div className="flex items-center gap-2">
-              <Label
-                htmlFor="auto-focus-switch"
-                className="text-xs text-muted-foreground cursor-pointer"
-              >
-                自动聚焦
-              </Label>
-              <Switch
-                id="auto-focus-switch"
-                checked={autoFocus}
-                onCheckedChange={setAutoFocus}
-              />
-            </div>
-          )}
         </div>
-
-        {!showingShipping && deliveryPages.length > 1 && (
-          <div className="flex items-center gap-1 border-b border-border bg-background/60 px-3 py-2">
-            {deliveryPages.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => {
-                  setPageIdx(i);
-                  setActiveChunkId(null);
-                }}
-                className={cn(
-                  "rounded px-2 py-0.5 text-xs",
-                  i === pageIdx
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent",
-                )}
-              >
-                第 {i + 1} 页
-              </button>
-            ))}
-          </div>
-        )}
-        {showingShipping && shippingImages.length > 1 && (
-          <div className="flex items-center gap-1 border-b border-border bg-background/60 px-3 py-2">
-            {shippingImages.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setShippingIdx(i)}
-                className={cn(
-                  "rounded px-2 py-0.5 text-xs",
-                  i === shippingIdx
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent",
-                )}
-              >
-                第 {i + 1} 张
-              </button>
-            ))}
-          </div>
-        )}
 
         <div className="flex-1 flex items-center justify-center overflow-hidden p-4">
           {leftImage && leftPage ? (
