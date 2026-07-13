@@ -1574,17 +1574,22 @@ function DetailView({
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <SheetTitle className="flex flex-wrap items-center gap-2">
-              验收任务详情
+              任务详情
               <StatusBadge status={record.status} pending={pending} />
-              {record.aiVerdict && <VerdictBadge value={record.aiVerdict} />}
               <SignatureBadge value={record.signatureStatus} />
-              <ConfidenceBadge score={record.confidence ?? 0} />
               {editing && (
                 <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
                   <Pencil className="size-3" /> 编辑中
                 </span>
               )}
             </SheetTitle>
+            {record.aiVerdict && (
+              <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
+                <span className="text-muted-foreground">ai识别结果：</span>
+                <VerdictBadge value={record.aiVerdict} />
+                <ConfidenceBadge score={record.confidence ?? 0} />
+              </div>
+            )}
             <SheetDescription className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs">
               <span>#{record.id}</span>
               <span>
