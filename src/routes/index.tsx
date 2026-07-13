@@ -1314,56 +1314,6 @@ function Workbench() {
           </AlertDialogContent>
         </AlertDialog>
 
-        <Sheet open={createOpen} onOpenChange={setCreateOpen}>
-          <SheetContent
-            side="right"
-            className="flex w-full flex-col gap-0 p-0 sm:max-w-[560px]"
-          >
-            <SheetHeader className="border-b border-border px-6 py-4">
-              <SheetTitle>新建识别任务</SheetTitle>
-              <SheetDescription>
-                分别上传送货单和出货传票的图片，系统将自动完成 OCR 与结构化识别。
-              </SheetDescription>
-            </SheetHeader>
-            <div className="flex-1 space-y-4 overflow-y-auto px-6 py-5">
-              <UploadZone
-                title="送货单"
-                icon={<Truck className="size-4" />}
-                images={deliveryImgs}
-                onAdd={(f) => addFiles("delivery_note", f)}
-                onRemove={(id) =>
-                  setDeliveryImgs((p) => p.filter((i) => i.id !== id))
-                }
-              />
-              <UploadZone
-                title="出货传票"
-                icon={<ScrollText className="size-4" />}
-                images={shippingImgs}
-                onAdd={(f) => addFiles("shipping_slip", f)}
-                onRemove={(id) =>
-                  setShippingImgs((p) => p.filter((i) => i.id !== id))
-                }
-              />
-            </div>
-            <SheetFooter className="flex-row items-center justify-between border-t border-border bg-muted/30 px-6 py-3 sm:justify-between">
-              <div className="text-xs text-muted-foreground">
-                共 <span className="font-medium text-foreground">{totalUploads}</span> 张图片
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setCreateOpen(false)}>
-                  取消
-                </Button>
-                <Button
-                  onClick={startOcr}
-                  disabled={totalUploads === 0}
-                  className="gap-2"
-                >
-                  <Sparkles className="size-4" /> 开始 OCR 识别
-                </Button>
-              </div>
-            </SheetFooter>
-          </SheetContent>
-        </Sheet>
 
         {!progressDismissed && activeRecords.length > 0 && (
           <div
