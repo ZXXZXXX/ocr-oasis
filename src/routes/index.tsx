@@ -1556,18 +1556,18 @@ function DetailView({
   onChange,
   onConfirm,
   onReplaceResults,
-  onDownload,
   onSubmit,
   buildExport,
 }: {
+
   record: OcrRecord;
   onChange: (docType: DocType, pageIdx: number, chunkId: string, value: string) => void;
   onConfirm: (docType: DocType, pageIdx: number, chunkId: string) => void;
   onReplaceResults: (results: NonNullable<OcrRecord["results"]>) => void;
-  onDownload: () => void;
   onSubmit: () => void;
   buildExport: (r: OcrRecord) => unknown;
 }) {
+
   const pending = pendingLowConf(record);
   const availableDocTypes = Object.keys(record.results ?? {}) as DocType[];
   const shippingRefImgs = record.images.filter((i) => i.docType === "shipping_slip");
@@ -1634,14 +1634,6 @@ function DetailView({
                     <Pencil className="size-4" /> 编辑识别结果
                   </Button>
                 )}
-                <Button
-                  variant="ghost"
-                  onClick={onDownload}
-                  disabled={pending > 0}
-                  className="gap-2"
-                >
-                  <Download className="size-4" /> JSON
-                </Button>
                 {record.status === "pending_review" && (
                   <Button onClick={onSubmit} className="gap-2">
                     <CheckCircle2 className="size-4" /> 提交验收结论
