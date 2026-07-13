@@ -2082,7 +2082,21 @@ function ImageWithBoxes({
               重置视图
             </button>
           )}
-          <span className="hidden sm:inline">{"\n"}</span>
+          {showAutoFocus && setAutoFocus && (
+            <div className="flex items-center gap-1.5 pl-1">
+              <Label
+                htmlFor="auto-focus-switch"
+                className="cursor-pointer text-[11px] text-muted-foreground"
+              >
+                自动聚焦
+              </Label>
+              <Switch
+                id="auto-focus-switch"
+                checked={autoFocus}
+                onCheckedChange={setAutoFocus}
+              />
+            </div>
+          )}
         </div>
       </div>
 
