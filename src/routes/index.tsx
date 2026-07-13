@@ -646,7 +646,9 @@ function Workbench() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [confRange, setConfRange] = useState<[number, number]>([0, 100]);
+  const [quickStatus, setQuickStatus] = useState<"all" | "pending_review">("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+
 
   const activeRecords = useMemo(
     () => records.filter((r) => r.status === "recognizing" || r.status === "queued"),
@@ -705,17 +707,20 @@ function Workbench() {
     const fromT = dateFrom ? new Date(dateFrom).getTime() : -Infinity;
     const toT = dateTo ? new Date(dateTo).getTime() + 86400000 : Infinity;
     return records.filter((r) => {
+      if (quickStatus !== "all" && r.status !== quickStatus) return false;
       if (r.createdAt < fromT || r.createdAt > toT) return false;
-      if (r.status !== "recognizing" && r.status !== "failed" && r.confidence != null) {
+      if (r.status !== "recognizing" && r.status !== "failed" && r.status !== "queued" && r.confidence != null) {
         if (r.confidence < confRange[0] || r.confidence > confRange[1]) return false;
       } else {
         if (confRange[0] > 0 || confRange[1] < 100) return false;
       }
       return true;
     });
-  }, [records, dateFrom, dateTo, confRange]);
+  }, [records, dateFrom, dateTo, confRange, quickStatus]);
 
-  const filterActive = !!dateFrom || !!dateTo || confRange[0] > 0 || confRange[1] < 100;
+  const filterActive =
+    quickStatus !== "all" || !!dateFrom || !!dateTo || confRange[0] > 0 || confRange[1] < 100;
+
 
   const selectableIds = filteredRecords
     .filter((r) => r.status !== "recognizing" && r.status !== "queued" && r.status !== "failed")
@@ -942,7 +947,9 @@ function Workbench() {
     setDateFrom("");
     setDateTo("");
     setConfRange([0, 100]);
+    setQuickStatus("all");
   }
+
 
   return (
     <TooltipProvider>
@@ -1000,7 +1007,17 @@ function Workbench() {
                 {selected.size > 0 && (
                   <span className="mr-1 text-xs text-muted-foreground">已选 {selected.size}</span>
                 )}
+                <Button
+                  variant={quickStatus === "pending_review" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() =>
+                    setQuickStatus((prev) => (prev === "pending_review" ? "all" : "pending_review"))
+                  }
+                >
+                  待审核
+                </Button>
                 <Popover open={filterOpen} onOpenChange={setFilterOpen}>
+
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
