@@ -27,6 +27,8 @@ import {
   MoreHorizontal,
   Search,
   GripVertical,
+  ThumbsUp,
+  ThumbsDown,
 } from "lucide-react";
 
 
@@ -855,13 +857,14 @@ function Workbench() {
 
 
   // 提交人工验收结论 → 状态置为已验收，模拟自动回传用户系统
-  function submitVerification(id: string) {
+  function submitVerification(id: string, verdict?: AiVerdict) {
     const target = records.find((r) => r.id === id);
     if (!target) return;
     if (target.status !== "pending_review") {
       toast.error("该任务当前状态无法提交验收");
       return;
     }
+    const finalVerdict: AiVerdict = verdict ?? target.aiVerdict ?? "pass";
     setRecords((prev) =>
       prev.map((r) =>
         r.id === id
@@ -870,6 +873,7 @@ function Workbench() {
               status: "verified",
               verifiedAt: Date.now(),
               verifiedBy: CURRENT_USER,
+              aiVerdict: finalVerdict,
             }
           : r,
       ),
@@ -880,9 +884,11 @@ function Workbench() {
       verifiedBy: CURRENT_USER,
       verifiedAt: new Date().toISOString(),
       signatureStatus: target.signatureStatus,
-      aiVerdict: target.aiVerdict,
+      aiVerdict: finalVerdict,
     });
-    toast.success("验收结论已提交，结果已回传至用户系统");
+    toast.success(
+      finalVerdict === "pass" ? "已通过，结果已回传至用户系统" : "已标记不通过，结果已回传至用户系统",
+    );
   }
 
   function mutateChunk(
@@ -1365,8 +1371,8 @@ function Workbench() {
                   confirmChunk(detailRecord.id, docType, pageIdx, chunkId)
                 }
                 onReplaceResults={(results) => replaceResults(detailRecord.id, results)}
-                onSubmit={() => {
-                  submitVerification(detailRecord.id);
+                onSubmit={(verdict) => {
+                  submitVerification(detailRecord.id, verdict);
                   setDetailId(null);
                 }}
               />
@@ -1498,7 +1504,7 @@ function DetailView({
   onChange: (docType: DocType, pageIdx: number, chunkId: string, value: string) => void;
   onConfirm: (docType: DocType, pageIdx: number, chunkId: string) => void;
   onReplaceResults: (results: NonNullable<OcrRecord["results"]>) => void;
-  onSubmit: () => void;
+  onSubmit: (verdict?: AiVerdict) => void;
 }) {
 
 
@@ -1509,26 +1515,55 @@ function DetailView({
   const [autoFocus, setAutoFocus] = useState(true);
 
   const [editing, setEditing] = useState(false);
+  const [lastEditedAt, setLastEditedAt] = useState<number | null>(null);
+  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   // snapshot taken on entering edit mode — used to cancel
   const snapshotRef = useRef<NonNullable<OcrRecord["results"]> | null>(null);
+  const hasChanges = lastEditedAt !== null;
 
   function startEdit() {
     // deep-clone current results so cancel can restore
     snapshotRef.current = JSON.parse(JSON.stringify(record.results ?? {})) as NonNullable<
       OcrRecord["results"]
     >;
+    setLastEditedAt(null);
     setEditing(true);
   }
-  function cancelEdit() {
+  function discardAndClose() {
     if (snapshotRef.current) onReplaceResults(snapshotRef.current);
     snapshotRef.current = null;
+    setLastEditedAt(null);
     setEditing(false);
-    toast.info("已取消本次修改");
+    toast.info("已放弃本次修改");
   }
-  function submitEdit() {
+  function keepEditsAndClose() {
     snapshotRef.current = null;
+    setLastEditedAt(null);
     setEditing(false);
-    toast.success("修改已提交");
+    toast.success("修改已保存");
+  }
+  function requestCancel() {
+    if (hasChanges) {
+      setCancelConfirmOpen(true);
+    } else {
+      snapshotRef.current = null;
+      setEditing(false);
+    }
+  }
+  function handleEditChange(
+    docType: DocType,
+    pageIdx: number,
+    chunkId: string,
+    value: string,
+  ) {
+    onChange(docType, pageIdx, chunkId, value);
+    if (editing) setLastEditedAt(Date.now());
+  }
+  function submitVerdict(verdict: AiVerdict) {
+    snapshotRef.current = null;
+    setLastEditedAt(null);
+    setEditing(false);
+    onSubmit(verdict);
   }
 
   return (
@@ -1570,7 +1605,7 @@ function DetailView({
                   </Button>
                 )}
                 {record.status === "pending_review" && (
-                  <Button onClick={onSubmit} className="gap-2">
+                  <Button onClick={() => onSubmit()} className="gap-2">
                     <CheckCircle2 className="size-4" /> 提交验收结论
                   </Button>
                 )}
@@ -1597,24 +1632,79 @@ function DetailView({
         editing={editing}
         autoFocus={autoFocus}
         setAutoFocus={setAutoFocus}
-        onChange={(pageIdx, chunkId, v) => onChange("delivery_note", pageIdx, chunkId, v)}
+        onChange={(pageIdx, chunkId, v) =>
+          handleEditChange("delivery_note", pageIdx, chunkId, v)
+        }
         onConfirm={(pageIdx, chunkId) => onConfirm("delivery_note", pageIdx, chunkId)}
       />
 
 
 
       {editing && (
-        <div className="shrink-0 border-t border-border bg-muted/30 px-6 py-3">
-          <div className="flex items-center justify-end gap-2">
-            <Button variant="outline" onClick={cancelEdit} className="gap-2">
-              <X className="size-4" /> 取消
-            </Button>
-            <Button onClick={submitEdit} className="gap-2">
-              <CheckCircle2 className="size-4" /> 提交
-            </Button>
+        <div className="shrink-0 border-t border-border bg-background px-6 py-3 shadow-[0_-4px_12px_-8px_rgba(0,0,0,0.15)]">
+          <div className="flex items-center justify-between gap-4">
+            <div className="text-xs text-muted-foreground">
+              {lastEditedAt ? (
+                <span className="inline-flex items-center gap-1">
+                  <Pencil className="size-3" />
+                  最后修改：{fmtTime(lastEditedAt)}
+                </span>
+              ) : (
+                <span className="text-muted-foreground/70">尚未修改</span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={requestCancel} className="gap-2">
+                <X className="size-4" /> 取消
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => submitVerdict("fail")}
+                className="gap-2 border-[color:var(--destructive)]/40 text-[color:var(--destructive)] hover:bg-[color:var(--destructive)]/10 hover:text-[color:var(--destructive)]"
+              >
+                <ThumbsDown className="size-4" /> 不通过
+              </Button>
+              <Button
+                onClick={() => submitVerdict("pass")}
+                className="gap-2 bg-[color:var(--success)] text-white hover:bg-[color:var(--success)]/90"
+              >
+                <ThumbsUp className="size-4" /> 通过
+              </Button>
+            </div>
           </div>
         </div>
       )}
+
+      <AlertDialog open={cancelConfirmOpen} onOpenChange={setCancelConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>是否保存刚刚编辑的信息？</AlertDialogTitle>
+            <AlertDialogDescription>
+              你已经修改了识别结果但未提交验收结论。选择「保存修改」将保留修改内容并退出编辑；选择「放弃修改」将恢复到进入编辑前的状态。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>继续编辑</AlertDialogCancel>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setCancelConfirmOpen(false);
+                discardAndClose();
+              }}
+            >
+              放弃修改
+            </Button>
+            <AlertDialogAction
+              onClick={() => {
+                setCancelConfirmOpen(false);
+                keepEditsAndClose();
+              }}
+            >
+              保存修改
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
