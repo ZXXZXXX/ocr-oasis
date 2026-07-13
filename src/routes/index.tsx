@@ -921,7 +921,7 @@ function Workbench() {
               </div>
               <div>
                 <h1 className="text-base font-semibold leading-tight">
-                  OCR 识别工作台
+                  验收单审核工作台
                 </h1>
                 <p className="text-xs text-muted-foreground">
                   送货单 · 出货传票 结构化识别
@@ -1104,7 +1104,7 @@ function Workbench() {
                   <TableHead>图片数量</TableHead>
                   <TableHead className="w-[220px]">识别进度</TableHead>
                   <TableHead>置信度评分</TableHead>
-                  <TableHead>状态</TableHead>
+                  <TableHead>审核状态</TableHead>
                   <TableHead className="text-right">操作</TableHead>
                 </TableRow>
               </TableHeader>
