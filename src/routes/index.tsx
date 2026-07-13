@@ -962,9 +962,9 @@ function Workbench() {
           <div className="overflow-hidden rounded-xl border border-border bg-card">
             <div className="flex items-center justify-between border-b border-border px-5 py-3">
               <div className="flex items-center gap-3 text-sm">
-                <span className="font-medium">识别记录</span>
+                <span className="font-medium">验收任务</span>
                 <span className="text-xs text-muted-foreground">
-                  共 {filteredRecords.length} 条
+                  共 {filteredRecords.length}&nbsp;项
                   {filterActive && ` / 全部 ${records.length}`}
                 </span>
               </div>
@@ -1118,7 +1118,7 @@ function Workbench() {
                         </div>
                         <div className="text-sm">
                           {records.length === 0
-                            ? "还没有识别记录"
+                            ? "还没有审核单记录"
                             : "没有符合当前筛选条件的记录"}
                         </div>
                         {records.length === 0 ? (
