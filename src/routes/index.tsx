@@ -2259,8 +2259,6 @@ function ImageWithBoxes({
       const { [image.id]: _drop, ...rest } = m;
       return rest;
     });
-    // 回到默认"适合"视图：关闭自动聚焦并清除激活块，避免立即被聚焦逻辑放大
-    setAutoFocus?.(false);
     onSelect(null);
   };
   const zoomBy = (factor: number) =>
