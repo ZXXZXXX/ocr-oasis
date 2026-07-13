@@ -1106,12 +1106,32 @@ function Workbench() {
 
   // Filters
   const [filterOpen, setFilterOpen] = useState(false);
+
+  // Applied filters (only update after clicking "完成")
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [selectedConfidenceTones, setSelectedConfidenceTones] = useState<Set<"high" | "mid" | "low">>(
     new Set(["high", "mid", "low"]),
   );
   const [aiVerdictFilter, setAiVerdictFilter] = useState<"all" | "pass" | "fail">("all");
+
+  // Draft filters for the popover UI
+  const [draftDateFrom, setDraftDateFrom] = useState("");
+  const [draftDateTo, setDraftDateTo] = useState("");
+  const [draftConfidenceTones, setDraftConfidenceTones] = useState<Set<"high" | "mid" | "low">>(
+    new Set(["high", "mid", "low"]),
+  );
+  const [draftAiVerdictFilter, setDraftAiVerdictFilter] = useState<"all" | "pass" | "fail">("all");
+
+  useEffect(() => {
+    if (filterOpen) {
+      setDraftDateFrom(dateFrom);
+      setDraftDateTo(dateTo);
+      setDraftConfidenceTones(new Set(selectedConfidenceTones));
+      setDraftAiVerdictFilter(aiVerdictFilter);
+    }
+  }, [filterOpen, dateFrom, dateTo, selectedConfidenceTones, aiVerdictFilter]);
+
   const [quickStatus, setQuickStatus] = useState<"all" | "pending_review">("all");
   const [searchQuery, setSearchQuery] = useState("");
   
@@ -1368,6 +1388,18 @@ function Workbench() {
     setDateTo("");
     setSelectedConfidenceTones(new Set(["high", "mid", "low"]));
     setAiVerdictFilter("all");
+    setDraftDateFrom("");
+    setDraftDateTo("");
+    setDraftConfidenceTones(new Set(["high", "mid", "low"]));
+    setDraftAiVerdictFilter("all");
+  }
+
+  function applyFilters() {
+    setDateFrom(draftDateFrom);
+    setDateTo(draftDateTo);
+    setSelectedConfidenceTones(new Set(draftConfidenceTones));
+    setAiVerdictFilter(draftAiVerdictFilter);
+    setFilterOpen(false);
   }
 
   return (
@@ -1484,15 +1516,15 @@ function Workbench() {
                         <div className="flex items-center gap-2">
                           <Input
                             type="date"
-                            value={dateFrom}
-                            onChange={(e) => setDateFrom(e.target.value)}
+                            value={draftDateFrom}
+                            onChange={(e) => setDraftDateFrom(e.target.value)}
                             className="h-9 flex-1"
                           />
                           <span className="text-xs text-muted-foreground">至</span>
                           <Input
                             type="date"
-                            value={dateTo}
-                            onChange={(e) => setDateTo(e.target.value)}
+                            value={draftDateTo}
+                            onChange={(e) => setDraftDateTo(e.target.value)}
                             className="h-9 flex-1"
                           />
                         </div>
@@ -1501,13 +1533,13 @@ function Workbench() {
                         <Label className="text-xs text-muted-foreground">置信度</Label>
                         <div className="flex gap-2">
                           {(["high", "mid", "low"] as const).map((tone) => {
-                            const selected = selectedConfidenceTones.has(tone);
+                            const selected = draftConfidenceTones.has(tone);
                             return (
                               <button
                                 key={tone}
                                 type="button"
                                 onClick={() => {
-                                  setSelectedConfidenceTones((prev) => {
+                                  setDraftConfidenceTones((prev) => {
                                     const next = new Set(prev);
                                     if (next.has(tone)) {
                                       next.delete(tone);
@@ -1548,12 +1580,12 @@ function Workbench() {
                             { value: "pass", label: "通过" },
                             { value: "fail", label: "不通过" },
                           ].map((opt) => {
-                            const selected = aiVerdictFilter === opt.value;
+                            const selected = draftAiVerdictFilter === opt.value;
                             return (
                               <button
                                 key={opt.value}
                                 type="button"
-                                onClick={() => setAiVerdictFilter(opt.value as typeof aiVerdictFilter)}
+                                onClick={() => setDraftAiVerdictFilter(opt.value as typeof draftAiVerdictFilter)}
                                 className={cn(
                                   "flex-1 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors",
                                   selected
@@ -1569,7 +1601,7 @@ function Workbench() {
                       </div>
                     </div>
                     <div className="flex justify-end border-t border-border bg-muted/30 px-4 py-2">
-                      <Button size="sm" onClick={() => setFilterOpen(false)}>
+                      <Button size="sm" onClick={applyFilters}>
                         完成
                       </Button>
                     </div>
