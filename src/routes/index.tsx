@@ -242,26 +242,26 @@ function confidenceTone(c?: number) {
   return "low";
 }
 
-// Synchronized color palette for confidence tones.
+// Synchronized color palette for confidence tones, using the same semantic tokens as status badges.
 function confidenceBadgeClasses(tone: "high" | "mid" | "low") {
-  if (tone === "high") return "text-[color:var(--success)] bg-[color:var(--success)]/10";
-  if (tone === "mid") return "text-orange-500 bg-orange-500/10";
-  return "text-red-500 bg-red-500/10";
+  if (tone === "high") return "text-[color:var(--success)] bg-[color:var(--success)]/15";
+  if (tone === "mid") return "text-[color:var(--warning-foreground)] bg-[color:var(--warning)]/25";
+  return "text-[color:var(--destructive)] bg-[color:var(--destructive)]/15";
 }
 function confidenceBorderClasses(tone: "high" | "mid" | "low") {
   if (tone === "high") return "border-[color:var(--success)]/70 bg-[color:var(--success)]/5";
-  if (tone === "mid") return "border-orange-500 bg-orange-500/10";
-  return "border-red-500 bg-red-500/15";
+  if (tone === "mid") return "border-[color:var(--warning)] bg-[color:var(--warning)]/15";
+  return "border-[color:var(--destructive)] bg-[color:var(--destructive)]/15";
 }
 function confidenceDotClasses(tone: "high" | "mid" | "low") {
   if (tone === "high") return "bg-[color:var(--success)]";
-  if (tone === "mid") return "bg-orange-500";
-  return "bg-red-500";
+  if (tone === "mid") return "bg-[color:var(--warning)]";
+  return "bg-[color:var(--destructive)]";
 }
 function confidenceTextClasses(tone: "high" | "mid" | "low") {
   if (tone === "high") return "text-[color:var(--success)]";
-  if (tone === "mid") return "text-orange-500";
-  return "text-red-500";
+  if (tone === "mid") return "text-[color:var(--warning-foreground)]";
+  return "text-[color:var(--destructive)]";
 }
 
 // Compute overall record confidence: average of scored chunks. Unscored counted as 1.0.
