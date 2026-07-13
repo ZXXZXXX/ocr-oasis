@@ -27,6 +27,8 @@ import {
   MoreHorizontal,
   Search,
   GripVertical,
+  ThumbsUp,
+  ThumbsDown,
 } from "lucide-react";
 
 
