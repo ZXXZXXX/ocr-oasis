@@ -2131,7 +2131,7 @@ function DocPanel({
                 <span className={cn("size-2 rounded-sm", confidenceDotClasses("mid"))} />中
               </span>
               <span className="inline-flex items-center gap-1">
-                <span className={cn("size-2 rounded-sm", confidenceDotClasses("low"))} />低 &lt; 80
+                <span className={cn("size-2 rounded-sm", confidenceDotClasses("low"))} />低
               </span>
             </div>
           </div>
