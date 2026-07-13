@@ -1656,6 +1656,26 @@ function StatusBadge({ status, pending: _pending }: { status: Status; pending: n
   );
 }
 
+function AuditConclusionBadge({ status, aiVerdict }: { status: Status; aiVerdict?: AiVerdict }) {
+  if (status === "verified" && aiVerdict === "pass")
+    return (
+      <Badge variant="status" className="w-20 justify-center gap-1 border-0 bg-[color:var(--success)]/15 font-normal text-[color:var(--success)]">
+        <CheckCircle2 className="size-3" /> 通过
+      </Badge>
+    );
+  if (status === "verified" && aiVerdict === "fail")
+    return (
+      <Badge variant="status" className="w-20 justify-center gap-1 border-0 bg-destructive/15 font-normal text-destructive">
+        <X className="size-3" /> 不通过
+      </Badge>
+    );
+  return (
+    <Badge variant="status" className="w-20 justify-center border-0 bg-muted font-normal text-muted-foreground">
+      —
+    </Badge>
+  );
+}
+
 function SignatureBadge({ value }: { value: SignatureStatus }) {
   if (value === "perfect")
     return (
