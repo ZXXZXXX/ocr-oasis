@@ -1523,6 +1523,7 @@ function DetailView({
   onConfirm,
   onReplaceResults,
   onDownload,
+  onSubmit,
   buildExport,
 }: {
   record: OcrRecord;
@@ -1535,6 +1536,7 @@ function DetailView({
   onConfirm: (docType: DocType, pageIdx: number, chunkId: string) => void;
   onReplaceResults: (results: NonNullable<OcrRecord["results"]>) => void;
   onDownload: () => void;
+  onSubmit: () => void;
   buildExport: (r: OcrRecord) => unknown;
 }) {
   const pending = pendingLowConf(record);
