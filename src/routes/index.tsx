@@ -23,7 +23,9 @@ import {
   Table as TableIcon,
   Image as ImageIcon,
   MoreHorizontal,
+  Search,
 } from "lucide-react";
+
 
 
 import { Button } from "@/components/ui/button";
