@@ -1020,13 +1020,8 @@ function Workbench() {
         </header>
 
         <main className="mx-auto max-w-[1400px] px-6 py-6">
-          <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3">
             <StatCard label="验收任务" value={records.length} />
-            <StatCard
-              label="AI识别中"
-              value={records.filter((r) => r.status === "recognizing").length}
-              accent="primary"
-            />
             <StatCard
               label="待审核任务"
               value={records.filter((r) => r.status === "pending_review").length}
@@ -1038,6 +1033,7 @@ function Workbench() {
               accent="success"
             />
           </div>
+
 
           <div className="overflow-hidden rounded-xl border border-border bg-card">
             <div className="flex items-center justify-between border-b border-border px-5 py-3">
