@@ -1195,22 +1195,15 @@ function Workbench() {
                         {fmtTime(r.createdAt)}
                       </TableCell>
                       <TableCell className="text-sm">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Badge
-                            variant="secondary"
-                            className="gap-1 font-normal"
-                          >
-                            <Truck className="size-3" />
-                            送货单 {r.deliveryCount}
-                          </Badge>
-                          <Badge
-                            variant="secondary"
-                            className="gap-1 font-normal"
-                          >
-                            <ScrollText className="size-3" />
-                            传票 {r.shippingCount}
-                          </Badge>
+                        <div className="flex flex-col leading-tight">
+                          <span className="text-foreground">{r.driver}</span>
+                          <span className="font-mono text-xs text-muted-foreground">
+                            {r.plateNo}
+                          </span>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        <SignatureBadge value={r.signatureStatus} />
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">
@@ -1227,6 +1220,13 @@ function Workbench() {
                           <span className="text-xs text-muted-foreground">
                             —
                           </span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {r.aiVerdict ? (
+                          <VerdictBadge value={r.aiVerdict} />
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
                         )}
                       </TableCell>
                       <TableCell>
