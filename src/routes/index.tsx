@@ -648,7 +648,10 @@ function Workbench() {
   const [confRange, setConfRange] = useState<[number, number]>([0, 100]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  const activeRecords = useMemo(() => records.filter((r) => r.status === "recognizing"), [records]);
+  const activeRecords = useMemo(
+    () => records.filter((r) => r.status === "recognizing" || r.status === "queued"),
+    [records],
+  );
 
   const detailRecord = records.find((r) => r.id === detailId) ?? null;
 
@@ -678,6 +681,25 @@ function Workbench() {
     }, 500);
     return () => clearInterval(t);
   }, [activeRecords.length]);
+
+  // 并发调度：最多同时识别 MAX_CONCURRENT_OCR 条，超出自动排队
+  useEffect(() => {
+    setRecords((prev) => {
+      const running = prev.filter((r) => r.status === "recognizing").length;
+      const slots = MAX_CONCURRENT_OCR - running;
+      if (slots <= 0) return prev;
+      const queuedOrdered = prev
+        .filter((r) => r.status === "queued")
+        .sort((a, b) => a.createdAt - b.createdAt)
+        .slice(0, slots)
+        .map((r) => r.id);
+      if (queuedOrdered.length === 0) return prev;
+      const promote = new Set(queuedOrdered);
+      return prev.map((r) =>
+        promote.has(r.id) ? { ...r, status: "recognizing" as Status, progress: 4 } : r,
+      );
+    });
+  }, [records]);
 
   const filteredRecords = useMemo(() => {
     const fromT = dateFrom ? new Date(dateFrom).getTime() : -Infinity;
