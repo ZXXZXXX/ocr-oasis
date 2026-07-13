@@ -937,19 +937,19 @@ function Workbench() {
 
         <main className="mx-auto max-w-[1400px] px-6 py-6">
           <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-            <StatCard label="识别任务" value={records.length} />
+            <StatCard label="验收单任务" value={records.length} />
             <StatCard
-              label="识别中"
+              label="AI识别中"
               value={records.filter((r) => r.status === "recognizing").length}
               accent="primary"
             />
             <StatCard
-              label="已完成"
+              label="待验收"
               value={records.filter((r) => r.status === "done").length}
               accent="success"
             />
             <StatCard
-              label="待核验"
+              label="已验收"
               value={
                 records.filter(
                   (r) => r.status === "done" && pendingLowConf(r) > 0,
