@@ -846,9 +846,8 @@ function seedRecords(): OcrRecord[] {
   return [realRecord, ...records];
 }
 
-function seedRecordsInner_unused() {
-  return [] as OcrRecord[];
-}
+
+
 
 
 // ---------- Main Workbench ----------
