@@ -2399,7 +2399,7 @@ function ImageWithBoxes({
                         width: `${((x2 - x1) / w) * 100}%`,
                         height: `${((y2 - y1) / h) * 100}%`,
                       }}
-                      title={`${c.label}${c.confidence != null ? ` · ${Math.round(c.confidence * 100)}%` : ""}`}
+                      title={`${c.label}${c.confidence != null ? ` · ${CONFIDENCE_LABEL[confidenceTone(c.confidence)]}` : ""}`}
                     />
                   );
                 })}
