@@ -611,9 +611,6 @@ function seedRecords(): OcrRecord[] {
 // ---------- Main Workbench ----------
 function Workbench() {
   const [records, setRecords] = useState<OcrRecord[]>(() => seedRecords());
-  const [createOpen, setCreateOpen] = useState(false);
-  const [deliveryImgs, setDeliveryImgs] = useState<UploadedImage[]>([]);
-  const [shippingImgs, setShippingImgs] = useState<UploadedImage[]>([]);
 
   const [progressMinimized, setProgressMinimized] = useState(false);
   const [progressDismissed, setProgressDismissed] = useState(true);
@@ -643,12 +640,15 @@ function Workbench() {
           const next = Math.min(100, r.progress + 4 + Math.random() * 6);
           if (next >= 100) {
             const result = fabricateResult(r.images);
+            // AI 结论：置信度 >= 80 通过，否则不通过
+            const verdict: AiVerdict = result.confidence >= 80 ? "pass" : "fail";
             return {
               ...r,
               progress: 100,
               status: "pending_review",
               confidence: result.confidence,
               results: result.results,
+              aiVerdict: verdict,
             };
           }
           return { ...r, progress: next };
@@ -700,80 +700,78 @@ function Workbench() {
     });
   }
 
-  function addFiles(target: DocType, files: FileList) {
-    const bucket = target === "delivery_note" ? deliveryImgs : shippingImgs;
-    const setter =
-      target === "delivery_note" ? setDeliveryImgs : setShippingImgs;
-    const remaining = 6 - bucket.length;
-    const arr = Array.from(files).slice(0, remaining);
-    const additions: Promise<UploadedImage | null>[] = arr.map(
-      (f) =>
-        new Promise((resolve) => {
-          if (!/image\/(jpeg|png)/.test(f.type)) {
-            toast.error(`${f.name}：仅支持 JPG / PNG`);
-            resolve(null);
-            return;
-          }
-          if (f.size > 3 * 1024 * 1024) {
-            toast.error(`${f.name}：超过 3MB`);
-            resolve(null);
-            return;
-          }
-          const url = URL.createObjectURL(f);
-          const im = new window.Image();
-          im.onload = () => {
-            resolve({
-              id: uid(),
-              name: f.name,
-              url,
-              docType: target,
-              width: im.naturalWidth || 1920,
-              height: im.naturalHeight || 1080,
-            });
-          };
-          im.onerror = () =>
-            resolve({
-              id: uid(),
-              name: f.name,
-              url,
-              docType: target,
-              width: 1920,
-              height: 1080,
-            });
-          im.src = url;
-        }),
-    );
-    Promise.all(additions).then((results) => {
-      const valid = results.filter((v): v is UploadedImage => v !== null);
-      if (arr.length < files.length)
-        toast.warning("单个类型最多 6 张，已截断");
-      setter((prev) => [...prev, ...valid]);
-    });
-  }
-
-  function startOcr() {
-    const images = [...deliveryImgs, ...shippingImgs];
-    if (images.length === 0) {
-      toast.error("请至少上传一张图片");
-      return;
-    }
+  // 手动模拟：从用户系统同步一条新的验收任务，进入 AI 识别中
+  const syncCounter = useRef(0);
+  function syncNewTask() {
+    syncCounter.current += 1;
+    const seq = syncCounter.current;
+    const who = pickDriver(records.length + seq);
+    const signatureStatus: SignatureStatus = Math.random() < 0.6 ? "perfect" : "partial";
+    const docTypes: DocType[] = ["delivery_note", "shipping_slip"];
+    const rid = uid();
+    const images: UploadedImage[] = docTypes.map((dt) => ({
+      id: `img-${rid}-${dt}`,
+      name: `${dt === "delivery_note" ? "delivery" : "shipping"}_${rid}.jpg`,
+      url: placeholderImg(
+        1920,
+        720,
+        dt === "delivery_note" ? "送货单（同步）" : "出货传票（参考）",
+      ),
+      docType: dt,
+      width: 1920,
+      height: 720,
+    }));
     const record: OcrRecord = {
-      id: uid(),
+      id: `task-${Date.now().toString().slice(-6)}`,
       createdAt: Date.now(),
       status: "recognizing",
       progress: 4,
-      deliveryCount: deliveryImgs.length,
-      shippingCount: shippingImgs.length,
+      deliveryCount: 1,
+      shippingCount: 1,
       images,
+      driver: who.driver,
+      plateNo: who.plate,
+      signatureStatus,
     };
     setRecords((p) => [record, ...p]);
-    setCreateOpen(false);
-    setDeliveryImgs([]);
-    setShippingImgs([]);
     setProgressDismissed(false);
     setProgressMinimized(false);
-    toast.success("识别任务已创建");
+    toast.success(`已同步新任务 · ${who.driver} ${who.plate}`);
   }
+
+  // 提交人工验收结论 → 状态置为已验收，模拟自动回传用户系统
+  function submitVerification(id: string) {
+    const target = records.find((r) => r.id === id);
+    if (!target) return;
+    if (target.status !== "pending_review") {
+      toast.error("该任务当前状态无法提交验收");
+      return;
+    }
+    setRecords((prev) =>
+      prev.map((r) =>
+        r.id === id
+          ? {
+              ...r,
+              status: "verified",
+              verifiedAt: Date.now(),
+              verifiedBy: CURRENT_USER,
+            }
+          : r,
+      ),
+    );
+    // 模拟回传接口
+    // eslint-disable-next-line no-console
+    console.log("[MOCK 回传用户系统]", {
+      taskId: id,
+      verifiedBy: CURRENT_USER,
+      verifiedAt: new Date().toISOString(),
+      signatureStatus: target.signatureStatus,
+      aiVerdict: target.aiVerdict,
+    });
+    toast.success("验收结论已提交，结果已回传至用户系统");
+  }
+
+
 
   function mutateChunk(
     recordId: string,
