@@ -1172,16 +1172,19 @@ function Workbench() {
   }, [records]);
 
   const filteredRecords = useMemo(() => {
+    const allTonesSelected = selectedConfidenceTones.size === 3;
     const fromT = dateFrom ? new Date(dateFrom).getTime() : -Infinity;
     const toT = dateTo ? new Date(dateTo).getTime() + 86400000 : Infinity;
     return records.filter((r) => {
       if (quickStatus !== "all" && r.status !== quickStatus) return false;
       if (r.createdAt < fromT || r.createdAt > toT) return false;
       if (r.status !== "recognizing" && r.status !== "failed" && r.status !== "queued" && r.confidence != null) {
-        if (r.confidence < confRange[0] || r.confidence > confRange[1]) return false;
+        const tone = confidenceTone(r.confidence / 100);
+        if (!selectedConfidenceTones.has(tone)) return false;
       } else {
-        if (confRange[0] > 0 || confRange[1] < 100) return false;
+        if (!allTonesSelected) return false;
       }
+      if (aiVerdictFilter !== "all" && r.aiVerdict !== aiVerdictFilter) return false;
       if (searchQuery.trim()) {
         const kaMatch = fuzzyMatch(searchQuery, r.id);
         const shippingMatch = r.shippingSlipNo ? fuzzyMatch(searchQuery, r.shippingSlipNo) : false;
@@ -1189,10 +1192,13 @@ function Workbench() {
       }
       return true;
     });
-  }, [records, dateFrom, dateTo, confRange, quickStatus, searchQuery]);
+  }, [records, dateFrom, dateTo, selectedConfidenceTones, aiVerdictFilter, quickStatus, searchQuery]);
 
-
-  const filterActive = !!dateFrom || !!dateTo || confRange[0] > 0 || confRange[1] < 100;
+  const filterActive =
+    !!dateFrom ||
+    !!dateTo ||
+    selectedConfidenceTones.size !== 3 ||
+    aiVerdictFilter !== "all";
 
 
   // 手动模拟：从用户系统同步若干条新的验收任务，先进入排队，由调度器按创建时间升序识别
