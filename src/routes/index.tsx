@@ -2271,20 +2271,11 @@ function ChunkEditor({
   const meta = LABEL_META[chunk.label];
   const Icon = meta.icon;
 
-  const accentCls = needsReview
-    ? "border-l-[color:var(--warning)]"
-    : tone === "low"
-      ? "border-l-[color:var(--warning)]/60"
-      : tone === "mid"
-        ? "border-l-primary/50"
-        : "border-l-transparent";
-
   return (
     <div
       onClick={onFocus}
       className={cn(
-        "flex items-start gap-2 border-l-2 py-1.5 pl-2 pr-1 transition-colors",
-        accentCls,
+        "flex items-start gap-2 py-1.5 pr-1 transition-colors",
         active && "bg-primary/5",
       )}
     >
