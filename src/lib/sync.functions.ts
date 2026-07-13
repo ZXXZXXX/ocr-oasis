@@ -1,9 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-// 从下面框出来的行开始同步：CD202607139758900，时间 2026/7/13 17:51:33 (Asia/Shanghai)
-const HIGHLIGHTED_ROW_CURSOR = new Date("2026-07-13T17:51:33+08:00").getTime();
-
 export const pollExternalTasks = createServerFn({ method: "POST" }).inputValidator(
   (data) =>
     z
@@ -12,6 +9,9 @@ export const pollExternalTasks = createServerFn({ method: "POST" }).inputValidat
       })
       .parse(data),
 ).handler(async ({ data }) => {
+  // 从下面框出来的行开始同步：CD202607139758900，时间 2026/7/13 17:51:33 (Asia/Shanghai)
+  const HIGHLIGHTED_ROW_CURSOR = new Date("2026-07-13T17:51:33+08:00").getTime();
+
   // TODO: 后续接入第三方系统 API，替换此处模拟数据
   const cursor = data.cursor ?? HIGHLIGHTED_ROW_CURSOR;
 
