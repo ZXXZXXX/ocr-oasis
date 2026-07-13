@@ -1217,7 +1217,7 @@ function Workbench() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                disabled={r.status !== "done"}
+                                disabled={r.status === "recognizing" || r.status === "failed"}
                                 onClick={() => setDetailId(r.id)}
                               >
                                 <Eye className="size-4" />
@@ -1230,7 +1230,7 @@ function Workbench() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                disabled={r.status !== "done"}
+                                disabled={r.status === "recognizing" || r.status === "failed"}
                                 onClick={() => downloadJson(r)}
                               >
                                 <Download className="size-4" />
