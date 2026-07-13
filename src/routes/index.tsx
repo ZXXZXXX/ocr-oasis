@@ -2236,6 +2236,11 @@ function DocPanel({
                 </span>
               </button>
             )}
+            {shippingImages.length === 0 && (
+              <span className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground">
+                <ScrollText className="size-3.5" /> 无出货传票
+              </span>
+            )}
           </div>
         </div>
 
