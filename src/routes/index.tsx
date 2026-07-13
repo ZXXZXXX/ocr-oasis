@@ -971,7 +971,100 @@ function seedRecords(): OcrRecord[] {
     shippingSlipNo: "1383RY202604220013",
   };
 
-  return [realRecord, ...records];
+  // 三个只有送货单、无出货传票的真实照片任务
+  type NoSlipSeed = {
+    key: string;
+    asset: { url: string };
+    width: number;
+    height: number;
+    chunks: () => Chunk[];
+    minutesAgo: number;
+    driver: string;
+    plateNo: string;
+    aiVerdict: AiVerdict;
+    signatureStatus: SignatureStatus;
+    idSeed: number;
+  };
+  const noSlipSeeds: NoSlipSeed[] = [
+    {
+      key: "lingshi",
+      asset: receiptLingshiAsset,
+      width: 1098,
+      height: 609,
+      chunks: mockLingshiChunks,
+      minutesAgo: 22,
+      driver: "麦吾兰·塞麦提",
+      plateNo: "新A9JU80",
+      aiVerdict: "pass",
+      signatureStatus: "perfect",
+      idSeed: 3_180_034,
+    },
+    {
+      key: "kualu-dg",
+      asset: receiptKualuDgAsset,
+      width: 839,
+      height: 1182,
+      chunks: mockKualuDgChunks,
+      minutesAgo: 68,
+      driver: "何钦扩",
+      plateNo: "粤S·47188",
+      aiVerdict: "pass",
+      signatureStatus: "partial",
+      idSeed: 3_260_287,
+    },
+    {
+      key: "kualu-tj",
+      asset: receiptKualuTjAsset,
+      width: 877,
+      height: 1174,
+      chunks: mockKualuTjChunks,
+      minutesAgo: 150,
+      driver: "姜金凤",
+      plateNo: "津B·22838",
+      aiVerdict: "fail",
+      signatureStatus: "partial",
+      idSeed: 3_260_522,
+    },
+  ];
+  const noSlipRecords: OcrRecord[] = noSlipSeeds.map((s) => {
+    const createdAt = now - s.minutesAgo * 60_000;
+    const img: UploadedImage = {
+      id: `img-${s.key}-delivery`,
+      name: `${s.key}_delivery.png`,
+      url: s.asset.url,
+      docType: "delivery_note",
+      width: s.width,
+      height: s.height,
+    };
+    const results: Partial<Record<DocType, DocPage[]>> = {
+      delivery_note: [
+        {
+          imageId: img.id,
+          sourceImage: img.name,
+          pageBox: [0, 0, img.width, img.height],
+          chunks: s.chunks(),
+        },
+      ],
+    };
+    const pages = Object.values(results).flat() as DocPage[];
+    return {
+      id: makeKaOrderId(createdAt, s.idSeed),
+      createdAt,
+      status: "pending_review",
+      progress: 100,
+      confidence: averageConfidence(pages),
+      deliveryCount: 1,
+      shippingCount: 0,
+      images: [img],
+      results,
+      driver: s.driver,
+      plateNo: s.plateNo,
+      signatureStatus: s.signatureStatus,
+      aiVerdict: s.aiVerdict,
+    };
+  });
+
+  return [realRecord, ...noSlipRecords, ...records];
 }
 
 
