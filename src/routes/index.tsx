@@ -1560,6 +1560,7 @@ function Workbench() {
             {detailRecord && detailRecord.results && (
               <DetailView
                 record={detailRecord}
+                initialEditing={detailEditing}
                 onChange={(docType, pageIdx, chunkId, val) =>
                   updateChunk(detailRecord.id, docType, pageIdx, chunkId, val)
                 }
