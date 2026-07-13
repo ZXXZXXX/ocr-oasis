@@ -2389,39 +2389,40 @@ function ImageWithBoxes({
               draggable={false}
               className="absolute inset-0 h-full w-full object-contain pointer-events-none"
             />
-            <div className="absolute inset-0">
-              {page.chunks.map((c) => {
-                const [x1, y1, x2, y2] = c.bbox;
-                const tone = confidenceTone(c.confidence);
-                const isActive = c.id === activeChunkId;
-                const color = confidenceBorderClasses(tone);
-                return (
-                  <button
-                    type="button"
-                    key={c.id}
-                    data-bbox
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (!autoFocus) return;
-                      onSelect(c.id);
-                    }}
-                    className={cn(
-                      "absolute cursor-pointer border transition-all hover:z-10 hover:shadow-md",
-                      color,
-                      isActive && "z-20 ring-2 ring-primary ring-offset-1",
-                    )}
-                    style={{
-                      left: `${(x1 / w) * 100}%`,
-                      top: `${(y1 / h) * 100}%`,
-                      width: `${((x2 - x1) / w) * 100}%`,
-                      height: `${((y2 - y1) / h) * 100}%`,
-                    }}
-                    title={`${c.label}${c.confidence != null ? ` · ${Math.round(c.confidence * 100)}%` : ""}`}
-                  />
-                );
-              })}
-            </div>
+            {autoFocus && (
+              <div className="absolute inset-0">
+                {page.chunks.map((c) => {
+                  const [x1, y1, x2, y2] = c.bbox;
+                  const tone = confidenceTone(c.confidence);
+                  const isActive = c.id === activeChunkId;
+                  const color = confidenceBorderClasses(tone);
+                  return (
+                    <button
+                      type="button"
+                      key={c.id}
+                      data-bbox
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelect(c.id);
+                      }}
+                      className={cn(
+                        "absolute cursor-pointer border transition-all hover:z-10 hover:shadow-md",
+                        color,
+                        isActive && "z-20 ring-2 ring-primary ring-offset-1",
+                      )}
+                      style={{
+                        left: `${(x1 / w) * 100}%`,
+                        top: `${(y1 / h) * 100}%`,
+                        width: `${((x2 - x1) / w) * 100}%`,
+                        height: `${((y2 - y1) / h) * 100}%`,
+                      }}
+                      title={`${c.label}${c.confidence != null ? ` · ${Math.round(c.confidence * 100)}%` : ""}`}
+                    />
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>
