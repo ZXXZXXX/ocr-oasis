@@ -1130,7 +1130,7 @@ function Workbench() {
             const result = fabricateResult(r.images);
             // AI 结论：置信度 >= 80 通过，否则不通过
             const verdict: AiVerdict = result.confidence >= 80 ? "pass" : "fail";
-            return {
+            const updated: OcrRecord = {
               ...r,
               progress: 100,
               status: "pending_review",
@@ -1138,6 +1138,7 @@ function Workbench() {
               results: result.results,
               aiVerdict: verdict,
             };
+            return { ...updated, aiRejectionReason: makeAiRejectionReason(updated) };
           }
           return { ...r, progress: next };
         }),
