@@ -1728,6 +1728,31 @@ function DocPanel({
   const scrollRef = useRef<HTMLDivElement>(null);
   const chunkRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
+  // Resizable split: left (image) width percentage, clamped to >= 50%.
+  const [leftPct, setLeftPct] = useState(50);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const resizingRef = useRef(false);
+
+  useEffect(() => {
+    const handleMove = (e: MouseEvent) => {
+      if (!resizingRef.current || !containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const pct = ((e.clientX - rect.left) / rect.width) * 100;
+      setLeftPct(Math.min(85, Math.max(50, pct)));
+    };
+    const handleUp = () => {
+      resizingRef.current = false;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseup", handleUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseup", handleUp);
+    };
+  }, []);
+
   useEffect(() => {
     if (!activeChunkId) return;
     const el = chunkRefs.current[activeChunkId];
