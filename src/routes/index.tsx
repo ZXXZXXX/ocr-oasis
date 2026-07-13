@@ -975,29 +975,6 @@ function Workbench() {
 
   const filterActive = !!dateFrom || !!dateTo || confRange[0] > 0 || confRange[1] < 100;
 
-  const selectableIds = filteredRecords
-
-    .filter((r) => r.status !== "recognizing" && r.status !== "queued" && r.status !== "failed")
-    .map((r) => r.id);
-  const allSelected = selectableIds.length > 0 && selectableIds.every((id) => selected.has(id));
-  const someSelected = selected.size > 0 && !allSelected;
-
-  function toggleSelect(id: string) {
-    setSelected((prev) => {
-      const n = new Set(prev);
-      if (n.has(id)) n.delete(id);
-      else n.add(id);
-      return n;
-    });
-  }
-  function toggleSelectAll() {
-    setSelected((prev) => {
-      if (allSelected) return new Set();
-      const n = new Set(prev);
-      selectableIds.forEach((id) => n.add(id));
-      return n;
-    });
-  }
 
   // 手动模拟：从用户系统同步若干条新的验收任务，先进入排队，由调度器按创建时间升序识别
   const syncCounter = useRef(0);
