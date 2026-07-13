@@ -2493,11 +2493,7 @@ function ChunkEditor({
               <span
                 className={cn(
                   "tabular-nums",
-                  tone === "low"
-                    ? "text-red-500"
-                    : tone === "mid"
-                      ? "text-orange-500"
-                      : "text-[color:var(--success)]",
+                  confidenceTextClasses(tone),
                 )}
               >
                 置信度 {Math.round(chunk.confidence * 100)}%{needsReview && " · 待人工核验"}
