@@ -2347,12 +2347,7 @@ function ImageWithBoxes({
                 const [x1, y1, x2, y2] = c.bbox;
                 const tone = confidenceTone(c.confidence);
                 const isActive = c.id === activeChunkId;
-                const color =
-                  tone === "low"
-                    ? "border-red-500 bg-red-500/15"
-                    : tone === "mid"
-                      ? "border-orange-500 bg-orange-500/10"
-                      : "border-[color:var(--success)]/70 bg-[color:var(--success)]/5";
+                const color = confidenceBorderClasses(tone);
                 return (
                   <button
                     type="button"
