@@ -1590,99 +1590,17 @@ function DetailView({
         </div>
       </SheetHeader>
 
-      <Tabs
-        value={activeTab}
-        onValueChange={(v) => setActiveTab(v as TabValue)}
-        className="flex flex-1 flex-col overflow-hidden"
-      >
-        <div className="flex items-center justify-between gap-3 border-b border-border bg-muted/20 px-6 py-2">
-          <TabsList>
-            {availableDocTypes.map((dt) => {
-              const pages = record.results![dt]!;
-              return (
-                <TabsTrigger key={dt} value={dt} className="gap-2">
-                  {dt === "delivery_note" ? (
-                    <Truck className="size-3.5" />
-                  ) : (
-                    <ScrollText className="size-3.5" />
-                  )}
-                  {DOC_LABEL[dt]}
-                  <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] tabular-nums text-muted-foreground">
-                    {pages.length}
-                  </span>
-                </TabsTrigger>
-              );
-            })}
-            {shippingRefImgs.length > 0 && (
-              <TabsTrigger value="shipping_ref" className="gap-2">
-                <ScrollText className="size-3.5" />
-                出货传票（参考）
-                <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] tabular-nums text-muted-foreground">
-                  {shippingRefImgs.length}
-                </span>
-              </TabsTrigger>
-            )}
-          </TabsList>
-          <div className="flex items-center gap-2">
-            <Label htmlFor="auto-focus-switch" className="text-xs text-muted-foreground cursor-pointer">
-              自动聚焦
-            </Label>
-            <Switch
-              id="auto-focus-switch"
-              checked={autoFocus}
-              onCheckedChange={setAutoFocus}
-            />
-          </div>
-        </div>
+      <DocPanel
+        deliveryPages={deliveryPages}
+        deliveryImages={deliveryImages}
+        shippingImages={shippingImages}
+        editing={editing}
+        autoFocus={autoFocus}
+        setAutoFocus={setAutoFocus}
+        onChange={(pageIdx, chunkId, v) => onChange("delivery_note", pageIdx, chunkId, v)}
+        onConfirm={(pageIdx, chunkId) => onConfirm("delivery_note", pageIdx, chunkId)}
+      />
 
-
-        {availableDocTypes.map((dt) => {
-          const pages = record.results![dt]!;
-          const imgs = record.images.filter((i) => i.docType === dt);
-          return (
-            <TabsContent
-              key={dt}
-              value={dt}
-              className="flex-1 overflow-hidden data-[state=inactive]:hidden"
-            >
-              <DocPanel
-                docType={dt}
-                pages={pages}
-                images={imgs}
-                editing={editing}
-                autoFocus={autoFocus}
-                onChange={(pageIdx, chunkId, v) => onChange(dt, pageIdx, chunkId, v)}
-                onConfirm={(pageIdx, chunkId) => onConfirm(dt, pageIdx, chunkId)}
-              />
-            </TabsContent>
-          );
-        })}
-
-        {shippingRefImgs.length > 0 && (
-          <TabsContent
-            value="shipping_ref"
-            className="flex-1 overflow-auto px-6 pb-6 pt-4 data-[state=inactive]:hidden"
-          >
-            <div className="mb-3 text-xs text-muted-foreground">
-              出货传票仅作参考图查看，不参与 OCR 识别与结构化提取。
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {shippingRefImgs.map((img) => (
-                <div
-                  key={img.id}
-                  className="overflow-hidden rounded-lg border border-border bg-muted/20"
-                >
-                  <img src={img.url} alt={img.name} className="h-auto w-full object-contain" />
-                  <div className="border-t border-border bg-primary/10 px-3 py-1.5 text-xs text-foreground">
-                    {img.name}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </TabsContent>
-        )}
-
-      </Tabs>
 
 
       {editing && (
