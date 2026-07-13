@@ -35,6 +35,9 @@ import {
 
 import receiptRtmartAsset from "@/assets/receipt_rtmart.jpg.asset.json";
 import receiptJdAsset from "@/assets/receipt_jd.jpg.asset.json";
+import receiptLingshiAsset from "@/assets/receipt_lingshi.png.asset.json";
+import receiptKualuDgAsset from "@/assets/receipt_kualu_dg.png.asset.json";
+import receiptKualuTjAsset from "@/assets/receipt_kualu_tj.png.asset.json";
 
 
 
