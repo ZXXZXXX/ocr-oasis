@@ -1043,10 +1043,8 @@ function Workbench() {
             <div className="flex items-center justify-between border-b border-border px-5 py-3">
               <div className="flex items-center gap-3 text-sm">
                 <span className="font-medium">验收任务</span>
-                <span className="text-xs text-muted-foreground">
-                  共 {filteredRecords.length}&nbsp;项
-                  {(filterActive || quickStatus !== "all" || searchQuery.trim()) && ` / 全部 ${records.length}`}
-                </span>
+                <span className="text-xs text-muted-foreground">共 {filteredRecords.length}&nbsp;项</span>
+
               </div>
               <div className="mx-4 flex-1 max-w-md">
                 <div className="relative">
