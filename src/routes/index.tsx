@@ -1205,19 +1205,6 @@ function Workbench() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                disabled={inProgress || r.status === "failed"}
-                                onClick={() => downloadJson(r)}
-                              >
-                                <Download className="size-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>下载 JSON</TooltipContent>
-                          </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
                                 className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                                 onClick={() => setDeleteId(r.id)}
                               >
