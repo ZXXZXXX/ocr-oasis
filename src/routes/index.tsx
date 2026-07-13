@@ -22,7 +22,9 @@ import {
   Heading,
   Table as TableIcon,
   Image as ImageIcon,
+  MoreHorizontal,
 } from "lucide-react";
+
 
 import { Button } from "@/components/ui/button";
 import {
