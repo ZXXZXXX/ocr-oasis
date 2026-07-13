@@ -1663,16 +1663,19 @@ function VerdictBadge({ value }: { value: AiVerdict }) {
 }
 
 function ConfidenceBadge({ score }: { score: number }) {
-  const tone = confidenceBadgeClasses(confidenceTone(score / 100));
+  const tone = confidenceTone(score / 100);
+  const Icon = tone === "high" ? CheckCircle2 : AlertTriangle;
   return (
-    <span
+    <Badge
+      variant="status"
       className={cn(
-        "inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium tabular-nums",
-        tone,
+        "gap-1 border-0 font-normal tabular-nums",
+        confidenceBadgeClasses(tone),
       )}
     >
+      <Icon className="size-3" />
       {score}
-    </span>
+    </Badge>
   );
 }
 
