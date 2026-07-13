@@ -76,6 +76,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
@@ -1140,6 +1147,12 @@ function Workbench() {
     setRecords((prev) => prev.map((r) => (r.id === recordId ? { ...r, results } : r)));
   }
 
+  function updateSignatureStatus(recordId: string, signatureStatus: SignatureStatus) {
+    setRecords((prev) =>
+      prev.map((r) => (r.id === recordId ? { ...r, signatureStatus } : r)),
+    );
+  }
+
 
 
 
@@ -1568,6 +1581,7 @@ function Workbench() {
                   confirmChunk(detailRecord.id, docType, pageIdx, chunkId)
                 }
                 onReplaceResults={(results) => replaceResults(detailRecord.id, results)}
+                onSignatureStatusChange={(value) => updateSignatureStatus(detailRecord.id, value)}
                 onSubmit={(verdict) => {
                   submitVerification(detailRecord.id, verdict);
                   setDetailId(null);
@@ -1694,6 +1708,7 @@ function DetailView({
   onChange,
   onConfirm,
   onReplaceResults,
+  onSignatureStatusChange,
   onSubmit,
 }: {
   record: OcrRecord;
@@ -1701,6 +1716,7 @@ function DetailView({
   onChange: (docType: DocType, pageIdx: number, chunkId: string, value: string) => void;
   onConfirm: (docType: DocType, pageIdx: number, chunkId: string) => void;
   onReplaceResults: (results: NonNullable<OcrRecord["results"]>) => void;
+  onSignatureStatusChange: (value: SignatureStatus) => void;
   onSubmit: (verdict?: AiVerdict) => void;
 }) {
 
@@ -1774,7 +1790,22 @@ function DetailView({
             <SheetTitle className="flex flex-wrap items-center gap-2">
               任务详情
               <StatusBadge status={record.status} pending={pending} />
-              <SignatureBadge value={record.signatureStatus} />
+              {editing ? (
+                <Select
+                  value={record.signatureStatus}
+                  onValueChange={(v) => onSignatureStatusChange(v as SignatureStatus)}
+                >
+                  <SelectTrigger className="h-7 w-28 px-2 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="perfect">{SIGNATURE_LABEL.perfect}</SelectItem>
+                    <SelectItem value="partial">{SIGNATURE_LABEL.partial}</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <SignatureBadge value={record.signatureStatus} />
+              )}
               {editing && (
                 <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
                   <Pencil className="size-3" /> 编辑中
