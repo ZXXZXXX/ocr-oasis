@@ -879,6 +879,7 @@ function Workbench() {
   const [progressMinimized, setProgressMinimized] = useState(false);
   const [progressDismissed, setProgressDismissed] = useState(true);
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [detailEditing, setDetailEditing] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   // Filters
@@ -1420,7 +1421,10 @@ function Workbench() {
                               variant="ghost"
                               size="sm"
                               className="text-sm font-semibold text-primary hover:bg-primary/10 hover:text-primary"
-                              onClick={() => setDetailId(r.id)}
+                              onClick={() => {
+                                setDetailId(r.id);
+                                setDetailEditing(true);
+                              }}
                             >
                               审核
                             </Button>
@@ -1431,7 +1435,10 @@ function Workbench() {
                             size="sm"
                             className="text-sm font-semibold"
                             disabled={inProgress || r.status === "failed"}
-                            onClick={() => setDetailId(r.id)}
+                            onClick={() => {
+                              setDetailId(r.id);
+                              setDetailEditing(false);
+                            }}
                           >
                             查看
                           </Button>
@@ -1545,7 +1552,7 @@ function Workbench() {
           </div>
         )}
 
-        <Sheet open={!!detailRecord} onOpenChange={(o) => !o && setDetailId(null)}>
+        <Sheet open={!!detailRecord} onOpenChange={(o) => { if (!o) { setDetailId(null); setDetailEditing(false); }}}>
           <SheetContent
             side="right"
             className="flex w-[75vw] flex-col gap-0 p-0 sm:max-w-[75vw] [&>button]:hidden"
@@ -1553,6 +1560,7 @@ function Workbench() {
             {detailRecord && detailRecord.results && (
               <DetailView
                 record={detailRecord}
+                initialEditing={detailEditing}
                 onChange={(docType, pageIdx, chunkId, val) =>
                   updateChunk(detailRecord.id, docType, pageIdx, chunkId, val)
                 }
@@ -1682,12 +1690,14 @@ function ConfidenceBadge({ score }: { score: number }) {
 // ---------- Detail view ----------
 function DetailView({
   record,
+  initialEditing = false,
   onChange,
   onConfirm,
   onReplaceResults,
   onSubmit,
 }: {
   record: OcrRecord;
+  initialEditing?: boolean;
   onChange: (docType: DocType, pageIdx: number, chunkId: string, value: string) => void;
   onConfirm: (docType: DocType, pageIdx: number, chunkId: string) => void;
   onReplaceResults: (results: NonNullable<OcrRecord["results"]>) => void;
@@ -1701,7 +1711,7 @@ function DetailView({
   const shippingImages = record.images.filter((i) => i.docType === "shipping_slip");
   const [autoFocus, setAutoFocus] = useState(true);
 
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(initialEditing);
   const [lastEditedAt, setLastEditedAt] = useState<number | null>(null);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   // snapshot taken on entering edit mode — used to cancel
@@ -1716,6 +1726,9 @@ function DetailView({
     setLastEditedAt(null);
     setEditing(true);
   }
+  useEffect(() => {
+    if (initialEditing) startEdit();
+  }, [initialEditing]);
   function discardAndClose() {
     if (snapshotRef.current) onReplaceResults(snapshotRef.current);
     snapshotRef.current = null;
