@@ -2522,11 +2522,10 @@ function ChunkEditor({
             {chunk.confidence != null ? (
               <span
                 className={cn(
-                  "tabular-nums",
                   confidenceTextClasses(tone),
                 )}
               >
-                置信度 {Math.round(chunk.confidence * 100)}%{needsReview && " · 待人工核验"}
+                置信度 {CONFIDENCE_LABEL[tone]}{needsReview && " · 待人工核验"}
               </span>
             ) : (
               <span className="text-muted-foreground">未评分</span>
