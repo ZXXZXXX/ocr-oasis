@@ -896,7 +896,7 @@ function Workbench() {
   const [confRange, setConfRange] = useState<[number, number]>([0, 100]);
   const [quickStatus, setQuickStatus] = useState<"all" | "pending_review">("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  
 
 
   const activeRecords = useMemo(
