@@ -2020,6 +2020,7 @@ function ImageWithBoxes({
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={(e) => {
                       e.stopPropagation();
+                      if (!autoFocus) return;
                       onSelect(c.id);
                     }}
                     className={cn(
