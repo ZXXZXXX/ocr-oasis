@@ -1398,12 +1398,11 @@ function Workbench() {
                 }
                 onReplaceResults={(results) => replaceResults(detailRecord.id, results)}
                 onSubmit={() => {
-
                   submitVerification(detailRecord.id);
                   setDetailId(null);
                 }}
-                buildExport={buildExport}
               />
+
             )}
           </SheetContent>
         </Sheet>
