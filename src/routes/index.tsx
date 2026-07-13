@@ -927,33 +927,6 @@ function Workbench() {
     toast.success("JSON 已下载");
   }
 
-  function downloadBatch() {
-    const targets = records.filter(
-      (r) => selected.has(r.id) && r.status !== "recognizing" && r.status !== "queued" && r.status !== "failed",
-    );
-    if (targets.length === 0) return;
-    const stillPending = targets.filter((r) => pendingLowConf(r) > 0);
-    if (stillPending.length > 0) {
-      toast.error(`其中 ${stillPending.length} 条记录仍有低置信度分块未核验，无法批量下载`);
-      return;
-    }
-    const payload = {
-      exportedAt: new Date().toISOString(),
-      exportedBy: CURRENT_USER,
-      count: targets.length,
-      tasks: targets.map(buildExport),
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `ocr-batch-${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success(`已批量下载 ${targets.length} 条识别结果`);
-  }
 
   function deleteRecord(id: string) {
     setRecords((p) => p.filter((r) => r.id !== id));
@@ -1114,16 +1087,6 @@ function Workbench() {
                     </div>
                   </PopoverContent>
                 </Popover>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1"
-                  disabled={selected.size === 0}
-                  onClick={downloadBatch}
-                >
-                  <Download className="size-3.5" />
-                  批量下载 JSON
-                </Button>
               </div>
             </div>
 
