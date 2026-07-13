@@ -1705,6 +1705,9 @@ function DocPanel({
 }) {
   const [pageIdx, setPageIdx] = useState(0);
   const [activeChunkId, setActiveChunkId] = useState<string | null>(null);
+  // Per-image zoom/pan/rotate state — persists while the detail sheet is open
+  // (this component unmounts on sheet close, resetting everything).
+  const [viewMap, setViewMap] = useState<Record<string, ImgView>>({});
   const page = pages[pageIdx];
   const image = images.find((i) => i.id === page?.imageId) ?? images[pageIdx];
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -1747,13 +1750,15 @@ function DocPanel({
             ))}
           </div>
         )}
-        <div className="flex-1 flex items-center justify-center overflow-auto p-4">
+        <div className="flex-1 flex items-center justify-center overflow-hidden p-4">
           {image && page ? (
             <ImageWithBoxes
               image={image}
               page={page}
               activeChunkId={activeChunkId}
               onSelect={setActiveChunkId}
+              viewMap={viewMap}
+              setViewMap={setViewMap}
             />
           ) : (
             <div className="rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
