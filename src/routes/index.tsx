@@ -1205,9 +1205,6 @@ function Workbench() {
               </div>
               <div className="flex items-center gap-2">
 
-                {selected.size > 0 && (
-                  <span className="mr-1 text-xs text-muted-foreground">已选 {selected.size}</span>
-                )}
                 <div className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-1.5">
                   <span className="text-sm font-medium">仅查看未审核</span>
                   <Switch
