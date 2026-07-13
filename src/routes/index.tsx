@@ -1552,7 +1552,7 @@ function Workbench() {
           </div>
         )}
 
-        <Sheet open={!!detailRecord} onOpenChange={(o) => !o && setDetailId(null)}>
+        <Sheet open={!!detailRecord} onOpenChange={(o) => { if (!o) { setDetailId(null); setDetailEditing(false); }}}>
           <SheetContent
             side="right"
             className="flex w-[75vw] flex-col gap-0 p-0 sm:max-w-[75vw] [&>button]:hidden"
