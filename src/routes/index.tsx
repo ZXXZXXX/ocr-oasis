@@ -857,13 +857,14 @@ function Workbench() {
 
 
   // 提交人工验收结论 → 状态置为已验收，模拟自动回传用户系统
-  function submitVerification(id: string) {
+  function submitVerification(id: string, verdict?: AiVerdict) {
     const target = records.find((r) => r.id === id);
     if (!target) return;
     if (target.status !== "pending_review") {
       toast.error("该任务当前状态无法提交验收");
       return;
     }
+    const finalVerdict: AiVerdict = verdict ?? target.aiVerdict ?? "pass";
     setRecords((prev) =>
       prev.map((r) =>
         r.id === id
@@ -872,6 +873,7 @@ function Workbench() {
               status: "verified",
               verifiedAt: Date.now(),
               verifiedBy: CURRENT_USER,
+              aiVerdict: finalVerdict,
             }
           : r,
       ),
@@ -882,9 +884,11 @@ function Workbench() {
       verifiedBy: CURRENT_USER,
       verifiedAt: new Date().toISOString(),
       signatureStatus: target.signatureStatus,
-      aiVerdict: target.aiVerdict,
+      aiVerdict: finalVerdict,
     });
-    toast.success("验收结论已提交，结果已回传至用户系统");
+    toast.success(
+      finalVerdict === "pass" ? "已通过，结果已回传至用户系统" : "已标记不通过，结果已回传至用户系统",
+    );
   }
 
   function mutateChunk(
