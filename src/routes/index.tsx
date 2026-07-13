@@ -1942,27 +1942,6 @@ function ImageWithBoxes({
             variant="ghost"
             size="icon"
             className="size-7"
-            onClick={() => rotateBy(-90)}
-            aria-label="逆时针旋转 90°"
-            title="逆时针旋转 90°"
-          >
-            <RotateCcw className="size-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7"
-            onClick={() => rotateBy(90)}
-            aria-label="顺时针旋转 90°"
-            title="顺时针旋转 90°"
-          >
-            <RotateCw className="size-3.5" />
-          </Button>
-          <span className="mx-1 h-4 w-px bg-border" />
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7"
             onClick={() => zoomBy(1 / 1.2)}
             aria-label="缩小"
             title="缩小"
