@@ -1938,16 +1938,30 @@ function ImageWithBoxes({
   activeChunkId,
   onSelect,
   autoFocus,
+  setAutoFocus,
+  showAutoFocus,
   viewMap,
   setViewMap,
+  navIndex,
+  navCount,
+  onPrev,
+  onNext,
+  navLabel,
 }: {
   image: UploadedImage;
   page: DocPage;
   activeChunkId: string | null;
   onSelect: (id: string | null) => void;
   autoFocus: boolean;
+  setAutoFocus?: (v: boolean) => void;
+  showAutoFocus?: boolean;
   viewMap: Record<string, ImgView>;
   setViewMap: React.Dispatch<React.SetStateAction<Record<string, ImgView>>>;
+  navIndex?: number;
+  navCount?: number;
+  onPrev?: () => void;
+  onNext?: () => void;
+  navLabel?: string;
 }) {
   const [w, h] = [page.pageBox[2] || image.width, page.pageBox[3] || image.height];
   const view = viewMap[image.id] ?? DEFAULT_IMG_VIEW;
