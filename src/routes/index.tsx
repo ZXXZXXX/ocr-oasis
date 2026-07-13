@@ -2573,28 +2573,78 @@ function EditableTableHtml({
   onChange: (v: string) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  // 仅在外部 html 与当前 DOM 不一致时同步，避免编辑中光标跳动
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    if (el.innerHTML !== html) el.innerHTML = html;
-    // 为每个 td 设置 title，hover 时通过原生气泡展示完整内容
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  const syncTitles = (el: HTMLElement) => {
     el.querySelectorAll("td").forEach((td) => {
       const text = (td.textContent || "").trim();
       if (text) td.setAttribute("title", text);
       else td.removeAttribute("title");
     });
+  };
+
+  // 根据表头文字自然宽度，为每列设置最小宽度（列名可完整展示），
+  // 单元格超出则省略号显示；容器变宽时按比例分配剩余空间。
+  const layoutTable = () => {
+    const el = ref.current;
+    const wrap = wrapRef.current;
+    if (!el || !wrap) return;
+    const table = el.querySelector("table") as HTMLTableElement | null;
+    if (!table) return;
+
+    // 先以自然布局测量列头需要的宽度
+    table.style.tableLayout = "auto";
+    table.style.width = "auto";
+    const oldCg = table.querySelector("colgroup[data-auto]");
+    if (oldCg) oldCg.remove();
+
+    const ths = Array.from(table.querySelectorAll("thead th")) as HTMLElement[];
+    if (ths.length === 0) return;
+    const widths = ths.map((th) => Math.ceil(th.getBoundingClientRect().width) + 2);
+
+    const cg = document.createElement("colgroup");
+    cg.setAttribute("data-auto", "");
+    widths.forEach((w) => {
+      const c = document.createElement("col");
+      c.style.width = `${w}px`;
+      cg.appendChild(c);
+    });
+    table.insertBefore(cg, table.firstChild);
+
+    const sum = widths.reduce((a, b) => a + b, 0);
+    // 容器内边距 p-2 = 16px 两侧
+    const available = Math.max(0, wrap.clientWidth - 16);
+    table.style.tableLayout = "fixed";
+    table.style.width = `${Math.max(sum, available)}px`;
+  };
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (el.innerHTML !== html) el.innerHTML = html;
+    syncTitles(el);
+    layoutTable();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [html]);
+
+  // 容器宽度变化时重新计算列宽
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    const ro = new ResizeObserver(() => layoutTable());
+    ro.observe(wrap);
+    return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div
+      ref={wrapRef}
       className={cn(
         "overflow-x-auto rounded border bg-background p-2 text-xs outline-none transition-colors",
-        // 表格宽度自适应容器；表头不换行，保证列宽至少能完整展示列名；
-        // 单元格内容超出宽度时省略号显示，完整内容通过 title 悬浮气泡展示
-        "[&_table]:w-full [&_table]:table-fixed",
+        // 单元格样式：超出宽度省略号 + title 悬浮气泡展示完整内容
         "[&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-1.5 [&_th]:py-1 [&_th]:whitespace-nowrap",
-        "[&_td]:border [&_td]:border-border [&_td]:px-1.5 [&_td]:py-1 [&_td]:max-w-0 [&_td]:overflow-hidden [&_td]:text-ellipsis [&_td]:whitespace-nowrap",
+        "[&_td]:border [&_td]:border-border [&_td]:px-1.5 [&_td]:py-1 [&_td]:overflow-hidden [&_td]:text-ellipsis [&_td]:whitespace-nowrap",
         readOnly
           ? "border-border"
           : mustEdit
@@ -2611,11 +2661,7 @@ function EditableTableHtml({
         spellCheck={false}
         onInput={(e) => {
           const el = e.currentTarget as HTMLDivElement;
-          el.querySelectorAll("td").forEach((td) => {
-            const text = (td.textContent || "").trim();
-            if (text) td.setAttribute("title", text);
-            else td.removeAttribute("title");
-          });
+          syncTitles(el);
           onChange(el.innerHTML);
         }}
       />
