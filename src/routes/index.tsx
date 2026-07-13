@@ -441,7 +441,104 @@ function mockShippingChunks(): Chunk[] {
   return raw.map((c) => ({ ...c, id: uid() }));
 }
 
-function fabricateResult(images: UploadedImage[]) {
+// 大润发 商品收货单 + 出货传票 叠拍 (1080x1920)
+function mockRtMartChunks(): Chunk[] {
+  const raw: Omit<Chunk, "id">[] = [
+    { bbox: [340, 500, 760, 570], label: "Section-Header", content: "<p>商品收货单</p>", confidence: 0.98 },
+    { bbox: [60, 580, 460, 618], label: "Text", content: "<p>列印时间: 2026/04/23 12:32:58</p>" },
+    { bbox: [60, 618, 460, 654], label: "Text", content: "<p>预约时间: 2026/04/23 08:00:00</p>" },
+    { bbox: [60, 654, 300, 686], label: "Text", content: "<p>厂编: 68480</p>" },
+    { bbox: [60, 686, 320, 720], label: "Text", content: "<p>收货码头: B28-1</p>" },
+    { bbox: [470, 580, 850, 618], label: "Text", content: "<p>采购单号: 999261071633</p>" },
+    { bbox: [470, 618, 900, 654], label: "Text", content: "<p>订单类型: B 采购越库</p>", confidence: 0.74 },
+    { bbox: [470, 654, 980, 690], label: "Text", content: "<p>厂商名称: 统一商贸(昆山)有限公司上海分公司</p>", confidence: 0.68 },
+    { bbox: [470, 690, 1000, 726], label: "Text", content: "<p>备注: 苏州高新区浒墅关镇青花路9号</p>", confidence: 0.62 },
+    { bbox: [860, 580, 1040, 618], label: "Text", content: "<p>收货代号: SH2604230006</p>" },
+    { bbox: [860, 618, 1040, 654], label: "Text", content: "<p>预约编号: YY1012604220006</p>" },
+    {
+      bbox: [40, 740, 1050, 890],
+      label: "Table",
+      content:
+        '<table border="1"><thead><tr><th>货号(序号)</th><th>条码</th><th>入数</th><th>外箱</th><th>规格</th><th>订购量</th><th>投单量</th><th>实收箱数</th><th>实收件数</th><th>拒收量</th></tr></thead><tbody><tr><td>709303-1</td><td>6925303773106</td><td>12</td><td>12</td><td>120克/桶</td><td>132(11)</td><td>132(11)</td><td>11</td><td>0</td><td>0</td></tr><tr><td>760111-1</td><td>6902447169378</td><td>12</td><td>12</td><td>103克/桶</td><td>144(12)</td><td>144(12)</td><td>12</td><td>0</td><td>0</td></tr></tbody></table>',
+      confidence: 0.71,
+    },
+    { bbox: [60, 900, 620, 940], label: "Text", content: "<p>品名: 统一来一桶老坛酸菜牛肉面(桶) 2026.04.16</p>", confidence: 0.66 },
+    { bbox: [60, 940, 620, 980], label: "Text", content: "<p>品名: 统一来一桶红烧牛肉面 2026.04.14</p>", confidence: 0.64 },
+    { bbox: [340, 1020, 760, 1080], label: "Section-Header", content: "<p>出货传票</p>", confidence: 0.96 },
+    { bbox: [60, 1090, 480, 1128], label: "Text", content: "<p>统一商贸(昆山)有限公司 2026-04-22 10:49:10</p>", confidence: 0.72 },
+    { bbox: [60, 1128, 460, 1160], label: "Text", content: "<p>客户订单号: 999261071633</p>" },
+    { bbox: [60, 1160, 460, 1194], label: "Text", content: "<p>客户代号: 1101</p>" },
+    { bbox: [60, 1194, 460, 1226], label: "Text", content: "<p>客户名称: 大润发(RT-Mart)</p>", confidence: 0.7 },
+    { bbox: [460, 1090, 900, 1160], label: "Text", content: "<p>传票号码: 1383RY202604220013</p>" },
+    { bbox: [460, 1160, 900, 1200], label: "Text", content: "<p>单据号: 83RY/0013/2020</p>" },
+    { bbox: [460, 1200, 900, 1240], label: "Text", content: "<p>业务员: 01618 姚云平</p>" },
+    {
+      bbox: [40, 1260, 1050, 1520],
+      label: "Table",
+      content:
+        '<table border="1"><thead><tr><th>序号</th><th>产品代号</th><th>品名称</th><th>规格</th><th>单位</th><th>数量</th><th>单价</th><th>金额</th></tr></thead><tbody><tr><td>1</td><td>4016432</td><td>来一桶老坛酸菜牛肉面桶潮源版</td><td>120g*12</td><td>箱</td><td>11</td><td>41.522</td><td>456.74</td></tr><tr><td>2</td><td>4016133</td><td>来一桶红烧牛肉面桶24升级版</td><td>103g*12</td><td>箱</td><td>12</td><td>41.522</td><td>498.26</td></tr></tbody></table>',
+      confidence: 0.69,
+    },
+    { bbox: [60, 1560, 400, 1600], label: "Text", content: "<p>折让金额: 148.31</p>" },
+    { bbox: [60, 1600, 400, 1640], label: "Text", content: "<p>未税金额: 845.13</p>" },
+    { bbox: [60, 1640, 400, 1680], label: "Text", content: "<p>应收金额: 806.69</p>" },
+    { bbox: [420, 1560, 720, 1640], label: "Text", content: "<p>经办人: 陈检容 04/22</p>", confidence: 0.65 },
+    { bbox: [420, 1640, 720, 1720], label: "Text", content: "<p>车号: 鲁DD8791</p>" },
+    { bbox: [720, 1560, 1000, 1720], label: "Text", content: "<p>司机: 王峰 04/22</p>" },
+    { bbox: [60, 1750, 500, 1800], label: "Text", content: "<p>收货工号: 99921603-田敏</p>" },
+    { bbox: [60, 1800, 400, 1840], label: "Text", content: "<p>PA确认人: 王峰</p>" },
+    { bbox: [60, 1840, 400, 1880], label: "Text", content: "<p>VA确认人: 99921603</p>" },
+    { bbox: [600, 1750, 1000, 1800], label: "Text", content: "<p>收货日期: 2026/04/23</p>" },
+    { bbox: [600, 1800, 1000, 1840], label: "Text", content: "<p>收货主管: 李翠</p>" },
+    { bbox: [600, 1840, 1000, 1890], label: "Text", content: '<p>送货人: &lt;img alt="Signature of driver"/&gt;</p>' },
+  ];
+  return raw.map((c) => ({ ...c, id: uid() }));
+}
+
+// 京东商城供应商送货验收单 (1423x1920)
+function mockJdReceiptChunks(): Chunk[] {
+  const raw: Omit<Chunk, "id">[] = [
+    { bbox: [340, 340, 1080, 410], label: "Section-Header", content: "<p>京东商城供应商送货验收单</p>", confidence: 0.99 },
+    { bbox: [1180, 300, 1400, 340], label: "Text", content: "<p>页次: 1/1</p>" },
+    { bbox: [130, 440, 500, 480], label: "Text", content: "<p>2742713727</p>" },
+    { bbox: [640, 470, 1200, 510], label: "Text", content: "<p>打印时间: 2026/5/23 11:47:21</p>" },
+    { bbox: [80, 550, 460, 590], label: "Text", content: "<p>预约单号: 26052340786</p>" },
+    { bbox: [460, 550, 750, 590], label: "Text", content: "<p>机构: 南宁京东达资</p>" },
+    { bbox: [750, 550, 1080, 590], label: "Text", content: "<p>供应商代码: gztyqy</p>" },
+    { bbox: [1080, 550, 1400, 590], label: "Text", content: "<p>验收人: 郭勇</p>" },
+    { bbox: [80, 590, 460, 630], label: "Text", content: "<p>PO编号: 2742713727</p>" },
+    { bbox: [460, 590, 750, 630], label: "Text", content: "<p>仓库: 1153号库</p>" },
+    { bbox: [750, 590, 1080, 640], label: "Text", content: "<p>供应商名称: 广州统一企业有限公司</p>", confidence: 0.78 },
+    { bbox: [1080, 590, 1400, 630], label: "Text", content: "<p>单据状态: 已完成</p>" },
+    { bbox: [80, 640, 460, 680], label: "Text", content: "<p>ASN编号: 2742713727</p>" },
+    { bbox: [460, 640, 750, 680], label: "Text", content: "<p>是否配货: 否</p>" },
+    { bbox: [750, 640, 1080, 680], label: "Text", content: "<p>货主: 京东商城</p>" },
+    { bbox: [1080, 640, 1400, 680], label: "Text", content: "<p>预约起始: 2026/5/23 9:30:00</p>" },
+    { bbox: [80, 680, 460, 720], label: "Text", content: "<p>单据类型: 一般采购</p>" },
+    { bbox: [1080, 680, 1400, 720], label: "Text", content: "<p>预约结束: 2026/5/23 10:00:00</p>" },
+    { bbox: [80, 720, 460, 760], label: "Text", content: "<p>备注:</p>" },
+    {
+      bbox: [60, 780, 1380, 950],
+      label: "Table",
+      content:
+        '<table border="1"><thead><tr><th>序号</th><th>商品编码</th><th>商品名称</th><th>预到量</th><th>验收量</th><th>批次验收量</th><th>拒收量</th><th>差异量</th><th>差异原因</th><th>贴码量</th></tr></thead><tbody><tr><td>1</td><td>967977</td><td>统一 绿茶 2L*6瓶 大包装 茶饮料 整箱装(新老包装随机发货)</td><td>16</td><td>16</td><td>0</td><td>0</td><td>0</td><td></td><td>0</td></tr><tr><td colspan="3">总计</td><td>16</td><td>16</td><td>0</td><td>0</td><td>0</td><td></td><td>0</td></tr></tbody></table>',
+      confidence: 0.73,
+    },
+    { bbox: [80, 1020, 500, 1070], label: "Text", content: '<p>送货人: &lt;img alt="Signature of driver"/&gt;</p>' },
+    { bbox: [80, 1080, 500, 1140], label: "Text", content: "<p>车牌号: 桂CV865</p>", confidence: 0.68 },
+    { bbox: [640, 1020, 1080, 1070], label: "Text", content: "<p>联系方式:</p>" },
+    { bbox: [640, 1080, 1080, 1130], label: "Text", content: "<p>送货日期:</p>" },
+    {
+      bbox: [140, 1620, 380, 1820],
+      label: "Image",
+      content: "<img alt=\"Red circular stamp of '南宁市中华路3号 收货专用章' with '郭勇'\"/>",
+    },
+    { bbox: [80, 1830, 340, 1870], label: "Text", content: "<p>签收人: 郭勇</p>" },
+    { bbox: [640, 1830, 1080, 1870], label: "Text", content: "<p>签收日期: 2026.5.23</p>" },
+  ];
+  return raw.map((c) => ({ ...c, id: uid() }));
+}
+
   const results: Partial<Record<DocType, DocPage[]>> = {};
   const deliveryImgs = images.filter((i) => i.docType === "delivery_note");
   const shippingImgs = images.filter((i) => i.docType === "shipping_slip");
