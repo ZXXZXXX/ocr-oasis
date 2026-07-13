@@ -745,47 +745,59 @@ function Workbench() {
     });
   }
 
-  // 手动模拟：从用户系统同步一条新的验收任务，进入 AI 识别中
+  // 手动模拟：从用户系统同步若干条新的验收任务，进入 AI 识别中
   const syncCounter = useRef(0);
   function syncNewTask() {
     syncCounter.current += 1;
     const seq = syncCounter.current;
-    const who = pickDriver(records.length + seq);
-    const signatureStatus: SignatureStatus = Math.random() < 0.6 ? "perfect" : "partial";
     const docTypes: DocType[] = ["delivery_note", "shipping_slip"];
-    const rid = uid();
-    const images: UploadedImage[] = docTypes.map((dt) => ({
-      id: `img-${rid}-${dt}`,
-      name: `${dt === "delivery_note" ? "delivery" : "shipping"}_${rid}.jpg`,
-      url: placeholderImg(
-        1920,
-        720,
-        dt === "delivery_note" ? "送货单（同步）" : "出货传票（参考）",
-      ),
-      docType: dt,
-      width: 1920,
-      height: 720,
-    }));
-    const nowTs = Date.now();
+    const count = Math.floor(Math.random() * 21); // 0 ~ 20
     const runningCount = records.filter((r) => r.status === "recognizing").length;
-    const startStatus: Status = runningCount < MAX_CONCURRENT_OCR ? "recognizing" : "queued";
-    const record: OcrRecord = {
-      id: makeKaOrderId(nowTs, Math.floor(Math.random() * 10_000_000)),
-      createdAt: nowTs,
-      status: startStatus,
-      progress: startStatus === "recognizing" ? 4 : 0,
-      deliveryCount: 1,
-      shippingCount: 1,
-      images,
-      driver: who.driver,
-      plateNo: who.plate,
-      signatureStatus,
-    };
-    setRecords((p) => [record, ...p]);
+    const slots = Math.max(0, MAX_CONCURRENT_OCR - runningCount);
+    const nowTs = Date.now();
+
+    const newRecords: OcrRecord[] = Array.from({ length: count }, (_, i) => {
+      const who = pickDriver(records.length + seq + i);
+      const signatureStatus: SignatureStatus = Math.random() < 0.6 ? "perfect" : "partial";
+      const rid = uid();
+      const images: UploadedImage[] = docTypes.map((dt) => ({
+        id: `img-${rid}-${dt}`,
+        name: `${dt === "delivery_note" ? "delivery" : "shipping"}_${rid}.jpg`,
+        url: placeholderImg(
+          1920,
+          720,
+          dt === "delivery_note" ? "送货单（同步）" : "出货传票（参考）",
+        ),
+        docType: dt,
+        width: 1920,
+        height: 720,
+      }));
+      const startStatus: Status = i < slots ? "recognizing" : "queued";
+      return {
+        id: makeKaOrderId(nowTs + i, Math.floor(Math.random() * 10_000_000)),
+        createdAt: nowTs + i,
+        status: startStatus,
+        progress: startStatus === "recognizing" ? 4 : 0,
+        deliveryCount: 1,
+        shippingCount: 1,
+        images,
+        driver: who.driver,
+        plateNo: who.plate,
+        signatureStatus,
+      };
+    });
+
+    if (newRecords.length === 0) {
+      toast.info("本次未同步到新任务");
+      return;
+    }
+
+    setRecords((p) => [...newRecords, ...p]);
     setProgressDismissed(false);
     setProgressMinimized(false);
-    toast.success(`已同步新任务 · ${who.driver} ${who.plate}`);
+    toast.success(`已同步 ${newRecords.length} 条新任务`);
   }
+
 
   // 提交人工验收结论 → 状态置为已验收，模拟自动回传用户系统
   function submitVerification(id: string) {
