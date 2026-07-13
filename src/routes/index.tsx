@@ -2261,6 +2261,13 @@ function ChunkEditor({
     chunk.label !== "Image" && chunk.confidence != null && chunk.confidence < LOW_CONF_THRESHOLD;
   const needsReview = isLow && !chunk.edited && !chunk.confirmed;
 
+  const dotColor =
+    tone === "low"
+      ? "bg-[color:var(--warning)]"
+      : tone === "mid"
+        ? "bg-primary"
+        : "bg-[color:var(--success)]";
+
   const meta = LABEL_META[chunk.label];
   const Icon = meta.icon;
 
