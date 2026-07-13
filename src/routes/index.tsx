@@ -569,7 +569,7 @@ function seedRecords(): OcrRecord[] {
     return {
       id: `seed-${idx}`,
       createdAt: now - s.minutesAgo * 60_000,
-      status: "done" as Status,
+      status: "pending_review" as Status,
       progress: 100,
       confidence: averageConfidence(allPages),
       deliveryCount: images.filter((i) => i.docType === "delivery_note").length,
@@ -618,7 +618,7 @@ function Workbench() {
             return {
               ...r,
               progress: 100,
-              status: "done",
+              status: "pending_review",
               confidence: result.confidence,
               results: result.results,
             };
@@ -635,7 +635,7 @@ function Workbench() {
     const toT = dateTo ? new Date(dateTo).getTime() + 86400000 : Infinity;
     return records.filter((r) => {
       if (r.createdAt < fromT || r.createdAt > toT) return false;
-      if (r.status === "done" && r.confidence != null) {
+      if (r.status !== "recognizing" && r.status !== "failed" && r.confidence != null) {
         if (r.confidence < confRange[0] || r.confidence > confRange[1])
           return false;
       } else {
@@ -649,7 +649,7 @@ function Workbench() {
     !!dateFrom || !!dateTo || confRange[0] > 0 || confRange[1] < 100;
 
   const selectableIds = filteredRecords
-    .filter((r) => r.status === "done")
+    .filter((r) => r.status !== "recognizing" && r.status !== "failed")
     .map((r) => r.id);
   const allSelected =
     selectableIds.length > 0 && selectableIds.every((id) => selected.has(id));
@@ -875,7 +875,7 @@ function Workbench() {
 
   function downloadBatch() {
     const targets = records.filter(
-      (r) => selected.has(r.id) && r.status === "done",
+      (r) => selected.has(r.id) && r.status !== "recognizing" && r.status !== "failed",
     );
     if (targets.length === 0) return;
     const stillPending = targets.filter((r) => pendingLowConf(r) > 0);
@@ -956,14 +956,14 @@ function Workbench() {
             />
             <StatCard
               label="待验收"
-              value={records.filter((r) => r.status === "done").length}
+              value={records.filter((r) => r.status !== "recognizing" && r.status !== "failed").length}
               accent="success"
             />
             <StatCard
               label="已验收"
               value={
                 records.filter(
-                  (r) => r.status === "done" && pendingLowConf(r) > 0,
+                  (r) => r.status !== "recognizing" && r.status !== "failed" && pendingLowConf(r) > 0,
                 ).length
               }
               accent="warning"
@@ -1154,8 +1154,8 @@ function Workbench() {
                   </TableRow>
                 )}
                 {filteredRecords.map((r) => {
-                  const canSelect = r.status === "done";
-                  const pending = r.status === "done" ? pendingLowConf(r) : 0;
+                  const canSelect = r.status !== "recognizing" && r.status !== "failed";
+                  const pending = r.status !== "recognizing" && r.status !== "failed" ? pendingLowConf(r) : 0;
                   return (
                     <TableRow key={r.id} className="hover:bg-muted/30">
                       <TableCell>
