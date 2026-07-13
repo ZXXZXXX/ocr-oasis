@@ -1663,12 +1663,7 @@ function VerdictBadge({ value }: { value: AiVerdict }) {
 }
 
 function ConfidenceBadge({ score }: { score: number }) {
-  const tone =
-    score >= 90
-      ? "text-[color:var(--success)] bg-[color:var(--success)]/10"
-      : score >= 80
-        ? "text-orange-500 bg-orange-500/10"
-        : "text-red-500 bg-red-500/10";
+  const tone = confidenceBadgeClasses(confidenceTone(score / 100));
   return (
     <span
       className={cn(
