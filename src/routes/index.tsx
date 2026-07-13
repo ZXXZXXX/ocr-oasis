@@ -756,15 +756,13 @@ function Workbench() {
     });
   }
 
-  // 手动模拟：从用户系统同步若干条新的验收任务，进入 AI 识别中
+  // 手动模拟：从用户系统同步若干条新的验收任务，先进入排队，由调度器按创建时间升序识别
   const syncCounter = useRef(0);
   function syncNewTask() {
     syncCounter.current += 1;
     const seq = syncCounter.current;
     const docTypes: DocType[] = ["delivery_note", "shipping_slip"];
     const count = Math.floor(Math.random() * 21); // 0 ~ 20
-    const runningCount = records.filter((r) => r.status === "recognizing").length;
-    const slots = Math.max(0, MAX_CONCURRENT_OCR - runningCount);
     const nowTs = Date.now();
 
     const newRecords: OcrRecord[] = Array.from({ length: count }, (_, i) => {
@@ -783,12 +781,11 @@ function Workbench() {
         width: 1920,
         height: 720,
       }));
-      const startStatus: Status = i < slots ? "recognizing" : "queued";
       return {
         id: makeKaOrderId(nowTs + i, Math.floor(Math.random() * 10_000_000)),
         createdAt: nowTs + i,
-        status: startStatus,
-        progress: startStatus === "recognizing" ? 4 : 0,
+        status: "queued" as Status,
+        progress: 0,
         deliveryCount: 1,
         shippingCount: 1,
         images,
@@ -797,6 +794,7 @@ function Workbench() {
         signatureStatus,
       };
     });
+
 
     if (newRecords.length === 0) {
       toast.info("本次未同步到新任务");
