@@ -1645,7 +1645,7 @@ function DetailView({
 
       <Tabs
         value={activeTab}
-        onValueChange={(v) => setActiveTab(v as DocType | "json")}
+        onValueChange={(v) => setActiveTab(v as TabValue)}
         className="flex flex-1 flex-col overflow-hidden"
       >
         <div className="border-b border-border bg-muted/20 px-6 py-2">
