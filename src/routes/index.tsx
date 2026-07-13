@@ -896,7 +896,7 @@ function Workbench() {
   const [confRange, setConfRange] = useState<[number, number]>([0, 100]);
   const [quickStatus, setQuickStatus] = useState<"all" | "pending_review">("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  
 
 
   const activeRecords = useMemo(
@@ -975,29 +975,6 @@ function Workbench() {
 
   const filterActive = !!dateFrom || !!dateTo || confRange[0] > 0 || confRange[1] < 100;
 
-  const selectableIds = filteredRecords
-
-    .filter((r) => r.status !== "recognizing" && r.status !== "queued" && r.status !== "failed")
-    .map((r) => r.id);
-  const allSelected = selectableIds.length > 0 && selectableIds.every((id) => selected.has(id));
-  const someSelected = selected.size > 0 && !allSelected;
-
-  function toggleSelect(id: string) {
-    setSelected((prev) => {
-      const n = new Set(prev);
-      if (n.has(id)) n.delete(id);
-      else n.add(id);
-      return n;
-    });
-  }
-  function toggleSelectAll() {
-    setSelected((prev) => {
-      if (allSelected) return new Set();
-      const n = new Set(prev);
-      selectableIds.forEach((id) => n.add(id));
-      return n;
-    });
-  }
 
   // 手动模拟：从用户系统同步若干条新的验收任务，先进入排队，由调度器按创建时间升序识别
   const syncCounter = useRef(0);
@@ -1158,11 +1135,6 @@ function Workbench() {
 
   function deleteRecord(id: string) {
     setRecords((p) => p.filter((r) => r.id !== id));
-    setSelected((prev) => {
-      const n = new Set(prev);
-      n.delete(id);
-      return n;
-    });
     if (detailId === id) setDetailId(null);
   }
 
@@ -1233,9 +1205,6 @@ function Workbench() {
               </div>
               <div className="flex items-center gap-2">
 
-                {selected.size > 0 && (
-                  <span className="mr-1 text-xs text-muted-foreground">已选 {selected.size}</span>
-                )}
                 <div className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-1.5">
                   <span className="text-sm font-medium">仅查看未审核</span>
                   <Switch
@@ -1341,20 +1310,12 @@ function Workbench() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/40">
-                  <TableHead className="w-[44px]">
-                    <Checkbox
-                      checked={allSelected ? true : someSelected ? "indeterminate" : false}
-                      onCheckedChange={toggleSelectAll}
-                      disabled={selectableIds.length === 0}
-                      aria-label="全选"
-                    />
-                  </TableHead>
                   <TableHead className="w-[200px]">KA 订单号</TableHead>
                   <TableHead className="w-[150px]">同步时间</TableHead>
                   <TableHead>签收状态</TableHead>
                   <TableHead>置信度</TableHead>
-                  <TableHead>AI 结论</TableHead>
-                  <TableHead>审核结论</TableHead>
+                  <TableHead>AI预审结论</TableHead>
+                  <TableHead>最终审核结论</TableHead>
                   <TableHead className="text-right">操作</TableHead>
 
                 </TableRow>
@@ -1390,14 +1351,6 @@ function Workbench() {
                   const pending = !inProgress && r.status !== "failed" ? pendingLowConf(r) : 0;
                   return (
                     <TableRow key={r.id} className="hover:bg-muted/30">
-                      <TableCell>
-                        <Checkbox
-                          checked={selected.has(r.id)}
-                          disabled={!canSelect}
-                          onCheckedChange={() => toggleSelect(r.id)}
-                          aria-label="选择"
-                        />
-                      </TableCell>
                       <TableCell className="font-mono text-xs text-foreground">{r.id}</TableCell>
                       <TableCell className="text-sm text-muted-foreground" suppressHydrationWarning>
                         {fmtTime(r.createdAt)}
@@ -1704,6 +1657,12 @@ function VerdictBadge({ value }: { value: AiVerdict }) {
   );
 }
 
+const CONFIDENCE_LABEL: Record<"high" | "mid" | "low", string> = {
+  high: "高",
+  mid: "中",
+  low: "低",
+};
+
 function ConfidenceBadge({ score }: { score: number }) {
   const tone = confidenceTone(score / 100);
   const Icon = tone === "high" ? CheckCircle2 : AlertTriangle;
@@ -1711,12 +1670,12 @@ function ConfidenceBadge({ score }: { score: number }) {
     <Badge
       variant="status"
       className={cn(
-        "gap-1 border-0 font-normal tabular-nums",
+        "gap-1 border-0 font-normal",
         confidenceBadgeClasses(tone),
       )}
     >
       <Icon className="size-3" />
-      {score}
+      {CONFIDENCE_LABEL[tone]}
     </Badge>
   );
 }
@@ -2172,7 +2131,7 @@ function DocPanel({
                 <span className={cn("size-2 rounded-sm", confidenceDotClasses("mid"))} />中
               </span>
               <span className="inline-flex items-center gap-1">
-                <span className={cn("size-2 rounded-sm", confidenceDotClasses("low"))} />低 &lt; 80
+                <span className={cn("size-2 rounded-sm", confidenceDotClasses("low"))} />低
               </span>
             </div>
           </div>
@@ -2440,7 +2399,7 @@ function ImageWithBoxes({
                         width: `${((x2 - x1) / w) * 100}%`,
                         height: `${((y2 - y1) / h) * 100}%`,
                       }}
-                      title={`${c.label}${c.confidence != null ? ` · ${Math.round(c.confidence * 100)}%` : ""}`}
+                      title={`${c.label}${c.confidence != null ? ` · ${CONFIDENCE_LABEL[confidenceTone(c.confidence)]}` : ""}`}
                     />
                   );
                 })}
@@ -2563,11 +2522,10 @@ function ChunkEditor({
             {chunk.confidence != null ? (
               <span
                 className={cn(
-                  "tabular-nums",
                   confidenceTextClasses(tone),
                 )}
               >
-                置信度 {Math.round(chunk.confidence * 100)}%{needsReview && " · 待人工核验"}
+                置信度 {CONFIDENCE_LABEL[tone]}{needsReview && " · 待人工核验"}
               </span>
             ) : (
               <span className="text-muted-foreground">未评分</span>
