@@ -35,6 +35,9 @@ import {
 
 import receiptRtmartAsset from "@/assets/receipt_rtmart.jpg.asset.json";
 import receiptJdAsset from "@/assets/receipt_jd.jpg.asset.json";
+import receiptLingshiAsset from "@/assets/receipt_lingshi.png.asset.json";
+import receiptKualuDgAsset from "@/assets/receipt_kualu_dg.png.asset.json";
+import receiptKualuTjAsset from "@/assets/receipt_kualu_tj.png.asset.json";
 
 
 
@@ -568,6 +571,102 @@ function mockJdReceiptChunks(): Chunk[] {
   return raw.map((c) => ({ ...c, id: uid() }));
 }
 
+// 零食有鸣收货回执单 (1098x609)
+function mockLingshiChunks(): Chunk[] {
+  const raw: Omit<Chunk, "id">[] = [
+    { bbox: [420, 40, 720, 85], label: "Section-Header", content: "<p>零食有鸣收货回执单</p>", confidence: 0.98 },
+    { bbox: [80, 100, 380, 128], label: "Text", content: "<p>收货单号: X10130432026051800034</p>", confidence: 0.86 },
+    { bbox: [400, 100, 620, 128], label: "Text", content: "<p>供应商: 1001010057</p>" },
+    { bbox: [660, 100, 900, 128], label: "Text", content: "<p>仓储中心: 新疆物流中心</p>" },
+    { bbox: [80, 130, 380, 158], label: "Text", content: "<p>ERP单号: 0016510102605113750</p>", confidence: 0.82 },
+    { bbox: [400, 130, 700, 158], label: "Text", content: "<p>SRM送货单号: 0840710112605180012</p>", confidence: 0.78 },
+    { bbox: [660, 130, 900, 158], label: "Text", content: "<p>签到时间: 2026-05-20 14:40:59</p>" },
+    { bbox: [80, 160, 300, 188], label: "Text", content: "<p>产地仓:</p>" },
+    { bbox: [80, 190, 300, 218], label: "Text", content: "<p>备注:</p>" },
+    { bbox: [660, 190, 940, 218], label: "Text", content: "<p>打印时间: 2026-05-20 14:50:35</p>" },
+    {
+      bbox: [80, 230, 960, 320],
+      label: "Table",
+      content:
+        '<table border="1"><thead><tr><th>商品编码</th><th>商品名称</th><th>单位</th><th>预约总数量</th><th>实收总数量</th><th>拒收数量</th><th>是否赠品</th><th>生产日期</th></tr></thead><tbody><tr><td>10100956</td><td>统一海之言柠檬味1L 1L</td><td>箱</td><td>700</td><td>700</td><td>0</td><td>否</td><td>2026-5-4</td></tr><tr><td colspan="3">总计</td><td>700</td><td>700</td><td>0</td><td></td><td></td></tr></tbody></table>',
+      confidence: 0.74,
+    },
+    { bbox: [80, 430, 380, 465], label: "Text", content: "<p>司机姓名: 麦吾兰·塞麦提</p>", confidence: 0.62 },
+    { bbox: [80, 465, 380, 500], label: "Text", content: "<p>司机电话: 13029634454</p>" },
+    { bbox: [80, 500, 380, 540], label: "Text", content: "<p>车牌号: 新A9JU80</p>", confidence: 0.7 },
+    { bbox: [720, 430, 940, 465], label: "Text", content: "<p>收货人姓名:</p>" },
+    { bbox: [720, 465, 940, 500], label: "Text", content: "<p>日期:</p>" },
+    {
+      bbox: [800, 380, 1000, 560],
+      label: "Image",
+      content: "<img alt=\"Red circular stamp '收货专用章 新疆仓'\"/>",
+    },
+  ];
+  return raw.map((c) => ({ ...c, id: uid() }));
+}
+
+// 快驴送货入库单 - 东莞虎门仓 (839x1182)
+function mockKualuDgChunks(): Chunk[] {
+  const raw: Omit<Chunk, "id">[] = [
+    { bbox: [280, 50, 560, 110], label: "Section-Header", content: "<p>快驴送货入库单</p>", confidence: 0.98 },
+    { bbox: [40, 130, 400, 165], label: "Text", content: "<p>采购单号: CG202605200000186584208</p>", confidence: 0.85 },
+    { bbox: [440, 130, 780, 165], label: "Text", content: "<p>入库仓库: 东莞虎门仓</p>" },
+    { bbox: [40, 165, 400, 200], label: "Text", content: "<p>入库单号: R2026052166894287</p>", confidence: 0.82 },
+    { bbox: [440, 165, 780, 200], label: "Text", content: "<p>预计到货时间:</p>" },
+    { bbox: [40, 200, 400, 235], label: "Text", content: "<p>供应商: 广州统一企业有限公司</p>", confidence: 0.78 },
+    { bbox: [440, 200, 780, 235], label: "Text", content: "<p>入库完成日期: 2026-05-26</p>" },
+    { bbox: [40, 235, 400, 270], label: "Text", content: "<p>货主: 东莞中小B</p>" },
+    {
+      bbox: [30, 290, 810, 800],
+      label: "Table",
+      content:
+        '<table border="1"><thead><tr><th>序号</th><th>SKU编码</th><th>调出货主</th><th>调入货主</th><th>品牌</th><th>品名</th><th>规格</th><th>生产批次</th><th>SKU单位</th><th>箱规</th><th>托规</th><th>码托说明</th><th>应收整包装数量</th><th>实收</th><th>实收整包装数量</th><th>实际贴码数量</th><th>单价(元)</th><th>金额(元)</th><th>备注</th></tr></thead><tbody><tr><td>1</td><td>10036304</td><td></td><td></td><td>统一</td><td>冰红茶250ml</td><td>24盒箱</td><td>2026-05-08</td><td>箱</td><td>1</td><td>150</td><td>150*10</td><td>10.0箱</td><td>10</td><td>10.0箱</td><td>0</td><td>0.00</td><td>0.00</td><td>常温</td></tr><tr><td>2</td><td>10502490</td><td></td><td></td><td>太魔性</td><td>柠檬红茶250ml</td><td>6L/箱(24盒)</td><td>2026-04-16</td><td>箱</td><td>1</td><td>170</td><td>170*10</td><td>50.0箱</td><td>50</td><td>50.0箱</td><td>0</td><td>0.00</td><td>0.00</td><td>常温</td></tr><tr><td>3</td><td>10025498</td><td></td><td></td><td>鲜橙多</td><td>鲜橙多2L</td><td>6瓶/箱</td><td>2026-05-06</td><td>箱</td><td>1</td><td>40</td><td>10*4</td><td>50.0箱</td><td>50</td><td>50.0箱</td><td>0</td><td>0.00</td><td>0.00</td><td>常温</td></tr><tr><td>4</td><td>10571319</td><td></td><td></td><td>鲜橙多</td><td>鲜橙多橙汁饮料310ml/罐</td><td>7440ml/箱(24罐)</td><td>2026-05-09</td><td>箱</td><td>1</td><td></td><td></td><td>50.0箱</td><td>50</td><td>50.0箱</td><td>0</td><td>0.00</td><td>0.00</td><td>常温</td></tr></tbody></table>',
+      confidence: 0.66,
+    },
+    { bbox: [40, 830, 780, 880], label: "Text", content: "<p>备注: 合计: 整件:160,散件:0</p>" },
+    { bbox: [40, 900, 260, 940], label: "Text", content: "<p>制单人: 何钦扩</p>", confidence: 0.72 },
+    { bbox: [260, 900, 480, 940], label: "Text", content: "<p>仓库签字:</p>" },
+    { bbox: [480, 900, 700, 940], label: "Text", content: "<p>供应商签字:</p>" },
+    { bbox: [700, 900, 810, 940], label: "Text", content: "<p>财务签字:</p>" },
+    {
+      bbox: [260, 870, 470, 990],
+      label: "Image",
+      content: "<img alt=\"Red circular stamp '收货专用章'\"/>",
+    },
+  ];
+  return raw.map((c) => ({ ...c, id: uid() }));
+}
+
+// 快驴送货入库单 - 天津东丽仓 (877x1174)
+function mockKualuTjChunks(): Chunk[] {
+  const raw: Omit<Chunk, "id">[] = [
+    { bbox: [300, 140, 580, 200], label: "Section-Header", content: "<p>快驴送货入库单</p>", confidence: 0.98 },
+    { bbox: [40, 220, 400, 255], label: "Text", content: "<p>来源单号: CG202605250000187515851</p>", confidence: 0.84 },
+    { bbox: [440, 220, 820, 255], label: "Text", content: "<p>入库仓库: 天津东丽仓</p>" },
+    { bbox: [40, 255, 400, 290], label: "Text", content: "<p>入库单号: R2026052668522838</p>", confidence: 0.82 },
+    { bbox: [440, 255, 820, 290], label: "Text", content: "<p>预计到货时间:</p>" },
+    { bbox: [40, 290, 400, 325], label: "Text", content: "<p>送货方: 北京统一饮品有限公司</p>", confidence: 0.78 },
+    { bbox: [440, 290, 820, 325], label: "Text", content: "<p>入库完成日期: 2026-05-29</p>" },
+    { bbox: [40, 325, 400, 360], label: "Text", content: "<p>货主: 天津中小B</p>" },
+    { bbox: [440, 325, 820, 360], label: "Text", content: "<p>货主类型: 自营</p>" },
+    {
+      bbox: [30, 400, 850, 780],
+      label: "Table",
+      content:
+        '<table border="1"><thead><tr><th>序号</th><th>SKU编码</th><th>品牌</th><th>品名</th><th>规格</th><th>生产批次</th><th>SKU单位</th><th>箱规</th><th>码托说明</th><th>应收整包装数量</th><th>实收</th><th>总重(抄重)</th><th>实收整包装数量</th><th>实际贴码数量</th><th>单价(元)</th><th>金额(元)</th><th>库位</th></tr></thead><tbody><tr><td>1</td><td>10028026</td><td>统一阿萨姆</td><td>阿萨姆奶茶500ml</td><td>15瓶/箱</td><td></td><td>箱</td><td>1</td><td>90</td><td>50</td><td>50.0箱</td><td>50</td><td>50.0箱</td><td>0</td><td>0.00</td><td>0.00</td><td></td></tr><tr><td>2</td><td>10502490</td><td>太魔性</td><td>柠檬红茶250ml</td><td>6L/箱(24盒)</td><td></td><td>箱</td><td>1</td><td>170</td><td>50</td><td>50.0箱</td><td>50</td><td>50.0箱</td><td>0</td><td>0.00</td><td>0.00</td><td></td></tr><tr><td>3</td><td>10571319</td><td>鲜橙多</td><td>鲜橙多橙汁饮料310ml/罐</td><td>7440ml/箱(24罐)</td><td></td><td>箱</td><td>1</td><td></td><td>50</td><td>50.0箱</td><td>50</td><td>50.0箱</td><td>0</td><td>0.00</td><td>0.00</td><td></td></tr></tbody></table>',
+      confidence: 0.68,
+    },
+    { bbox: [40, 820, 820, 900], label: "Text", content: "<p>备注: 截止至2026-05-29 11:10的实际收货数据 合计: 整件:100,散件:0,总净重(抄重):-</p>", confidence: 0.62 },
+    { bbox: [40, 940, 260, 980], label: "Text", content: "<p>制单人: 姜金凤</p>", confidence: 0.7 },
+    { bbox: [260, 940, 480, 980], label: "Text", content: "<p>仓库签字:</p>" },
+    { bbox: [480, 940, 700, 980], label: "Text", content: "<p>送货方签字:</p>" },
+    { bbox: [700, 940, 850, 980], label: "Text", content: "<p>财务签字:</p>" },
+  ];
+  return raw.map((c) => ({ ...c, id: uid() }));
+}
+
+
+
 function fabricateResult(images: UploadedImage[]) {
   const results: Partial<Record<DocType, DocPage[]>> = {};
 
@@ -872,7 +971,100 @@ function seedRecords(): OcrRecord[] {
     shippingSlipNo: "1383RY202604220013",
   };
 
-  return [realRecord, ...records];
+  // 三个只有送货单、无出货传票的真实照片任务
+  type NoSlipSeed = {
+    key: string;
+    asset: { url: string };
+    width: number;
+    height: number;
+    chunks: () => Chunk[];
+    minutesAgo: number;
+    driver: string;
+    plateNo: string;
+    aiVerdict: AiVerdict;
+    signatureStatus: SignatureStatus;
+    idSeed: number;
+  };
+  const noSlipSeeds: NoSlipSeed[] = [
+    {
+      key: "lingshi",
+      asset: receiptLingshiAsset,
+      width: 1098,
+      height: 609,
+      chunks: mockLingshiChunks,
+      minutesAgo: 22,
+      driver: "麦吾兰·塞麦提",
+      plateNo: "新A9JU80",
+      aiVerdict: "pass",
+      signatureStatus: "perfect",
+      idSeed: 3_180_034,
+    },
+    {
+      key: "kualu-dg",
+      asset: receiptKualuDgAsset,
+      width: 839,
+      height: 1182,
+      chunks: mockKualuDgChunks,
+      minutesAgo: 68,
+      driver: "何钦扩",
+      plateNo: "粤S·47188",
+      aiVerdict: "pass",
+      signatureStatus: "partial",
+      idSeed: 3_260_287,
+    },
+    {
+      key: "kualu-tj",
+      asset: receiptKualuTjAsset,
+      width: 877,
+      height: 1174,
+      chunks: mockKualuTjChunks,
+      minutesAgo: 150,
+      driver: "姜金凤",
+      plateNo: "津B·22838",
+      aiVerdict: "fail",
+      signatureStatus: "partial",
+      idSeed: 3_260_522,
+    },
+  ];
+  const noSlipRecords: OcrRecord[] = noSlipSeeds.map((s) => {
+    const createdAt = now - s.minutesAgo * 60_000;
+    const img: UploadedImage = {
+      id: `img-${s.key}-delivery`,
+      name: `${s.key}_delivery.png`,
+      url: s.asset.url,
+      docType: "delivery_note",
+      width: s.width,
+      height: s.height,
+    };
+    const results: Partial<Record<DocType, DocPage[]>> = {
+      delivery_note: [
+        {
+          imageId: img.id,
+          sourceImage: img.name,
+          pageBox: [0, 0, img.width, img.height],
+          chunks: s.chunks(),
+        },
+      ],
+    };
+    const pages = Object.values(results).flat() as DocPage[];
+    return {
+      id: makeKaOrderId(createdAt, s.idSeed),
+      createdAt,
+      status: "pending_review",
+      progress: 100,
+      confidence: averageConfidence(pages),
+      deliveryCount: 1,
+      shippingCount: 0,
+      images: [img],
+      results,
+      driver: s.driver,
+      plateNo: s.plateNo,
+      signatureStatus: s.signatureStatus,
+      aiVerdict: s.aiVerdict,
+    };
+  });
+
+  return [realRecord, ...noSlipRecords, ...records];
 }
 
 
@@ -2043,6 +2235,11 @@ function DocPanel({
                   {shippingImages.length}
                 </span>
               </button>
+            )}
+            {shippingImages.length === 0 && (
+              <span className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground">
+                <ScrollText className="size-3.5" /> 无出货传票
+              </span>
             )}
           </div>
         </div>
