@@ -1506,6 +1506,7 @@ function DetailView({
   const shippingRefImgs = record.images.filter((i) => i.docType === "shipping_slip");
   type TabValue = DocType | "shipping_ref";
   const [activeTab, setActiveTab] = useState<TabValue>(availableDocTypes[0] ?? "shipping_ref");
+  const [autoFocus, setAutoFocus] = useState(true);
 
   const [editing, setEditing] = useState(false);
   // snapshot taken on entering edit mode — used to cancel
