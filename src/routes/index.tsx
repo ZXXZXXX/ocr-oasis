@@ -1765,9 +1765,12 @@ function DocPanel({
   }, [activeChunkId, pageIdx]);
 
   return (
-    <div className="grid h-full grid-cols-1 overflow-hidden md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
+    <div ref={containerRef} className="flex h-full overflow-hidden">
       {/* Preview with bbox overlay */}
-      <div className="flex flex-col overflow-hidden border-r border-border bg-muted/30">
+      <div
+        className="flex flex-col overflow-hidden border-r border-border bg-muted/30"
+        style={{ flex: `0 0 ${leftPct}%`, minWidth: 0 }}
+      >
         {pages.length > 1 && (
           <div className="flex items-center gap-1 border-b border-border bg-background/60 px-3 py-2">
             {pages.map((_, i) => (
