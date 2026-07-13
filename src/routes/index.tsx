@@ -76,7 +76,8 @@ const LOW_CONF_THRESHOLD = 0.8;
 
 // ---------- Types ----------
 type DocType = "delivery_note" | "shipping_slip";
-type Status = "recognizing" | "pending_review" | "verified" | "failed";
+type Status = "queued" | "recognizing" | "pending_review" | "verified" | "failed";
+const MAX_CONCURRENT_OCR = 3;
 type SignatureStatus = "perfect" | "partial";
 type AiVerdict = "pass" | "fail";
 
@@ -739,11 +740,13 @@ function Workbench() {
       height: 720,
     }));
     const nowTs = Date.now();
+    const runningCount = records.filter((r) => r.status === "recognizing").length;
+    const startStatus: Status = runningCount < MAX_CONCURRENT_OCR ? "recognizing" : "queued";
     const record: OcrRecord = {
       id: makeKaOrderId(nowTs, Math.floor(Math.random() * 10_000_000)),
       createdAt: nowTs,
-      status: "recognizing",
-      progress: 4,
+      status: startStatus,
+      progress: startStatus === "recognizing" ? 4 : 0,
       deliveryCount: 1,
       shippingCount: 1,
       images,
