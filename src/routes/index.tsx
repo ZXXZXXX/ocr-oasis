@@ -1310,14 +1310,6 @@ function Workbench() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/40">
-                  <TableHead className="w-[44px]">
-                    <Checkbox
-                      checked={allSelected ? true : someSelected ? "indeterminate" : false}
-                      onCheckedChange={toggleSelectAll}
-                      disabled={selectableIds.length === 0}
-                      aria-label="全选"
-                    />
-                  </TableHead>
                   <TableHead className="w-[200px]">KA 订单号</TableHead>
                   <TableHead className="w-[150px]">同步时间</TableHead>
                   <TableHead>签收状态</TableHead>
