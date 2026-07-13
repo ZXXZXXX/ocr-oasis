@@ -242,6 +242,28 @@ function confidenceTone(c?: number) {
   return "low";
 }
 
+// Synchronized color palette for confidence tones.
+function confidenceBadgeClasses(tone: "high" | "mid" | "low") {
+  if (tone === "high") return "text-[color:var(--success)] bg-[color:var(--success)]/10";
+  if (tone === "mid") return "text-orange-500 bg-orange-500/10";
+  return "text-red-500 bg-red-500/10";
+}
+function confidenceBorderClasses(tone: "high" | "mid" | "low") {
+  if (tone === "high") return "border-[color:var(--success)]/70 bg-[color:var(--success)]/5";
+  if (tone === "mid") return "border-orange-500 bg-orange-500/10";
+  return "border-red-500 bg-red-500/15";
+}
+function confidenceDotClasses(tone: "high" | "mid" | "low") {
+  if (tone === "high") return "bg-[color:var(--success)]";
+  if (tone === "mid") return "bg-orange-500";
+  return "bg-red-500";
+}
+function confidenceTextClasses(tone: "high" | "mid" | "low") {
+  if (tone === "high") return "text-[color:var(--success)]";
+  if (tone === "mid") return "text-orange-500";
+  return "text-red-500";
+}
+
 // Compute overall record confidence: average of scored chunks. Unscored counted as 1.0.
 function averageConfidence(pages: DocPage[]): number {
   const scores: number[] = [];
@@ -1641,12 +1663,7 @@ function VerdictBadge({ value }: { value: AiVerdict }) {
 }
 
 function ConfidenceBadge({ score }: { score: number }) {
-  const tone =
-    score >= 90
-      ? "text-[color:var(--success)] bg-[color:var(--success)]/10"
-      : score >= 80
-        ? "text-orange-500 bg-orange-500/10"
-        : "text-red-500 bg-red-500/10";
+  const tone = confidenceBadgeClasses(confidenceTone(score / 100));
   return (
     <span
       className={cn(
@@ -2330,12 +2347,7 @@ function ImageWithBoxes({
                 const [x1, y1, x2, y2] = c.bbox;
                 const tone = confidenceTone(c.confidence);
                 const isActive = c.id === activeChunkId;
-                const color =
-                  tone === "low"
-                    ? "border-red-500 bg-red-500/15"
-                    : tone === "mid"
-                      ? "border-orange-500 bg-orange-500/10"
-                      : "border-[color:var(--success)]/70 bg-[color:var(--success)]/5";
+                const color = confidenceBorderClasses(tone);
                 return (
                   <button
                     type="button"
@@ -2429,12 +2441,7 @@ function ChunkEditor({
     chunk.label !== "Image" && chunk.confidence != null && chunk.confidence < LOW_CONF_THRESHOLD;
   const needsReview = isLow && !chunk.edited && !chunk.confirmed;
 
-  const dotColor =
-    tone === "low"
-      ? "bg-red-500"
-      : tone === "mid"
-        ? "bg-orange-500"
-        : "bg-[color:var(--success)]";
+  const dotColor = confidenceDotClasses(tone);
 
   const meta = LABEL_META[chunk.label];
   const Icon = meta.icon;
@@ -2486,11 +2493,7 @@ function ChunkEditor({
               <span
                 className={cn(
                   "tabular-nums",
-                  needsReview
-                    ? "text-[color:var(--warning-foreground)]"
-                    : tone === "mid"
-                      ? "text-primary"
-                      : "text-muted-foreground",
+                  confidenceTextClasses(tone),
                 )}
               >
                 置信度 {Math.round(chunk.confidence * 100)}%{needsReview && " · 待人工核验"}
