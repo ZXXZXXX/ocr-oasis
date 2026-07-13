@@ -1388,6 +1388,18 @@ function Workbench() {
     setDateTo("");
     setSelectedConfidenceTones(new Set(["high", "mid", "low"]));
     setAiVerdictFilter("all");
+    setDraftDateFrom("");
+    setDraftDateTo("");
+    setDraftConfidenceTones(new Set(["high", "mid", "low"]));
+    setDraftAiVerdictFilter("all");
+  }
+
+  function applyFilters() {
+    setDateFrom(draftDateFrom);
+    setDateTo(draftDateTo);
+    setSelectedConfidenceTones(new Set(draftConfidenceTones));
+    setAiVerdictFilter(draftAiVerdictFilter);
+    setFilterOpen(false);
   }
 
   return (
