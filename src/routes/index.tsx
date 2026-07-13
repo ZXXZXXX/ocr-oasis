@@ -2102,13 +2102,13 @@ function DocPanel({
                 <span className="text-muted-foreground">{"\n"}</span>
               )}
               <span className="inline-flex items-center gap-1">
-                <span className="size-2 rounded-sm bg-[color:var(--success)]" />高
+                <span className={cn("size-2 rounded-sm", confidenceDotClasses("high"))} />高
               </span>
               <span className="inline-flex items-center gap-1">
-                <span className="size-2 rounded-sm bg-primary" />中
+                <span className={cn("size-2 rounded-sm", confidenceDotClasses("mid"))} />中
               </span>
               <span className="inline-flex items-center gap-1">
-                <span className="size-2 rounded-sm bg-[color:var(--warning)]" />低 &lt; 80
+                <span className={cn("size-2 rounded-sm", confidenceDotClasses("low"))} />低 &lt; 80
               </span>
             </div>
           </div>
