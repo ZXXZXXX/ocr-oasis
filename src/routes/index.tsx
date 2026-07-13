@@ -1785,7 +1785,7 @@ function DocPanel({
 
       {/* Chunks editor */}
       <div ref={scrollRef} className="flex flex-col overflow-y-auto">
-        <div className="space-y-3 px-5 py-5">
+        <div className="space-y-0.5 px-4 py-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium text-foreground">
               识别分块 · {page?.chunks.length ?? 0}
