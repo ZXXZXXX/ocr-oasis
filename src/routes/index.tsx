@@ -23,7 +23,9 @@ import {
   Table as TableIcon,
   Image as ImageIcon,
   MoreHorizontal,
+  Search,
 } from "lucide-react";
+
 
 
 import { Button } from "@/components/ui/button";
@@ -169,7 +171,9 @@ interface OcrRecord {
   aiVerdict?: AiVerdict; // 识别完成后由AI给出
   verifiedAt?: number; // 人工提交验收结论时间
   verifiedBy?: string;
+  shippingSlipNo?: string; // 出货传票单号，用于搜索
 }
+
 
 // ---------- Helpers ----------
 const uid = () => Math.random().toString(36).slice(2, 10);
@@ -183,6 +187,32 @@ function makeKaOrderId(ts: number, seq: number): string {
   const tail = String(seq % 10_000_000).padStart(7, "0");
   return `CD${yyyy}${mm}${dd}${tail}`;
 }
+
+function makeShippingSlipNo(ts: number, seq: number): string {
+  const d = new Date(ts);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const tail = String(seq % 100_000).padStart(5, "0");
+  return `SH${yyyy}${mm}${dd}-${tail}`;
+}
+
+function fuzzyMatch(query: string, target: string): boolean {
+  if (!query) return true;
+  const q = query.toLowerCase().trim();
+  const t = target.toLowerCase().trim();
+  if (!q) return true;
+  if (!t.includes(q)) {
+    let i = 0;
+    for (const char of t) {
+      if (char === q[i]) i++;
+      if (i === q.length) return true;
+    }
+    return false;
+  }
+  return true;
+}
+
 
 const fmtTime = (t: number) =>
   new Date(t).toLocaleString("zh-CN", {
@@ -639,7 +669,9 @@ function seedRecords(): OcrRecord[] {
       aiVerdict: s.aiVerdict,
       verifiedAt: s.status === "verified" ? now - (s.minutesAgo - 10) * 60_000 : undefined,
       verifiedBy: s.status === "verified" ? CURRENT_USER : undefined,
+      shippingSlipNo: makeShippingSlipNo(createdAt, 1_000 + idx * 137),
     };
+
   });
 }
 
@@ -658,7 +690,10 @@ function Workbench() {
   const [dateTo, setDateTo] = useState("");
   const [confRange, setConfRange] = useState<[number, number]>([0, 100]);
   const [quickStatus, setQuickStatus] = useState<"all" | "pending_review">("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+
+
 
 
   const activeRecords = useMemo(
@@ -725,9 +760,15 @@ function Workbench() {
       } else {
         if (confRange[0] > 0 || confRange[1] < 100) return false;
       }
+      if (searchQuery.trim()) {
+        const kaMatch = fuzzyMatch(searchQuery, r.id);
+        const shippingMatch = r.shippingSlipNo ? fuzzyMatch(searchQuery, r.shippingSlipNo) : false;
+        if (!kaMatch && !shippingMatch) return false;
+      }
       return true;
     });
-  }, [records, dateFrom, dateTo, confRange, quickStatus]);
+  }, [records, dateFrom, dateTo, confRange, quickStatus, searchQuery]);
+
 
   const filterActive = !!dateFrom || !!dateTo || confRange[0] > 0 || confRange[1] < 100;
 
@@ -791,7 +832,9 @@ function Workbench() {
         driver: who.driver,
         plateNo: who.plate,
         signatureStatus,
+        shippingSlipNo: makeShippingSlipNo(nowTs + i, Math.floor(Math.random() * 100_000)),
       };
+
     });
 
 
@@ -1019,11 +1062,23 @@ function Workbench() {
                 <span className="font-medium">验收任务</span>
                 <span className="text-xs text-muted-foreground">
                   共 {filteredRecords.length}&nbsp;项
-                  {(filterActive || quickStatus !== "all") && ` / 全部 ${records.length}`}
+                  {(filterActive || quickStatus !== "all" || searchQuery.trim()) && ` / 全部 ${records.length}`}
                 </span>
-
+              </div>
+              <div className="mx-4 flex-1 max-w-md">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="搜索 KA 订单号 / 出货传票单号"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-9 w-full pl-9"
+                  />
+                </div>
               </div>
               <div className="flex items-center gap-2">
+
                 {selected.size > 0 && (
                   <span className="mr-1 text-xs text-muted-foreground">已选 {selected.size}</span>
                 )}
