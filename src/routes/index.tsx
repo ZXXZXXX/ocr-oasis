@@ -1541,7 +1541,9 @@ function DetailView({
 }) {
   const pending = pendingLowConf(record);
   const availableDocTypes = Object.keys(record.results ?? {}) as DocType[];
-  const [activeTab, setActiveTab] = useState<DocType | "json">(
+  const shippingRefImgs = record.images.filter((i) => i.docType === "shipping_slip");
+  type TabValue = DocType | "shipping_ref" | "json";
+  const [activeTab, setActiveTab] = useState<TabValue>(
     availableDocTypes[0] ?? "json",
   );
   const [editing, setEditing] = useState(false);
