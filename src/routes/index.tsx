@@ -1237,13 +1237,13 @@ function Workbench() {
                   <span className="mr-1 text-xs text-muted-foreground">已选 {selected.size}</span>
                 )}
                 <div className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-1.5">
-                  <span className="text-sm font-medium">仅查看待审核</span>
+                  <span className="text-sm font-medium">仅查看未审核</span>
                   <Switch
                     checked={quickStatus === "pending_review"}
                     onCheckedChange={(checked) =>
                       setQuickStatus(checked ? "pending_review" : "all")
                     }
-                    aria-label="仅查看待审核"
+                    aria-label="仅查看未审核"
                   />
                 </div>
 
@@ -1354,7 +1354,7 @@ function Workbench() {
                   <TableHead>签收状态</TableHead>
                   <TableHead>置信度</TableHead>
                   <TableHead>AI 结论</TableHead>
-                  <TableHead>审核状态</TableHead>
+                  <TableHead>审核结论</TableHead>
                   <TableHead className="text-right">操作</TableHead>
 
                 </TableRow>
@@ -1425,7 +1425,7 @@ function Workbench() {
                       </TableCell>
 
                       <TableCell>
-                        <StatusBadge status={r.status} pending={pending} />
+                        <AuditConclusionBadge status={r.status} aiVerdict={r.aiVerdict} />
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
@@ -1652,6 +1652,26 @@ function StatusBadge({ status, pending: _pending }: { status: Status; pending: n
   return (
     <Badge variant="status" className="gap-1 border-0 bg-[color:var(--success)]/15 font-normal text-[color:var(--success)]">
       <CheckCircle2 className="size-3" /> 已审核
+    </Badge>
+  );
+}
+
+function AuditConclusionBadge({ status, aiVerdict }: { status: Status; aiVerdict?: AiVerdict }) {
+  if (status === "verified" && aiVerdict === "pass")
+    return (
+      <Badge variant="status" className="w-20 justify-center gap-1 border-0 bg-[color:var(--success)]/15 font-normal text-[color:var(--success)]">
+        <CheckCircle2 className="size-3" /> 通过
+      </Badge>
+    );
+  if (status === "verified" && aiVerdict === "fail")
+    return (
+      <Badge variant="status" className="w-20 justify-center gap-1 border-0 bg-destructive/15 font-normal text-destructive">
+        <X className="size-3" /> 不通过
+      </Badge>
+    );
+  return (
+    <Badge variant="status" className="w-20 justify-center border-0 bg-muted font-normal text-muted-foreground">
+      —
     </Badge>
   );
 }
