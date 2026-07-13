@@ -1580,12 +1580,12 @@ function Workbench() {
                             { value: "pass", label: "通过" },
                             { value: "fail", label: "不通过" },
                           ].map((opt) => {
-                            const selected = aiVerdictFilter === opt.value;
+                            const selected = draftAiVerdictFilter === opt.value;
                             return (
                               <button
                                 key={opt.value}
                                 type="button"
-                                onClick={() => setAiVerdictFilter(opt.value as typeof aiVerdictFilter)}
+                                onClick={() => setDraftAiVerdictFilter(opt.value as typeof draftAiVerdictFilter)}
                                 className={cn(
                                   "flex-1 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors",
                                   selected
