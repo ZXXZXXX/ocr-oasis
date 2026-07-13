@@ -76,7 +76,8 @@ const LOW_CONF_THRESHOLD = 0.8;
 
 // ---------- Types ----------
 type DocType = "delivery_note" | "shipping_slip";
-type Status = "recognizing" | "pending_review" | "verified" | "failed";
+type Status = "queued" | "recognizing" | "pending_review" | "verified" | "failed";
+const MAX_CONCURRENT_OCR = 3;
 type SignatureStatus = "perfect" | "partial";
 type AiVerdict = "pass" | "fail";
 
@@ -647,7 +648,10 @@ function Workbench() {
   const [confRange, setConfRange] = useState<[number, number]>([0, 100]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  const activeRecords = useMemo(() => records.filter((r) => r.status === "recognizing"), [records]);
+  const activeRecords = useMemo(
+    () => records.filter((r) => r.status === "recognizing" || r.status === "queued"),
+    [records],
+  );
 
   const detailRecord = records.find((r) => r.id === detailId) ?? null;
 
@@ -678,6 +682,25 @@ function Workbench() {
     return () => clearInterval(t);
   }, [activeRecords.length]);
 
+  // 并发调度：最多同时识别 MAX_CONCURRENT_OCR 条，超出自动排队
+  useEffect(() => {
+    setRecords((prev) => {
+      const running = prev.filter((r) => r.status === "recognizing").length;
+      const slots = MAX_CONCURRENT_OCR - running;
+      if (slots <= 0) return prev;
+      const queuedOrdered = prev
+        .filter((r) => r.status === "queued")
+        .sort((a, b) => a.createdAt - b.createdAt)
+        .slice(0, slots)
+        .map((r) => r.id);
+      if (queuedOrdered.length === 0) return prev;
+      const promote = new Set(queuedOrdered);
+      return prev.map((r) =>
+        promote.has(r.id) ? { ...r, status: "recognizing" as Status, progress: 4 } : r,
+      );
+    });
+  }, [records]);
+
   const filteredRecords = useMemo(() => {
     const fromT = dateFrom ? new Date(dateFrom).getTime() : -Infinity;
     const toT = dateTo ? new Date(dateTo).getTime() + 86400000 : Infinity;
@@ -695,7 +718,7 @@ function Workbench() {
   const filterActive = !!dateFrom || !!dateTo || confRange[0] > 0 || confRange[1] < 100;
 
   const selectableIds = filteredRecords
-    .filter((r) => r.status !== "recognizing" && r.status !== "failed")
+    .filter((r) => r.status !== "recognizing" && r.status !== "queued" && r.status !== "failed")
     .map((r) => r.id);
   const allSelected = selectableIds.length > 0 && selectableIds.every((id) => selected.has(id));
   const someSelected = selected.size > 0 && !allSelected;
@@ -739,11 +762,13 @@ function Workbench() {
       height: 720,
     }));
     const nowTs = Date.now();
+    const runningCount = records.filter((r) => r.status === "recognizing").length;
+    const startStatus: Status = runningCount < MAX_CONCURRENT_OCR ? "recognizing" : "queued";
     const record: OcrRecord = {
       id: makeKaOrderId(nowTs, Math.floor(Math.random() * 10_000_000)),
       createdAt: nowTs,
-      status: "recognizing",
-      progress: 4,
+      status: startStatus,
+      progress: startStatus === "recognizing" ? 4 : 0,
       deliveryCount: 1,
       shippingCount: 1,
       images,
@@ -904,7 +929,7 @@ function Workbench() {
 
   function downloadBatch() {
     const targets = records.filter(
-      (r) => selected.has(r.id) && r.status !== "recognizing" && r.status !== "failed",
+      (r) => selected.has(r.id) && r.status !== "recognizing" && r.status !== "queued" && r.status !== "failed",
     );
     if (targets.length === 0) return;
     const stillPending = targets.filter((r) => pendingLowConf(r) > 0);
@@ -1148,9 +1173,9 @@ function Workbench() {
                   </TableRow>
                 )}
                 {filteredRecords.map((r) => {
-                  const canSelect = r.status !== "recognizing" && r.status !== "failed";
-                  const pending =
-                    r.status !== "recognizing" && r.status !== "failed" ? pendingLowConf(r) : 0;
+                  const inProgress = r.status === "recognizing" || r.status === "queued";
+                  const canSelect = !inProgress && r.status !== "failed";
+                  const pending = !inProgress && r.status !== "failed" ? pendingLowConf(r) : 0;
                   return (
                     <TableRow key={r.id} className="hover:bg-muted/30">
                       <TableCell>
@@ -1169,12 +1194,16 @@ function Workbench() {
                         <SignatureBadge value={r.signatureStatus} />
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Progress value={r.progress} className="h-1.5 w-32" />
-                          <span className="w-10 text-xs tabular-nums text-muted-foreground">
-                            {Math.round(r.progress)}%
-                          </span>
-                        </div>
+                        {r.status === "queued" ? (
+                          <span className="text-xs text-muted-foreground">排队等待中…</span>
+                        ) : (
+                          <div className="flex items-center gap-3">
+                            <Progress value={r.progress} className="h-1.5 w-32" />
+                            <span className="w-10 text-xs tabular-nums text-muted-foreground">
+                              {Math.round(r.progress)}%
+                            </span>
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell>
                         {r.confidence != null ? (
@@ -1200,7 +1229,7 @@ function Workbench() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                disabled={r.status === "recognizing" || r.status === "failed"}
+                                disabled={inProgress || r.status === "failed"}
                                 onClick={() => setDetailId(r.id)}
                               >
                                 <Eye className="size-4" />
@@ -1213,7 +1242,7 @@ function Workbench() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                disabled={r.status === "recognizing" || r.status === "failed"}
+                                disabled={inProgress || r.status === "failed"}
                                 onClick={() => downloadJson(r)}
                               >
                                 <Download className="size-4" />
@@ -1306,14 +1335,14 @@ function Workbench() {
                 {activeRecords.map((r) => (
                   <div key={r.id}>
                     <div className="mb-1 flex items-center justify-between text-xs">
-                      <span className="font-mono text-muted-foreground">#{r.id}</span>
+                      <span className="font-mono text-muted-foreground">{r.id}</span>
                       <span className="tabular-nums text-foreground">
-                        {Math.round(r.progress)}%
+                        {r.status === "queued" ? "排队中" : `${Math.round(r.progress)}%`}
                       </span>
                     </div>
-                    <Progress value={r.progress} className="h-1.5" />
+                    <Progress value={r.status === "queued" ? 0 : r.progress} className="h-1.5" />
                     <div className="mt-1 text-[11px] text-muted-foreground">
-                      {r.images.length} 张图片 · 正在进行结构化识别
+                      {r.images.length} 张图片 · {r.status === "queued" ? `等待识别（最多同时识别 ${MAX_CONCURRENT_OCR} 条）` : "正在进行结构化识别"}
                     </div>
                   </div>
                 ))}
@@ -1384,6 +1413,12 @@ function StatCard({
 }
 
 function StatusBadge({ status, pending: _pending }: { status: Status; pending: number }) {
+  if (status === "queued")
+    return (
+      <Badge variant="status" className="gap-1 bg-muted font-normal text-muted-foreground">
+        <Loader2 className="size-3" /> 排队中
+      </Badge>
+    );
   if (status === "recognizing")
     return (
       <Badge variant="status" className="gap-1 bg-secondary font-normal text-secondary-foreground">
