@@ -1470,7 +1470,7 @@ function Workbench() {
                     </div>
                     <div className="space-y-4 px-4 py-4">
                       <div className="flex flex-col gap-1.5">
-                        <Label className="text-xs text-muted-foreground">创建时间范围</Label>
+                        <Label className="text-xs text-muted-foreground">同步时间范围</Label>
                         <div className="flex items-center gap-2">
                           <Input
                             type="date"
