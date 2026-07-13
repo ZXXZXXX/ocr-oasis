@@ -2259,8 +2259,6 @@ function ImageWithBoxes({
       const { [image.id]: _drop, ...rest } = m;
       return rest;
     });
-    // 回到默认"适合"视图：关闭自动聚焦并清除激活块，避免立即被聚焦逻辑放大
-    setAutoFocus?.(false);
     onSelect(null);
   };
   const zoomBy = (factor: number) =>
@@ -2327,6 +2325,10 @@ function ImageWithBoxes({
     }
   };
 
+  const isDefaultFit = !view.manual && view.scale === 1 && view.tx === 0 && view.ty === 0;
+  const isAutoFocused = autoFocus && !view.manual && !!activeChunk;
+  const showReset = !isDefaultFit || isAutoFocused;
+
   return (
     <div className="flex h-full w-full max-w-full flex-col overflow-hidden rounded-lg border border-border bg-background">
       {/* Toolbar */}
@@ -2357,7 +2359,7 @@ function ImageWithBoxes({
           </Button>
         </div>
         <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-          {view.manual && (
+          {showReset && (
             <button
               type="button"
               onClick={resetView}
