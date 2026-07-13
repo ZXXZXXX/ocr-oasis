@@ -1435,7 +1435,10 @@ function Workbench() {
                             size="sm"
                             className="text-sm font-semibold"
                             disabled={inProgress || r.status === "failed"}
-                            onClick={() => setDetailId(r.id)}
+                            onClick={() => {
+                              setDetailId(r.id);
+                              setDetailEditing(false);
+                            }}
                           >
                             查看
                           </Button>
