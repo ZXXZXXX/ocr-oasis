@@ -29,6 +29,8 @@ import {
   GripVertical,
   ThumbsUp,
   ThumbsDown,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 
@@ -1830,64 +1832,7 @@ function DocPanel({
               </button>
             )}
           </div>
-          {!showingShipping && (
-            <div className="flex items-center gap-2">
-              <Label
-                htmlFor="auto-focus-switch"
-                className="text-xs text-muted-foreground cursor-pointer"
-              >
-                自动聚焦
-              </Label>
-              <Switch
-                id="auto-focus-switch"
-                checked={autoFocus}
-                onCheckedChange={setAutoFocus}
-              />
-            </div>
-          )}
         </div>
-
-        {!showingShipping && deliveryPages.length > 1 && (
-          <div className="flex items-center gap-1 border-b border-border bg-background/60 px-3 py-2">
-            {deliveryPages.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => {
-                  setPageIdx(i);
-                  setActiveChunkId(null);
-                }}
-                className={cn(
-                  "rounded px-2 py-0.5 text-xs",
-                  i === pageIdx
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent",
-                )}
-              >
-                第 {i + 1} 页
-              </button>
-            ))}
-          </div>
-        )}
-        {showingShipping && shippingImages.length > 1 && (
-          <div className="flex items-center gap-1 border-b border-border bg-background/60 px-3 py-2">
-            {shippingImages.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setShippingIdx(i)}
-                className={cn(
-                  "rounded px-2 py-0.5 text-xs",
-                  i === shippingIdx
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent",
-                )}
-              >
-                第 {i + 1} 张
-              </button>
-            ))}
-          </div>
-        )}
 
         <div className="flex-1 flex items-center justify-center overflow-hidden p-4">
           {leftImage && leftPage ? (
@@ -1897,8 +1842,35 @@ function DocPanel({
               activeChunkId={showingShipping ? null : activeChunkId}
               onSelect={setActiveChunkId}
               autoFocus={!showingShipping && autoFocus}
+              setAutoFocus={setAutoFocus}
+              showAutoFocus={!showingShipping}
               viewMap={viewMap}
               setViewMap={setViewMap}
+              navIndex={showingShipping ? shippingIdx : pageIdx}
+              navCount={showingShipping ? shippingImages.length : deliveryPages.length}
+              onPrev={() => {
+                if (showingShipping) {
+                  setShippingIdx((i) => Math.max(0, i - 1));
+                } else {
+                  setPageIdx((i) => {
+                    const next = Math.max(0, i - 1);
+                    if (next !== i) setActiveChunkId(null);
+                    return next;
+                  });
+                }
+              }}
+              onNext={() => {
+                if (showingShipping) {
+                  setShippingIdx((i) => Math.min(shippingImages.length - 1, i + 1));
+                } else {
+                  setPageIdx((i) => {
+                    const next = Math.min(deliveryPages.length - 1, i + 1);
+                    if (next !== i) setActiveChunkId(null);
+                    return next;
+                  });
+                }
+              }}
+              navLabel={showingShipping ? "张" : "页"}
             />
           ) : (
             <div className="rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
@@ -1993,16 +1965,30 @@ function ImageWithBoxes({
   activeChunkId,
   onSelect,
   autoFocus,
+  setAutoFocus,
+  showAutoFocus,
   viewMap,
   setViewMap,
+  navIndex,
+  navCount,
+  onPrev,
+  onNext,
+  navLabel,
 }: {
   image: UploadedImage;
   page: DocPage;
   activeChunkId: string | null;
   onSelect: (id: string | null) => void;
   autoFocus: boolean;
+  setAutoFocus?: (v: boolean) => void;
+  showAutoFocus?: boolean;
   viewMap: Record<string, ImgView>;
   setViewMap: React.Dispatch<React.SetStateAction<Record<string, ImgView>>>;
+  navIndex?: number;
+  navCount?: number;
+  onPrev?: () => void;
+  onNext?: () => void;
+  navLabel?: string;
 }) {
   const [w, h] = [page.pageBox[2] || image.width, page.pageBox[3] || image.height];
   const view = viewMap[image.id] ?? DEFAULT_IMG_VIEW;
@@ -2123,7 +2109,21 @@ function ImageWithBoxes({
               重置视图
             </button>
           )}
-          <span className="hidden sm:inline">{"\n"}</span>
+          {showAutoFocus && setAutoFocus && (
+            <div className="flex items-center gap-1.5 pl-1">
+              <Label
+                htmlFor="auto-focus-switch"
+                className="cursor-pointer text-[11px] text-muted-foreground"
+              >
+                自动聚焦
+              </Label>
+              <Switch
+                id="auto-focus-switch"
+                checked={autoFocus}
+                onCheckedChange={setAutoFocus}
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -2194,21 +2194,37 @@ function ImageWithBoxes({
         </div>
       </div>
       <div className="flex items-center justify-between gap-2 border-t border-primary/20 bg-primary/5 px-3 py-1.5 text-xs text-primary">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="truncate font-medium">{image.name}</span>
-          <span className="text-primary/70">
-            · {w} × {h}
-          </span>
-        </div>
-        {view.manual && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-6 gap-1 border-primary/30 px-2 text-xs text-primary hover:bg-primary/10"
-            onClick={resetView}
-          >
-            <Minimize2 className="size-3" /> 重置视图
-          </Button>
+        {navCount && navCount > 1 ? (
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-6 gap-1 border-primary/30 px-2 text-xs text-primary hover:bg-primary/10 disabled:opacity-50"
+              onClick={onPrev}
+              disabled={navIndex === 0}
+            >
+              <ChevronLeft className="size-3.5" /> 上一页
+            </Button>
+            <span className="tabular-nums">
+              第 {((navIndex ?? 0) + 1)} / {navCount} {navLabel}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-6 gap-1 border-primary/30 px-2 text-xs text-primary hover:bg-primary/10 disabled:opacity-50"
+              onClick={onNext}
+              disabled={navIndex === navCount - 1}
+            >
+              下一页 <ChevronRight className="size-3.5" />
+            </Button>
+          </>
+        ) : (
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="truncate font-medium">{image.name}</span>
+            <span className="text-primary/70">
+              · {w} × {h}
+            </span>
+          </div>
         )}
       </div>
     </div>
