@@ -87,6 +87,7 @@ import { toast } from "sonner";
 
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
+import { pollExternalTasks } from "@/lib/sync.functions";
 
 export const Route = createFileRoute("/")({
   component: Workbench,
