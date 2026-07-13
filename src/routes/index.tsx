@@ -1425,7 +1425,7 @@ function Workbench() {
                       </TableCell>
 
                       <TableCell>
-                        <StatusBadge status={r.status} pending={pending} />
+                        <AuditConclusionBadge status={r.status} aiVerdict={r.aiVerdict} />
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
