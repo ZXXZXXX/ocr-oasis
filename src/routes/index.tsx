@@ -2039,7 +2039,7 @@ function ImageWithBoxes({
               重置视图
             </button>
           )}
-          <span className="hidden sm:inline">拖动平移 · 滚轮缩放</span>
+          <span className="hidden sm:inline">{"\n"}</span>
         </div>
       </div>
 
