@@ -532,57 +532,78 @@ function adjustChunkConfidences(
   });
 }
 
+const MOCK_DRIVERS = [
+  { driver: "王建国", plate: "沪B·72841" },
+  { driver: "李永强", plate: "浙A·33176" },
+  { driver: "陈小龙", plate: "苏E·58902" },
+  { driver: "赵国胜", plate: "皖K·10429" },
+  { driver: "刘志明", plate: "京N·66317" },
+];
+
+function pickDriver(seed: number) {
+  return MOCK_DRIVERS[seed % MOCK_DRIVERS.length]!;
+}
+
 function seedRecords(): OcrRecord[] {
   const now = Date.now();
   type Seed = {
     minutesAgo: number;
     mode: "high" | "mid" | "low";
-    docTypes: DocType[];
+    signatureStatus: SignatureStatus;
+    status: Extract<Status, "pending_review" | "verified">;
+    aiVerdict: AiVerdict;
   };
+  // 送货单始终有；出货传票作为参考图，一定附带
   const seeds: Seed[] = [
-    { minutesAgo: 4, mode: "high", docTypes: ["delivery_note", "shipping_slip"] },
-    { minutesAgo: 45, mode: "mid", docTypes: ["delivery_note"] },
-    { minutesAgo: 180, mode: "low", docTypes: ["delivery_note", "shipping_slip"] },
+    { minutesAgo: 4,   mode: "high", signatureStatus: "perfect", status: "pending_review", aiVerdict: "pass" },
+    { minutesAgo: 45,  mode: "mid",  signatureStatus: "partial", status: "pending_review", aiVerdict: "fail" },
+    { minutesAgo: 180, mode: "low",  signatureStatus: "partial", status: "pending_review", aiVerdict: "fail" },
+    { minutesAgo: 320, mode: "high", signatureStatus: "perfect", status: "verified",       aiVerdict: "pass" },
   ];
+  const docTypes: DocType[] = ["delivery_note", "shipping_slip"];
   return seeds.map((s, idx) => {
-    const images: UploadedImage[] = s.docTypes.map((dt) => ({
+    const images: UploadedImage[] = docTypes.map((dt) => ({
       id: `img-${idx}-${dt}`,
       name: `${dt === "delivery_note" ? "delivery" : "shipping"}_sample_${idx + 1}.jpg`,
       url: placeholderImg(
         1920,
         720,
-        dt === "delivery_note" ? "送货单示例" : "出货传票示例",
+        dt === "delivery_note" ? "送货单示例" : "出货传票示例（参考）",
       ),
       docType: dt,
       width: 1920,
       height: 720,
     }));
+    // 只对送货单执行 OCR
     const results: Partial<Record<DocType, DocPage[]>> = {};
-    s.docTypes.forEach((dt) => {
-      const img = images.find((i) => i.docType === dt)!;
-      const rawChunks =
-        dt === "delivery_note" ? mockDeliveryChunks() : mockShippingChunks();
-      const rand = createRand(idx + 1 + s.docTypes.indexOf(dt));
-      results[dt] = [
-        {
-          imageId: img.id,
-          sourceImage: img.name,
-          pageBox: [0, 0, img.width, img.height],
-          chunks: adjustChunkConfidences(rawChunks, s.mode, rand),
-        },
-      ];
-    });
+    const dImg = images.find((i) => i.docType === "delivery_note")!;
+    const rand = createRand(idx + 1);
+    results.delivery_note = [
+      {
+        imageId: dImg.id,
+        sourceImage: dImg.name,
+        pageBox: [0, 0, dImg.width, dImg.height],
+        chunks: adjustChunkConfidences(mockDeliveryChunks(), s.mode, rand),
+      },
+    ];
     const allPages = Object.values(results).flat() as DocPage[];
+    const who = pickDriver(idx);
     return {
-      id: `seed-${idx}`,
+      id: `task-${1000 + idx}`,
       createdAt: now - s.minutesAgo * 60_000,
-      status: "pending_review" as Status,
+      status: s.status,
       progress: 100,
       confidence: averageConfidence(allPages),
-      deliveryCount: images.filter((i) => i.docType === "delivery_note").length,
-      shippingCount: images.filter((i) => i.docType === "shipping_slip").length,
+      deliveryCount: 1,
+      shippingCount: 1,
       images,
       results,
+      driver: who.driver,
+      plateNo: who.plate,
+      signatureStatus: s.signatureStatus,
+      aiVerdict: s.aiVerdict,
+      verifiedAt: s.status === "verified" ? now - (s.minutesAgo - 10) * 60_000 : undefined,
+      verifiedBy: s.status === "verified" ? CURRENT_USER : undefined,
     };
   });
 }
