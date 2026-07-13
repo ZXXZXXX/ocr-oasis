@@ -739,7 +739,7 @@ function seedRecords(): OcrRecord[] {
     },
   ];
   const docTypes: DocType[] = ["delivery_note", "shipping_slip"];
-  return seeds.map((s, idx) => {
+  const records: OcrRecord[] = seeds.map((s, idx) => {
     const images: UploadedImage[] = docTypes.map((dt) => ({
       id: `img-${idx}-${dt}`,
       name: `${dt === "delivery_note" ? "delivery" : "shipping"}_sample_${idx + 1}.jpg`,
