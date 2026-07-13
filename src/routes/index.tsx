@@ -1812,8 +1812,24 @@ function DocPanel({
         </div>
       </div>
 
+      {/* Resizer */}
+      <div
+        className="relative z-10 flex shrink-0 items-center justify-center hover:bg-primary/5 active:bg-primary/10"
+        style={{ width: 8, cursor: "col-resize" }}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          resizingRef.current = true;
+          document.body.style.cursor = "col-resize";
+          document.body.style.userSelect = "none";
+        }}
+      >
+        <div className="flex h-8 w-5 items-center justify-center rounded-full bg-muted/50 hover:bg-primary/10">
+          <GripVertical className="size-3 text-muted-foreground" />
+        </div>
+      </div>
+
       {/* Chunks editor */}
-      <div ref={scrollRef} className="flex flex-col overflow-y-auto">
+      <div ref={scrollRef} className="flex flex-1 flex-col overflow-y-auto" style={{ minWidth: 0 }}>
         <div className="space-y-0.5 px-4 py-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium text-foreground">
