@@ -1632,24 +1632,79 @@ function DetailView({
         editing={editing}
         autoFocus={autoFocus}
         setAutoFocus={setAutoFocus}
-        onChange={(pageIdx, chunkId, v) => onChange("delivery_note", pageIdx, chunkId, v)}
+        onChange={(pageIdx, chunkId, v) =>
+          handleEditChange("delivery_note", pageIdx, chunkId, v)
+        }
         onConfirm={(pageIdx, chunkId) => onConfirm("delivery_note", pageIdx, chunkId)}
       />
 
 
 
       {editing && (
-        <div className="shrink-0 border-t border-border bg-muted/30 px-6 py-3">
-          <div className="flex items-center justify-end gap-2">
-            <Button variant="outline" onClick={cancelEdit} className="gap-2">
-              <X className="size-4" /> 取消
-            </Button>
-            <Button onClick={submitEdit} className="gap-2">
-              <CheckCircle2 className="size-4" /> 提交
-            </Button>
+        <div className="shrink-0 border-t border-border bg-background px-6 py-3 shadow-[0_-4px_12px_-8px_rgba(0,0,0,0.15)]">
+          <div className="flex items-center justify-between gap-4">
+            <div className="text-xs text-muted-foreground">
+              {lastEditedAt ? (
+                <span className="inline-flex items-center gap-1">
+                  <Pencil className="size-3" />
+                  最后修改：{fmtTime(lastEditedAt)}
+                </span>
+              ) : (
+                <span className="text-muted-foreground/70">尚未修改</span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={requestCancel} className="gap-2">
+                <X className="size-4" /> 取消
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => submitVerdict("fail")}
+                className="gap-2 border-[color:var(--destructive)]/40 text-[color:var(--destructive)] hover:bg-[color:var(--destructive)]/10 hover:text-[color:var(--destructive)]"
+              >
+                <ThumbsDown className="size-4" /> 不通过
+              </Button>
+              <Button
+                onClick={() => submitVerdict("pass")}
+                className="gap-2 bg-[color:var(--success)] text-white hover:bg-[color:var(--success)]/90"
+              >
+                <ThumbsUp className="size-4" /> 通过
+              </Button>
+            </div>
           </div>
         </div>
       )}
+
+      <AlertDialog open={cancelConfirmOpen} onOpenChange={setCancelConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>是否保存刚刚编辑的信息？</AlertDialogTitle>
+            <AlertDialogDescription>
+              你已经修改了识别结果但未提交验收结论。选择「保存修改」将保留修改内容并退出编辑；选择「放弃修改」将恢复到进入编辑前的状态。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>继续编辑</AlertDialogCancel>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setCancelConfirmOpen(false);
+                discardAndClose();
+              }}
+            >
+              放弃修改
+            </Button>
+            <AlertDialogAction
+              onClick={() => {
+                setCancelConfirmOpen(false);
+                keepEditsAndClose();
+              }}
+            >
+              保存修改
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
