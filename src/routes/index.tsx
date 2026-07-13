@@ -1069,7 +1069,7 @@ function seedRecords(): OcrRecord[] {
       ],
     };
     const pages = Object.values(results).flat() as DocPage[];
-    return {
+    const record: OcrRecord = {
       id: makeKaOrderId(createdAt, s.idSeed),
       createdAt,
       status: "pending_review",
@@ -1084,6 +1084,7 @@ function seedRecords(): OcrRecord[] {
       signatureStatus: s.signatureStatus,
       aiVerdict: s.aiVerdict,
     };
+    return { ...record, aiRejectionReason: makeAiRejectionReason(record) };
   });
 
   return [realRecord, ...noSlipRecords, ...records];
