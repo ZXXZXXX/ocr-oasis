@@ -1498,28 +1498,70 @@ function Workbench() {
                         </div>
                       </div>
                       <div className="flex flex-col gap-1.5">
-                        <div className="flex items-center justify-between">
-                          <Label className="text-xs text-muted-foreground">置信度评分范围</Label>
-                          <span className="text-xs tabular-nums text-foreground">
-                            {confRange[0]} – {confRange[1]}
-                          </span>
+                        <Label className="text-xs text-muted-foreground">置信度</Label>
+                        <div className="flex gap-2">
+                          {(["high", "mid", "low"] as const).map((tone) => {
+                            const selected = selectedConfidenceTones.has(tone);
+                            return (
+                              <button
+                                key={tone}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedConfidenceTones((prev) => {
+                                    const next = new Set(prev);
+                                    if (next.has(tone)) {
+                                      next.delete(tone);
+                                    } else {
+                                      next.add(tone);
+                                    }
+                                    return next;
+                                  });
+                                }}
+                                className={cn(
+                                  "flex-1 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors",
+                                  selected
+                                    ? cn(
+                                        "border-transparent text-white",
+                                        tone === "high" && "bg-[color:var(--success)]",
+                                        tone === "mid" && "bg-[color:var(--warning)]",
+                                        tone === "low" && "bg-[color:var(--destructive)]",
+                                      )
+                                    : cn(
+                                        "border-border bg-background text-muted-foreground hover:bg-accent hover:text-foreground",
+                                      ),
+                                )}
+                              >
+                                {CONFIDENCE_LABEL[tone]}
+                              </button>
+                            );
+                          })}
                         </div>
-                        <div className="px-1 pt-3">
-                          <Slider
-                            min={0}
-                            max={100}
-                            step={1}
-                            minStepsBetweenThumbs={1}
-                            value={confRange}
-                            onValueChange={(v) =>
-                              setConfRange([v[0] ?? 0, v[1] ?? 100] as [number, number])
-                            }
-                          />
-                          <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
-                            <span>0</span>
-                            <span>50</span>
-                            <span>100</span>
-                          </div>
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <Label className="text-xs text-muted-foreground">AI 预审结论</Label>
+                        <div className="flex gap-2">
+                          {[
+                            { value: "all", label: "全部" },
+                            { value: "pass", label: "通过" },
+                            { value: "fail", label: "不通过" },
+                          ].map((opt) => {
+                            const selected = aiVerdictFilter === opt.value;
+                            return (
+                              <button
+                                key={opt.value}
+                                type="button"
+                                onClick={() => setAiVerdictFilter(opt.value as typeof aiVerdictFilter)}
+                                className={cn(
+                                  "flex-1 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors",
+                                  selected
+                                    ? "border-primary bg-primary text-primary-foreground"
+                                    : "border-border bg-background text-muted-foreground hover:bg-accent hover:text-foreground",
+                                )}
+                              >
+                                {opt.label}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
                     </div>
