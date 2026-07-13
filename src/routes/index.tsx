@@ -1130,11 +1130,13 @@ function Workbench() {
                       aria-label="全选"
                     />
                   </TableHead>
-                  <TableHead className="w-[160px]">任务 ID</TableHead>
-                  <TableHead>创建时间</TableHead>
-                  <TableHead>图片数量</TableHead>
-                  <TableHead className="w-[220px]">识别进度</TableHead>
-                  <TableHead>置信度评分</TableHead>
+                  <TableHead className="w-[140px]">任务 ID</TableHead>
+                  <TableHead className="w-[150px]">同步时间</TableHead>
+                  <TableHead>司机 / 车牌</TableHead>
+                  <TableHead>签收状态</TableHead>
+                  <TableHead className="w-[180px]">识别进度</TableHead>
+                  <TableHead>置信度</TableHead>
+                  <TableHead>AI 结论</TableHead>
                   <TableHead>审核状态</TableHead>
                   <TableHead className="text-right">操作</TableHead>
                 </TableRow>
