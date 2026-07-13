@@ -2261,6 +2261,13 @@ function ChunkEditor({
     chunk.label !== "Image" && chunk.confidence != null && chunk.confidence < LOW_CONF_THRESHOLD;
   const needsReview = isLow && !chunk.edited && !chunk.confirmed;
 
+  const dotColor =
+    tone === "low"
+      ? "bg-[color:var(--warning)]"
+      : tone === "mid"
+        ? "bg-primary"
+        : "bg-[color:var(--success)]";
+
   const meta = LABEL_META[chunk.label];
   const Icon = meta.icon;
 
@@ -2276,12 +2283,14 @@ function ChunkEditor({
     <div
       onClick={onFocus}
       className={cn(
-        "border-l-2 py-1.5 pl-2 pr-1 transition-colors",
+        "flex items-start gap-2 border-l-2 py-1.5 pl-2 pr-1 transition-colors",
         accentCls,
         active && "bg-primary/5",
       )}
     >
-      {active && (
+      <span className={cn("mt-1.5 size-2 shrink-0 rounded-full", dotColor)} />
+      <div className="min-w-0 flex-1">
+        {active && (
         <div className="mb-1 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <span
@@ -2389,6 +2398,7 @@ function ChunkEditor({
           {chunk.edited ? "最近修改" : "确认于"}：{fmtEditLog(chunk.lastEdit)}
         </div>
       )}
+      </div>
     </div>
   );
 }
