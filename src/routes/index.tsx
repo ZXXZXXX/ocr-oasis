@@ -1435,7 +1435,7 @@ function StatCard({
 
 function StatusBadge({
   status,
-  pending,
+  pending: _pending,
 }: {
   status: Status;
   pending: number;
@@ -1443,7 +1443,7 @@ function StatusBadge({
   if (status === "recognizing")
     return (
       <Badge variant="secondary" className="gap-1 font-normal">
-        <Loader2 className="size-3 animate-spin" /> 识别中
+        <Loader2 className="size-3 animate-spin" /> AI 识别中
       </Badge>
     );
   if (status === "failed")
@@ -1452,15 +1452,43 @@ function StatusBadge({
         <AlertTriangle className="size-3" /> 识别异常
       </Badge>
     );
-  if (pending > 0)
+  if (status === "pending_review")
     return (
       <Badge className="gap-1 border-0 bg-[color:var(--warning)]/25 font-normal text-[color:var(--warning-foreground)]">
-        <AlertTriangle className="size-3" /> 待核验 · {pending}
+        <AlertTriangle className="size-3" /> 待审核
       </Badge>
     );
   return (
     <Badge className="gap-1 border-0 bg-[color:var(--success)]/15 font-normal text-[color:var(--success)]">
-      <CheckCircle2 className="size-3" /> 已完成
+      <CheckCircle2 className="size-3" /> 已验收
+    </Badge>
+  );
+}
+
+function SignatureBadge({ value }: { value: SignatureStatus }) {
+  if (value === "perfect")
+    return (
+      <Badge className="gap-1 border-0 bg-[color:var(--success)]/15 font-normal text-[color:var(--success)]">
+        <CheckCircle2 className="size-3" /> {SIGNATURE_LABEL[value]}
+      </Badge>
+    );
+  return (
+    <Badge className="gap-1 border-0 bg-[color:var(--warning)]/25 font-normal text-[color:var(--warning-foreground)]">
+      <AlertTriangle className="size-3" /> {SIGNATURE_LABEL[value]}
+    </Badge>
+  );
+}
+
+function VerdictBadge({ value }: { value: AiVerdict }) {
+  if (value === "pass")
+    return (
+      <Badge className="gap-1 border-0 bg-[color:var(--success)]/15 font-normal text-[color:var(--success)]">
+        <CheckCircle2 className="size-3" /> {VERDICT_LABEL[value]}
+      </Badge>
+    );
+  return (
+    <Badge variant="destructive" className="gap-1 font-normal">
+      <AlertTriangle className="size-3" /> {VERDICT_LABEL[value]}
     </Badge>
   );
 }
