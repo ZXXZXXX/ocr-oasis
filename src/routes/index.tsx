@@ -916,7 +916,7 @@ function seedRecords(): OcrRecord[] {
     const allPages = Object.values(results).flat() as DocPage[];
     const who = pickDriver(idx);
     const createdAt = now - s.minutesAgo * 60_000;
-    return {
+    const record: OcrRecord = {
       id: makeKaOrderId(createdAt, 1_000_000 + idx * 137),
       createdAt,
       status: s.status,
@@ -934,6 +934,7 @@ function seedRecords(): OcrRecord[] {
       verifiedBy: s.status === "verified" ? CURRENT_USER : undefined,
       shippingSlipNo: makeShippingSlipNo(createdAt, 1_000 + idx * 137),
     };
+    return { ...record, aiRejectionReason: makeAiRejectionReason(record) };
   });
 
   // 真实照片任务（大润发 商品收货单 + 京东 送货验收单）
