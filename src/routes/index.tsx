@@ -1503,10 +1503,9 @@ function DetailView({
 
 
   const pending = pendingLowConf(record);
-  const availableDocTypes = Object.keys(record.results ?? {}) as DocType[];
-  const shippingRefImgs = record.images.filter((i) => i.docType === "shipping_slip");
-  type TabValue = DocType | "shipping_ref";
-  const [activeTab, setActiveTab] = useState<TabValue>(availableDocTypes[0] ?? "shipping_ref");
+  const deliveryPages = record.results?.delivery_note ?? [];
+  const deliveryImages = record.images.filter((i) => i.docType === "delivery_note");
+  const shippingImages = record.images.filter((i) => i.docType === "shipping_slip");
   const [autoFocus, setAutoFocus] = useState(true);
 
   const [editing, setEditing] = useState(false);
