@@ -2354,10 +2354,6 @@ function ImageWithBoxes({
             <ZoomIn className="size-3.5" />
           </Button>
         </div>
-        const isDefaultFit = !view.manual && view.scale === 1 && view.tx === 0 && view.ty === 0;
-        const isAutoFocused = autoFocus && !view.manual && !!activeChunk;
-        const showReset = !isDefaultFit || isAutoFocused;
-
         <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
           {showReset && (
             <button
