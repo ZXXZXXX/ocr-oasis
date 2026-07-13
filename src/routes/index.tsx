@@ -1156,9 +1156,9 @@ function Workbench() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setCreateOpen(true)}
+                            onClick={syncNewTask}
                           >
-                            <Plus className="mr-1 size-4" /> 新建识别
+                            <RotateCcw className="mr-1 size-4" /> 手动同步新任务
                           </Button>
                         ) : (
                           <Button
