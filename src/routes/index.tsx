@@ -2332,9 +2332,9 @@ function ImageWithBoxes({
                 const isActive = c.id === activeChunkId;
                 const color =
                   tone === "low"
-                    ? "border-[color:var(--warning)] bg-[color:var(--warning)]/15"
+                    ? "border-red-500 bg-red-500/15"
                     : tone === "mid"
-                      ? "border-primary bg-primary/10"
+                      ? "border-orange-500 bg-orange-500/10"
                       : "border-[color:var(--success)]/70 bg-[color:var(--success)]/5";
                 return (
                   <button
