@@ -61,12 +61,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
@@ -160,7 +155,7 @@ interface OcrRecord {
   plateNo: string;
   signatureStatus: SignatureStatus;
   aiVerdict?: AiVerdict; // 识别完成后由AI给出
-  verifiedAt?: number;   // 人工提交验收结论时间
+  verifiedAt?: number; // 人工提交验收结论时间
   verifiedBy?: string;
 }
 
@@ -227,10 +222,7 @@ function htmlToText(html: string): string {
 }
 
 function textToHtml(text: string): string {
-  const escaped = text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  const escaped = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   return `<p>${escaped.replace(/\n/g, "<br/>")}</p>`;
 }
 
@@ -320,7 +312,7 @@ function mockDeliveryChunks(): Chunk[] {
       bbox: [598, 481, 867, 678],
       label: "Image",
       content:
-        '<img alt="Red circular stamp of \'统一企业有限公司\' with the number \'0058\' in the center."/>',
+        "<img alt=\"Red circular stamp of '统一企业有限公司' with the number '0058' in the center.\"/>",
     },
   ];
   return raw.map((c) => ({ ...c, id: uid() }));
@@ -475,11 +467,7 @@ function UploadZone({
               key={img.id}
               className="group relative aspect-square overflow-hidden rounded-md border border-border bg-muted"
             >
-              <img
-                src={img.url}
-                alt={img.name}
-                className="h-full w-full object-cover"
-              />
+              <img src={img.url} alt={img.name} className="h-full w-full object-cover" />
               <button
                 type="button"
                 onClick={(e) => {
@@ -555,10 +543,34 @@ function seedRecords(): OcrRecord[] {
   };
   // 送货单始终有；出货传票作为参考图，一定附带
   const seeds: Seed[] = [
-    { minutesAgo: 4,   mode: "high", signatureStatus: "perfect", status: "pending_review", aiVerdict: "pass" },
-    { minutesAgo: 45,  mode: "mid",  signatureStatus: "partial", status: "pending_review", aiVerdict: "fail" },
-    { minutesAgo: 180, mode: "low",  signatureStatus: "partial", status: "pending_review", aiVerdict: "fail" },
-    { minutesAgo: 320, mode: "high", signatureStatus: "perfect", status: "verified",       aiVerdict: "pass" },
+    {
+      minutesAgo: 4,
+      mode: "high",
+      signatureStatus: "perfect",
+      status: "pending_review",
+      aiVerdict: "pass",
+    },
+    {
+      minutesAgo: 45,
+      mode: "mid",
+      signatureStatus: "partial",
+      status: "pending_review",
+      aiVerdict: "fail",
+    },
+    {
+      minutesAgo: 180,
+      mode: "low",
+      signatureStatus: "partial",
+      status: "pending_review",
+      aiVerdict: "fail",
+    },
+    {
+      minutesAgo: 320,
+      mode: "high",
+      signatureStatus: "perfect",
+      status: "verified",
+      aiVerdict: "pass",
+    },
   ];
   const docTypes: DocType[] = ["delivery_note", "shipping_slip"];
   return seeds.map((s, idx) => {
@@ -624,10 +636,7 @@ function Workbench() {
   const [confRange, setConfRange] = useState<[number, number]>([0, 100]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  const activeRecords = useMemo(
-    () => records.filter((r) => r.status === "recognizing"),
-    [records],
-  );
+  const activeRecords = useMemo(() => records.filter((r) => r.status === "recognizing"), [records]);
 
   const detailRecord = records.find((r) => r.id === detailId) ?? null;
 
@@ -664,8 +673,7 @@ function Workbench() {
     return records.filter((r) => {
       if (r.createdAt < fromT || r.createdAt > toT) return false;
       if (r.status !== "recognizing" && r.status !== "failed" && r.confidence != null) {
-        if (r.confidence < confRange[0] || r.confidence > confRange[1])
-          return false;
+        if (r.confidence < confRange[0] || r.confidence > confRange[1]) return false;
       } else {
         if (confRange[0] > 0 || confRange[1] < 100) return false;
       }
@@ -673,14 +681,12 @@ function Workbench() {
     });
   }, [records, dateFrom, dateTo, confRange]);
 
-  const filterActive =
-    !!dateFrom || !!dateTo || confRange[0] > 0 || confRange[1] < 100;
+  const filterActive = !!dateFrom || !!dateTo || confRange[0] > 0 || confRange[1] < 100;
 
   const selectableIds = filteredRecords
     .filter((r) => r.status !== "recognizing" && r.status !== "failed")
     .map((r) => r.id);
-  const allSelected =
-    selectableIds.length > 0 && selectableIds.every((id) => selected.has(id));
+  const allSelected = selectableIds.length > 0 && selectableIds.every((id) => selected.has(id));
   const someSelected = selected.size > 0 && !allSelected;
 
   function toggleSelect(id: string) {
@@ -771,8 +777,6 @@ function Workbench() {
     toast.success("验收结论已提交，结果已回传至用户系统");
   }
 
-
-
   function mutateChunk(
     recordId: string,
     docType: DocType,
@@ -820,28 +824,16 @@ function Workbench() {
     });
   }
 
-  function confirmChunk(
-    recordId: string,
-    docType: DocType,
-    pageIdx: number,
-    chunkId: string,
-  ) {
+  function confirmChunk(recordId: string, docType: DocType, pageIdx: number, chunkId: string) {
     mutateChunk(recordId, docType, pageIdx, chunkId, (c) => ({
       ...c,
       confirmed: !c.confirmed,
-      lastEdit: !c.confirmed
-        ? { by: CURRENT_USER, at: new Date().toISOString() }
-        : c.lastEdit,
+      lastEdit: !c.confirmed ? { by: CURRENT_USER, at: new Date().toISOString() } : c.lastEdit,
     }));
   }
 
-  function replaceResults(
-    recordId: string,
-    results: NonNullable<OcrRecord["results"]>,
-  ) {
-    setRecords((prev) =>
-      prev.map((r) => (r.id === recordId ? { ...r, results } : r)),
-    );
+  function replaceResults(recordId: string, results: NonNullable<OcrRecord["results"]>) {
+    setRecords((prev) => prev.map((r) => (r.id === recordId ? { ...r, results } : r)));
   }
 
   function buildExport(r: OcrRecord) {
@@ -864,11 +856,11 @@ function Workbench() {
                   lastEdit: c.lastEdit ?? null,
                 }
               : c.confirmed
-              ? {
-                  confirmed: true,
-                  reviewedBy: c.lastEdit ?? null,
-                }
-              : {}),
+                ? {
+                    confirmed: true,
+                    reviewedBy: c.lastEdit ?? null,
+                  }
+                : {}),
           })),
         })),
       )
@@ -906,9 +898,7 @@ function Workbench() {
     if (targets.length === 0) return;
     const stillPending = targets.filter((r) => pendingLowConf(r) > 0);
     if (stillPending.length > 0) {
-      toast.error(
-        `其中 ${stillPending.length} 条记录仍有低置信度分块未核验，无法批量下载`,
-      );
+      toast.error(`其中 ${stillPending.length} 条记录仍有低置信度分块未核验，无法批量下载`);
       return;
     }
     const payload = {
@@ -955,9 +945,7 @@ function Workbench() {
                 <Sparkles className="size-5" />
               </div>
               <div>
-                <h1 className="text-base font-semibold leading-tight">
-                  验收单审核工作台
-                </h1>
+                <h1 className="text-base font-semibold leading-tight">验收单审核工作台</h1>
                 <p className="text-xs text-muted-foreground">
                   自动同步司机上传 · AI 预识别 · 人工审核回传
                 </p>
@@ -1001,19 +989,14 @@ function Workbench() {
               </div>
               <div className="flex items-center gap-2">
                 {selected.size > 0 && (
-                  <span className="mr-1 text-xs text-muted-foreground">
-                    已选 {selected.size}
-                  </span>
+                  <span className="mr-1 text-xs text-muted-foreground">已选 {selected.size}</span>
                 )}
                 <Popover open={filterOpen} onOpenChange={setFilterOpen}>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
                       size="sm"
-                      className={cn(
-                        "gap-1",
-                        filterActive && "border-primary/60 text-primary",
-                      )}
+                      className={cn("gap-1", filterActive && "border-primary/60 text-primary")}
                     >
                       <Filter className="size-3.5" />
                       筛选
@@ -1045,9 +1028,7 @@ function Workbench() {
                     </div>
                     <div className="space-y-4 px-4 py-4">
                       <div className="flex flex-col gap-1.5">
-                        <Label className="text-xs text-muted-foreground">
-                          创建时间范围
-                        </Label>
+                        <Label className="text-xs text-muted-foreground">创建时间范围</Label>
                         <div className="flex items-center gap-2">
                           <Input
                             type="date"
@@ -1055,9 +1036,7 @@ function Workbench() {
                             onChange={(e) => setDateFrom(e.target.value)}
                             className="h-9 flex-1"
                           />
-                          <span className="text-xs text-muted-foreground">
-                            至
-                          </span>
+                          <span className="text-xs text-muted-foreground">至</span>
                           <Input
                             type="date"
                             value={dateTo}
@@ -1068,9 +1047,7 @@ function Workbench() {
                       </div>
                       <div className="flex flex-col gap-1.5">
                         <div className="flex items-center justify-between">
-                          <Label className="text-xs text-muted-foreground">
-                            置信度评分范围
-                          </Label>
+                          <Label className="text-xs text-muted-foreground">置信度评分范围</Label>
                           <span className="text-xs tabular-nums text-foreground">
                             {confRange[0]} – {confRange[1]}
                           </span>
@@ -1083,10 +1060,7 @@ function Workbench() {
                             minStepsBetweenThumbs={1}
                             value={confRange}
                             onValueChange={(v) =>
-                              setConfRange([
-                                v[0] ?? 0,
-                                v[1] ?? 100,
-                              ] as [number, number])
+                              setConfRange([v[0] ?? 0, v[1] ?? 100] as [number, number])
                             }
                           />
                           <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
@@ -1122,9 +1096,7 @@ function Workbench() {
                 <TableRow className="bg-muted/40">
                   <TableHead className="w-[44px]">
                     <Checkbox
-                      checked={
-                        allSelected ? true : someSelected ? "indeterminate" : false
-                      }
+                      checked={allSelected ? true : someSelected ? "indeterminate" : false}
                       onCheckedChange={toggleSelectAll}
                       disabled={selectableIds.length === 0}
                       aria-label="全选"
@@ -1150,24 +1122,14 @@ function Workbench() {
                           <FileText className="size-5" />
                         </div>
                         <div className="text-sm">
-                          {records.length === 0
-                            ? "还没有审核单记录"
-                            : "没有符合当前筛选条件的记录"}
+                          {records.length === 0 ? "还没有审核单记录" : "没有符合当前筛选条件的记录"}
                         </div>
                         {records.length === 0 ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={syncNewTask}
-                          >
+                          <Button variant="outline" size="sm" onClick={syncNewTask}>
                             <RotateCcw className="mr-1 size-4" /> 手动同步新任务
                           </Button>
                         ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={resetFilters}
-                          >
+                          <Button variant="outline" size="sm" onClick={resetFilters}>
                             <RotateCcw className="mr-1 size-4" /> 重置筛选
                           </Button>
                         )}
@@ -1177,7 +1139,8 @@ function Workbench() {
                 )}
                 {filteredRecords.map((r) => {
                   const canSelect = r.status !== "recognizing" && r.status !== "failed";
-                  const pending = r.status !== "recognizing" && r.status !== "failed" ? pendingLowConf(r) : 0;
+                  const pending =
+                    r.status !== "recognizing" && r.status !== "failed" ? pendingLowConf(r) : 0;
                   return (
                     <TableRow key={r.id} className="hover:bg-muted/30">
                       <TableCell>
@@ -1188,9 +1151,7 @@ function Workbench() {
                           aria-label="选择"
                         />
                       </TableCell>
-                      <TableCell className="font-mono text-xs text-foreground">
-                        #{r.id}
-                      </TableCell>
+                      <TableCell className="font-mono text-xs text-foreground">#{r.id}</TableCell>
                       <TableCell className="text-sm text-muted-foreground" suppressHydrationWarning>
                         {fmtTime(r.createdAt)}
                       </TableCell>
@@ -1217,9 +1178,7 @@ function Workbench() {
                         {r.confidence != null ? (
                           <ConfidenceBadge score={r.confidence} />
                         ) : (
-                          <span className="text-xs text-muted-foreground">
-                            —
-                          </span>
+                          <span className="text-xs text-muted-foreground">—</span>
                         )}
                       </TableCell>
                       <TableCell>
@@ -1283,10 +1242,7 @@ function Workbench() {
           </div>
         </main>
 
-        <AlertDialog
-          open={!!deleteId}
-          onOpenChange={(o) => !o && setDeleteId(null)}
-        >
+        <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>确认删除</AlertDialogTitle>
@@ -1300,9 +1256,7 @@ function Workbench() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setDeleteId(null)}>
-                取消
-              </AlertDialogCancel>
+              <AlertDialogCancel onClick={() => setDeleteId(null)}>取消</AlertDialogCancel>
               <AlertDialogAction
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 onClick={() => {
@@ -1315,7 +1269,6 @@ function Workbench() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-
 
         {!progressDismissed && activeRecords.length > 0 && (
           <div
@@ -1351,9 +1304,7 @@ function Workbench() {
                 {activeRecords.map((r) => (
                   <div key={r.id}>
                     <div className="mb-1 flex items-center justify-between text-xs">
-                      <span className="font-mono text-muted-foreground">
-                        #{r.id}
-                      </span>
+                      <span className="font-mono text-muted-foreground">#{r.id}</span>
                       <span className="tabular-nums text-foreground">
                         {Math.round(r.progress)}%
                       </span>
@@ -1372,10 +1323,7 @@ function Workbench() {
           </div>
         )}
 
-        <Sheet
-          open={!!detailRecord}
-          onOpenChange={(o) => !o && setDetailId(null)}
-        >
+        <Sheet open={!!detailRecord} onOpenChange={(o) => !o && setDetailId(null)}>
           <SheetContent
             side="right"
             className="flex w-[75vw] flex-col gap-0 p-0 sm:max-w-[75vw] [&>button]:hidden"
@@ -1389,9 +1337,7 @@ function Workbench() {
                 onConfirm={(docType, pageIdx, chunkId) =>
                   confirmChunk(detailRecord.id, docType, pageIdx, chunkId)
                 }
-                onReplaceResults={(results) =>
-                  replaceResults(detailRecord.id, results)
-                }
+                onReplaceResults={(results) => replaceResults(detailRecord.id, results)}
                 onDownload={() => downloadJson(detailRecord)}
                 onSubmit={() => {
                   submitVerification(detailRecord.id);
@@ -1423,27 +1369,19 @@ function StatCard({
     accent === "primary"
       ? "text-primary"
       : accent === "success"
-      ? "text-[color:var(--success)]"
-      : accent === "warning"
-      ? "text-[color:var(--warning-foreground)]"
-      : "text-foreground";
+        ? "text-[color:var(--success)]"
+        : accent === "warning"
+          ? "text-[color:var(--warning-foreground)]"
+          : "text-foreground";
   return (
     <div className="rounded-xl border border-border bg-card px-4 py-3">
       <div className="text-xs text-muted-foreground">{label}</div>
-      <div className={cn("mt-1 text-2xl font-semibold tabular-nums", tone)}>
-        {value}
-      </div>
+      <div className={cn("mt-1 text-2xl font-semibold tabular-nums", tone)}>{value}</div>
     </div>
   );
 }
 
-function StatusBadge({
-  status,
-  pending: _pending,
-}: {
-  status: Status;
-  pending: number;
-}) {
+function StatusBadge({ status, pending: _pending }: { status: Status; pending: number }) {
   if (status === "recognizing")
     return (
       <Badge variant="secondary" className="gap-1 font-normal">
@@ -1502,8 +1440,8 @@ function ConfidenceBadge({ score }: { score: number }) {
     score >= 90
       ? "text-[color:var(--success)] bg-[color:var(--success)]/10"
       : score >= 80
-      ? "text-primary bg-primary/10"
-      : "text-[color:var(--warning-foreground)] bg-[color:var(--warning)]/25";
+        ? "text-primary bg-primary/10"
+        : "text-[color:var(--warning-foreground)] bg-[color:var(--warning)]/25";
   return (
     <span
       className={cn(
@@ -1527,12 +1465,7 @@ function DetailView({
   buildExport,
 }: {
   record: OcrRecord;
-  onChange: (
-    docType: DocType,
-    pageIdx: number,
-    chunkId: string,
-    value: string,
-  ) => void;
+  onChange: (docType: DocType, pageIdx: number, chunkId: string, value: string) => void;
   onConfirm: (docType: DocType, pageIdx: number, chunkId: string) => void;
   onReplaceResults: (results: NonNullable<OcrRecord["results"]>) => void;
   onDownload: () => void;
@@ -1543,18 +1476,16 @@ function DetailView({
   const availableDocTypes = Object.keys(record.results ?? {}) as DocType[];
   const shippingRefImgs = record.images.filter((i) => i.docType === "shipping_slip");
   type TabValue = DocType | "shipping_ref" | "json";
-  const [activeTab, setActiveTab] = useState<TabValue>(
-    availableDocTypes[0] ?? "json",
-  );
+  const [activeTab, setActiveTab] = useState<TabValue>(availableDocTypes[0] ?? "json");
   const [editing, setEditing] = useState(false);
   // snapshot taken on entering edit mode — used to cancel
   const snapshotRef = useRef<NonNullable<OcrRecord["results"]> | null>(null);
 
   function startEdit() {
     // deep-clone current results so cancel can restore
-    snapshotRef.current = JSON.parse(
-      JSON.stringify(record.results ?? {}),
-    ) as NonNullable<OcrRecord["results"]>;
+    snapshotRef.current = JSON.parse(JSON.stringify(record.results ?? {})) as NonNullable<
+      OcrRecord["results"]
+    >;
     setEditing(true);
   }
   function cancelEdit() {
@@ -1588,7 +1519,9 @@ function DetailView({
             </SheetTitle>
             <SheetDescription className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs">
               <span>#{record.id}</span>
-              <span>{record.driver} · {record.plateNo}</span>
+              <span>
+                {record.driver} · {record.plateNo}
+              </span>
               <span>同步 {fmtTime(record.createdAt)}</span>
               {record.verifiedAt && (
                 <span className="text-[color:var(--success)]">
@@ -1601,11 +1534,7 @@ function DetailView({
             {!editing && (
               <>
                 {record.status === "pending_review" && (
-                  <Button
-                    variant="outline"
-                    onClick={startEdit}
-                    className="gap-2"
-                  >
+                  <Button variant="outline" onClick={startEdit} className="gap-2">
                     <Pencil className="size-4" /> 编辑识别结果
                   </Button>
                 )}
@@ -1630,12 +1559,7 @@ function DetailView({
               </>
             )}
             <SheetClose asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                className="shrink-0"
-                aria-label="关闭"
-              >
+              <Button variant="outline" size="icon" className="shrink-0" aria-label="关闭">
                 <X className="size-4" />
               </Button>
             </SheetClose>
@@ -1693,12 +1617,8 @@ function DetailView({
                 pages={pages}
                 images={imgs}
                 editing={editing}
-                onChange={(pageIdx, chunkId, v) =>
-                  onChange(dt, pageIdx, chunkId, v)
-                }
-                onConfirm={(pageIdx, chunkId) =>
-                  onConfirm(dt, pageIdx, chunkId)
-                }
+                onChange={(pageIdx, chunkId, v) => onChange(dt, pageIdx, chunkId, v)}
+                onConfirm={(pageIdx, chunkId) => onConfirm(dt, pageIdx, chunkId)}
               />
             </TabsContent>
           );
@@ -1718,11 +1638,7 @@ function DetailView({
                   key={img.id}
                   className="overflow-hidden rounded-lg border border-border bg-muted/20"
                 >
-                  <img
-                    src={img.url}
-                    alt={img.name}
-                    className="h-auto w-full object-contain"
-                  />
+                  <img src={img.url} alt={img.name} className="h-auto w-full object-contain" />
                   <div className="border-t border-border bg-primary/10 px-3 py-1.5 text-xs text-foreground">
                     {img.name}
                   </div>
@@ -1745,11 +1661,7 @@ function DetailView({
       {editing && (
         <div className="shrink-0 border-t border-border bg-muted/30 px-6 py-3">
           <div className="flex items-center justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={cancelEdit}
-              className="gap-2"
-            >
+            <Button variant="outline" onClick={cancelEdit} className="gap-2">
               <X className="size-4" /> 取消
             </Button>
             <Button onClick={submitEdit} className="gap-2">
@@ -1793,7 +1705,6 @@ function DocPanel({
     const delta = elRect.top - containerRect.top - 12;
     container.scrollTo({ top: container.scrollTop + delta, behavior: "smooth" });
   }, [activeChunkId, pageIdx]);
-
 
   return (
     <div className="grid h-full grid-cols-1 overflow-hidden md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
@@ -1846,21 +1757,16 @@ function DocPanel({
             </h3>
             <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
               {!editing && (
-                <span className="text-muted-foreground">
-                  点击顶部「编辑」进入编辑态
-                </span>
+                <span className="text-muted-foreground">点击顶部「编辑」进入编辑态</span>
               )}
               <span className="inline-flex items-center gap-1">
-                <span className="size-2 rounded-sm bg-[color:var(--success)]" />
-                高
+                <span className="size-2 rounded-sm bg-[color:var(--success)]" />高
               </span>
               <span className="inline-flex items-center gap-1">
-                <span className="size-2 rounded-sm bg-primary" />
-                中
+                <span className="size-2 rounded-sm bg-primary" />中
               </span>
               <span className="inline-flex items-center gap-1">
-                <span className="size-2 rounded-sm bg-[color:var(--warning)]" />
-                低 &lt; 80
+                <span className="size-2 rounded-sm bg-[color:var(--warning)]" />低 &lt; 80
               </span>
             </div>
           </div>
@@ -1937,8 +1843,8 @@ function ImageWithBoxes({
                   tone === "low"
                     ? "border-[color:var(--warning)] bg-[color:var(--warning)]/15"
                     : tone === "mid"
-                    ? "border-primary bg-primary/10"
-                    : "border-[color:var(--success)]/70 bg-[color:var(--success)]/5";
+                      ? "border-primary bg-primary/10"
+                      : "border-[color:var(--success)]/70 bg-[color:var(--success)]/5";
                 return (
                   <button
                     type="button"
@@ -1966,7 +1872,9 @@ function ImageWithBoxes({
       <div className="flex items-center justify-between gap-2 border-t border-primary/20 bg-primary/5 px-3 py-1.5 text-xs text-primary">
         <div className="flex min-w-0 items-center gap-2">
           <span className="truncate font-medium">{image.name}</span>
-          <span className="text-primary/70">· {w} × {h}</span>
+          <span className="text-primary/70">
+            · {w} × {h}
+          </span>
         </div>
         {activeChunkId && (
           <Button
@@ -1982,7 +1890,6 @@ function ImageWithBoxes({
     </div>
   );
 }
-
 
 function fmtEditLog(e: EditLog) {
   const d = new Date(e.at);
@@ -2006,9 +1913,7 @@ function ChunkEditor({
 }) {
   const tone = confidenceTone(chunk.confidence);
   const isLow =
-    chunk.label !== "Image" &&
-    chunk.confidence != null &&
-    chunk.confidence < LOW_CONF_THRESHOLD;
+    chunk.label !== "Image" && chunk.confidence != null && chunk.confidence < LOW_CONF_THRESHOLD;
   const needsReview = isLow && !chunk.edited && !chunk.confirmed;
 
   const meta = LABEL_META[chunk.label];
@@ -2017,10 +1922,10 @@ function ChunkEditor({
   const borderCls = needsReview
     ? "border-[color:var(--warning)]/70"
     : tone === "low"
-    ? "border-[color:var(--warning)]/40"
-    : tone === "mid"
-    ? "border-primary/40"
-    : "border-border";
+      ? "border-[color:var(--warning)]/40"
+      : tone === "mid"
+        ? "border-primary/40"
+        : "border-border";
 
   const bgCls = needsReview ? "bg-[color:var(--warning)]/5" : "bg-card";
 
@@ -2042,10 +1947,10 @@ function ChunkEditor({
               chunk.label === "Section-Header"
                 ? "bg-primary/10 text-primary"
                 : chunk.label === "Table"
-                ? "bg-accent text-accent-foreground"
-                : chunk.label === "Image"
-                ? "bg-muted text-muted-foreground"
-                : "bg-secondary text-secondary-foreground",
+                  ? "bg-accent text-accent-foreground"
+                  : chunk.label === "Image"
+                    ? "bg-muted text-muted-foreground"
+                    : "bg-secondary text-secondary-foreground",
             )}
           >
             <Icon className="size-3" />
@@ -2073,12 +1978,11 @@ function ChunkEditor({
                 needsReview
                   ? "text-[color:var(--warning-foreground)]"
                   : tone === "mid"
-                  ? "text-primary"
-                  : "text-muted-foreground",
+                    ? "text-primary"
+                    : "text-muted-foreground",
               )}
             >
-              置信度 {Math.round(chunk.confidence * 100)}%
-              {needsReview && " · 待人工核验"}
+              置信度 {Math.round(chunk.confidence * 100)}%{needsReview && " · 待人工核验"}
             </span>
           ) : (
             <span className="text-muted-foreground">未评分</span>
@@ -2099,8 +2003,8 @@ function ChunkEditor({
             {needsReview
               ? "若识别结果正确，可直接确认；如有错误请在上方修改。"
               : chunk.edited
-              ? "已通过修改。"
-              : "已确认无需修改。"}
+                ? "已通过修改。"
+                : "已确认无需修改。"}
           </span>
           <Button
             type="button"
@@ -2128,11 +2032,7 @@ function ChunkEditor({
   );
 }
 
-function AutoResizeTextarea({
-  value,
-  className,
-  ...props
-}: React.ComponentProps<"textarea">) {
+function AutoResizeTextarea({ value, className, ...props }: React.ComponentProps<"textarea">) {
   const ref = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     const el = ref.current;
@@ -2200,7 +2100,6 @@ function ChunkContentEditor({
     );
   }
 
-
   // Section-Header / Text: edit plain text; store back as <p>...</p>
   const text = htmlToText(chunk.content);
   const isMulti = text.length > 60 || text.includes("\n");
@@ -2250,8 +2149,8 @@ function EditableTableHtml({
         readOnly
           ? "border-border"
           : mustEdit
-          ? "border-[color:var(--warning)] focus-within:ring-2 focus-within:ring-[color:var(--warning)]"
-          : "border-border focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/30",
+            ? "border-[color:var(--warning)] focus-within:ring-2 focus-within:ring-[color:var(--warning)]"
+            : "border-border focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/30",
         !readOnly && "[&_td]:cursor-text [&_th]:cursor-text",
       )}
       onClick={(e) => e.stopPropagation()}
@@ -2266,4 +2165,3 @@ function EditableTableHtml({
     </div>
   );
 }
-
