@@ -1657,6 +1657,12 @@ function VerdictBadge({ value }: { value: AiVerdict }) {
   );
 }
 
+const CONFIDENCE_LABEL: Record<"high" | "mid" | "low", string> = {
+  high: "高",
+  mid: "中",
+  low: "低",
+};
+
 function ConfidenceBadge({ score }: { score: number }) {
   const tone = confidenceTone(score / 100);
   const Icon = tone === "high" ? CheckCircle2 : AlertTriangle;
@@ -1664,12 +1670,12 @@ function ConfidenceBadge({ score }: { score: number }) {
     <Badge
       variant="status"
       className={cn(
-        "gap-1 border-0 font-normal tabular-nums",
+        "gap-1 border-0 font-normal",
         confidenceBadgeClasses(tone),
       )}
     >
       <Icon className="size-3" />
-      {score}
+      {CONFIDENCE_LABEL[tone]}
     </Badge>
   );
 }
