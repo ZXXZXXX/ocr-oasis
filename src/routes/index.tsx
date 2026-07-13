@@ -2431,9 +2431,9 @@ function ChunkEditor({
 
   const dotColor =
     tone === "low"
-      ? "bg-[color:var(--warning)]"
+      ? "bg-red-500"
       : tone === "mid"
-        ? "bg-primary"
+        ? "bg-orange-500"
         : "bg-[color:var(--success)]";
 
   const meta = LABEL_META[chunk.label];
