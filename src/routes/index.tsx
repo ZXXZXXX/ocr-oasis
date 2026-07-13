@@ -945,8 +945,6 @@ function Workbench() {
     setConfRange([0, 100]);
   }
 
-  const totalUploads = deliveryImgs.length + shippingImgs.length;
-
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-background text-foreground">
@@ -961,13 +959,13 @@ function Workbench() {
                   验收单审核工作台
                 </h1>
                 <p className="text-xs text-muted-foreground">
-                  送货单 · 出货传票 结构化识别
+                  自动同步司机上传 · AI 预识别 · 人工审核回传
                 </p>
               </div>
             </div>
-            <Button onClick={() => setCreateOpen(true)} className="gap-2">
-              <Plus className="size-4" />
-              新建识别
+            <Button onClick={syncNewTask} className="gap-2" variant="outline">
+              <RotateCcw className="size-4" />
+              手动同步新任务
             </Button>
           </div>
         </header>
