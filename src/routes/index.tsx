@@ -242,6 +242,28 @@ function confidenceTone(c?: number) {
   return "low";
 }
 
+// Synchronized color palette for confidence tones.
+function confidenceBadgeClasses(tone: "high" | "mid" | "low") {
+  if (tone === "high") return "text-[color:var(--success)] bg-[color:var(--success)]/10";
+  if (tone === "mid") return "text-orange-500 bg-orange-500/10";
+  return "text-red-500 bg-red-500/10";
+}
+function confidenceBorderClasses(tone: "high" | "mid" | "low") {
+  if (tone === "high") return "border-[color:var(--success)]/70 bg-[color:var(--success)]/5";
+  if (tone === "mid") return "border-orange-500 bg-orange-500/10";
+  return "border-red-500 bg-red-500/15";
+}
+function confidenceDotClasses(tone: "high" | "mid" | "low") {
+  if (tone === "high") return "bg-[color:var(--success)]";
+  if (tone === "mid") return "bg-orange-500";
+  return "bg-red-500";
+}
+function confidenceTextClasses(tone: "high" | "mid" | "low") {
+  if (tone === "high") return "text-[color:var(--success)]";
+  if (tone === "mid") return "text-orange-500";
+  return "text-red-500";
+}
+
 // Compute overall record confidence: average of scored chunks. Unscored counted as 1.0.
 function averageConfidence(pages: DocPage[]): number {
   const scores: number[] = [];
