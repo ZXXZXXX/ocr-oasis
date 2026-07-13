@@ -8,7 +8,6 @@ import {
   ScrollText,
   X,
   Minimize2,
-  Download,
   CheckCircle2,
   AlertTriangle,
   Loader2,
@@ -25,6 +24,7 @@ import {
   MoreHorizontal,
   Search,
 } from "lucide-react";
+
 
 
 
@@ -977,23 +977,6 @@ function Workbench() {
     };
   }
 
-  function downloadJson(r: OcrRecord) {
-    const pending = pendingLowConf(r);
-    if (pending > 0) {
-      toast.error(`还有 ${pending} 项低置信度分块未确认，无法导出`);
-      return;
-    }
-    const blob = new Blob([JSON.stringify(buildExport(r), null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `ocr-${r.id}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success("JSON 已下载");
-  }
 
 
   function deleteRecord(id: string) {
@@ -1428,8 +1411,8 @@ function Workbench() {
                   confirmChunk(detailRecord.id, docType, pageIdx, chunkId)
                 }
                 onReplaceResults={(results) => replaceResults(detailRecord.id, results)}
-                onDownload={() => downloadJson(detailRecord)}
                 onSubmit={() => {
+
                   submitVerification(detailRecord.id);
                   setDetailId(null);
                 }}
@@ -1556,18 +1539,18 @@ function DetailView({
   onChange,
   onConfirm,
   onReplaceResults,
-  onDownload,
   onSubmit,
   buildExport,
 }: {
+
   record: OcrRecord;
   onChange: (docType: DocType, pageIdx: number, chunkId: string, value: string) => void;
   onConfirm: (docType: DocType, pageIdx: number, chunkId: string) => void;
   onReplaceResults: (results: NonNullable<OcrRecord["results"]>) => void;
-  onDownload: () => void;
   onSubmit: () => void;
   buildExport: (r: OcrRecord) => unknown;
 }) {
+
   const pending = pendingLowConf(record);
   const availableDocTypes = Object.keys(record.results ?? {}) as DocType[];
   const shippingRefImgs = record.images.filter((i) => i.docType === "shipping_slip");
@@ -1634,14 +1617,6 @@ function DetailView({
                     <Pencil className="size-4" /> 编辑识别结果
                   </Button>
                 )}
-                <Button
-                  variant="ghost"
-                  onClick={onDownload}
-                  disabled={pending > 0}
-                  className="gap-2"
-                >
-                  <Download className="size-4" /> JSON
-                </Button>
                 {record.status === "pending_review" && (
                   <Button onClick={onSubmit} className="gap-2">
                     <CheckCircle2 className="size-4" /> 提交验收结论
