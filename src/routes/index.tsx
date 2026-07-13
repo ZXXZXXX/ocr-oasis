@@ -785,9 +785,71 @@ function seedRecords(): OcrRecord[] {
       verifiedBy: s.status === "verified" ? CURRENT_USER : undefined,
       shippingSlipNo: makeShippingSlipNo(createdAt, 1_000 + idx * 137),
     };
-
   });
+
+  // 真实照片任务（大润发 商品收货单 + 京东 送货验收单）
+  const realCreatedAt = now - 12 * 60_000;
+  const realImages: UploadedImage[] = [
+    {
+      id: "img-real-delivery",
+      name: "rtmart_receipt.jpg",
+      url: receiptRtmartAsset.url,
+      docType: "delivery_note",
+      width: 1080,
+      height: 1920,
+    },
+    {
+      id: "img-real-shipping",
+      name: "jd_receipt.jpg",
+      url: receiptJdAsset.url,
+      docType: "shipping_slip",
+      width: 1423,
+      height: 1920,
+    },
+  ];
+  const realResults: Partial<Record<DocType, DocPage[]>> = {
+    delivery_note: [
+      {
+        imageId: realImages[0]!.id,
+        sourceImage: realImages[0]!.name,
+        pageBox: [0, 0, realImages[0]!.width, realImages[0]!.height],
+        chunks: mockRtMartChunks(),
+      },
+    ],
+    shipping_slip: [
+      {
+        imageId: realImages[1]!.id,
+        sourceImage: realImages[1]!.name,
+        pageBox: [0, 0, realImages[1]!.width, realImages[1]!.height],
+        chunks: mockJdReceiptChunks(),
+      },
+    ],
+  };
+  const realPages = Object.values(realResults).flat() as DocPage[];
+  const realRecord: OcrRecord = {
+    id: makeKaOrderId(realCreatedAt, 2_260_423),
+    createdAt: realCreatedAt,
+    status: "pending_review",
+    progress: 100,
+    confidence: averageConfidence(realPages),
+    deliveryCount: 1,
+    shippingCount: 1,
+    images: realImages,
+    results: realResults,
+    driver: "王峰",
+    plateNo: "鲁DD8791",
+    signatureStatus: "perfect",
+    aiVerdict: "pass",
+    shippingSlipNo: "1383RY202604220013",
+  };
+
+  return [realRecord, ...records];
 }
+
+function seedRecordsInner_unused() {
+  return [] as OcrRecord[];
+}
+
 
 // ---------- Main Workbench ----------
 function Workbench() {
