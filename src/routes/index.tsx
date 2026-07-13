@@ -1666,6 +1666,15 @@ function DetailView({
                 </TabsTrigger>
               );
             })}
+            {shippingRefImgs.length > 0 && (
+              <TabsTrigger value="shipping_ref" className="gap-2">
+                <ScrollText className="size-3.5" />
+                出货传票（参考）
+                <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] tabular-nums text-muted-foreground">
+                  {shippingRefImgs.length}
+                </span>
+              </TabsTrigger>
+            )}
             <TabsTrigger value="json">JSON 预览</TabsTrigger>
           </TabsList>
         </div>
