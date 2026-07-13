@@ -1832,16 +1832,16 @@ type ImgView = {
   scale: number;
   tx: number; // px offset from centered
   ty: number;
-  rot: number; // degrees, multiples of 90 via buttons
   manual: boolean; // once user adjusts, stop auto-focus on active chunk
 };
-const DEFAULT_IMG_VIEW: ImgView = { scale: 1, tx: 0, ty: 0, rot: 0, manual: false };
+const DEFAULT_IMG_VIEW: ImgView = { scale: 1, tx: 0, ty: 0, manual: false };
 
 function ImageWithBoxes({
   image,
   page,
   activeChunkId,
   onSelect,
+  autoFocus,
   viewMap,
   setViewMap,
 }: {
@@ -1849,6 +1849,7 @@ function ImageWithBoxes({
   page: DocPage;
   activeChunkId: string | null;
   onSelect: (id: string | null) => void;
+  autoFocus: boolean;
   viewMap: Record<string, ImgView>;
   setViewMap: React.Dispatch<React.SetStateAction<Record<string, ImgView>>>;
 }) {
@@ -1870,14 +1871,12 @@ function ImageWithBoxes({
   };
   const zoomBy = (factor: number) =>
     updateView((v) => ({ scale: Math.min(6, Math.max(0.3, v.scale * factor)) }));
-  const rotateBy = (deg: number) =>
-    updateView((v) => ({ rot: (((v.rot + deg) % 360) + 360) % 360 }));
 
-  // Auto-focus on the active chunk only when user has not manually adjusted.
+  // Auto-focus on the active chunk only when enabled and user has not manually adjusted.
   const activeChunk = page.chunks.find((c) => c.id === activeChunkId);
   let transform: string;
   let transitionCls = "";
-  if (!view.manual && activeChunk) {
+  if (autoFocus && !view.manual && activeChunk) {
     const [x1, y1, x2, y2] = activeChunk.bbox;
     const bw = Math.max(1, x2 - x1 + 20);
     const fx = (x1 + x2) / 2 / w;
@@ -1888,8 +1887,9 @@ function ImageWithBoxes({
     transform = `translate(${tx}%, ${ty}%) scale(${scale})`;
     transitionCls = "transition-transform duration-500 ease-out";
   } else {
-    transform = `translate(${view.tx}px, ${view.ty}px) scale(${view.scale}) rotate(${view.rot}deg)`;
+    transform = `translate(${view.tx}px, ${view.ty}px) scale(${view.scale})`;
   }
+
 
   // Wheel to zoom
   const stageRef = useRef<HTMLDivElement>(null);
