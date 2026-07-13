@@ -1140,6 +1140,12 @@ function Workbench() {
     setRecords((prev) => prev.map((r) => (r.id === recordId ? { ...r, results } : r)));
   }
 
+  function updateSignatureStatus(recordId: string, signatureStatus: SignatureStatus) {
+    setRecords((prev) =>
+      prev.map((r) => (r.id === recordId ? { ...r, signatureStatus } : r)),
+    );
+  }
+
 
 
 
