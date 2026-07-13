@@ -1785,7 +1785,7 @@ function DocPanel({
 
       {/* Chunks editor */}
       <div ref={scrollRef} className="flex flex-col overflow-y-auto">
-        <div className="space-y-3 px-5 py-5">
+        <div className="space-y-0.5 px-4 py-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium text-foreground">
               识别分块 · {page?.chunks.length ?? 0}
@@ -2092,76 +2092,92 @@ function ChunkEditor({
   const meta = LABEL_META[chunk.label];
   const Icon = meta.icon;
 
-  const borderCls = needsReview
-    ? "border-[color:var(--warning)]/70"
+  const accentCls = needsReview
+    ? "border-l-[color:var(--warning)]"
     : tone === "low"
-      ? "border-[color:var(--warning)]/40"
+      ? "border-l-[color:var(--warning)]/60"
       : tone === "mid"
-        ? "border-primary/40"
-        : "border-border";
-
-  const bgCls = needsReview ? "bg-[color:var(--warning)]/5" : "bg-card";
+        ? "border-l-primary/50"
+        : "border-l-transparent";
 
   return (
     <div
       onClick={onFocus}
       className={cn(
-        "rounded-lg border p-3 transition-all",
-        borderCls,
-        bgCls,
-        active && "ring-2 ring-primary ring-offset-1",
+        "border-l-2 py-1.5 pl-2 pr-1 transition-colors",
+        accentCls,
+        active && "bg-primary/5",
       )}
     >
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <span
-            className={cn(
-              "inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium",
-              chunk.label === "Section-Header"
-                ? "bg-primary/10 text-primary"
-                : chunk.label === "Table"
-                  ? "bg-accent text-accent-foreground"
-                  : chunk.label === "Image"
-                    ? "bg-muted text-muted-foreground"
-                    : "bg-secondary text-secondary-foreground",
+      {active && (
+        <div className="mb-1 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium",
+                chunk.label === "Section-Header"
+                  ? "bg-primary/10 text-primary"
+                  : chunk.label === "Table"
+                    ? "bg-accent text-accent-foreground"
+                    : chunk.label === "Image"
+                      ? "bg-muted text-muted-foreground"
+                      : "bg-secondary text-secondary-foreground",
+              )}
+            >
+              <Icon className="size-3" />
+              {meta.text}
+            </span>
+            <span className="font-mono text-[10px] text-muted-foreground">
+              [{chunk.bbox.join(", ")}]
+            </span>
+          </div>
+          <div className="flex items-center gap-2 text-[11px]">
+            {chunk.edited && (
+              <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-primary">
+                <Pencil className="size-2.5" /> 已修改
+              </span>
             )}
-          >
-            <Icon className="size-3" />
-            {meta.text}
-          </span>
-          <span className="font-mono text-[10px] text-muted-foreground">
-            [{chunk.bbox.join(", ")}]
-          </span>
+            {chunk.confirmed && !chunk.edited && (
+              <span className="inline-flex items-center gap-1 rounded bg-[color:var(--success)]/15 px-1.5 py-0.5 text-[color:var(--success)]">
+                <CheckCircle2 className="size-2.5" /> 已确认
+              </span>
+            )}
+            {chunk.confidence != null ? (
+              <span
+                className={cn(
+                  "tabular-nums",
+                  needsReview
+                    ? "text-[color:var(--warning-foreground)]"
+                    : tone === "mid"
+                      ? "text-primary"
+                      : "text-muted-foreground",
+                )}
+              >
+                置信度 {Math.round(chunk.confidence * 100)}%{needsReview && " · 待人工核验"}
+              </span>
+            ) : (
+              <span className="text-muted-foreground">未评分</span>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-2 text-[11px]">
+      )}
+      {!active && (chunk.edited || (chunk.confirmed && !chunk.edited) || needsReview) && (
+        <div className="mb-0.5 flex items-center gap-1.5 text-[10px]">
           {chunk.edited && (
-            <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-primary">
+            <span className="inline-flex items-center gap-0.5 text-primary">
               <Pencil className="size-2.5" /> 已修改
             </span>
           )}
           {chunk.confirmed && !chunk.edited && (
-            <span className="inline-flex items-center gap-1 rounded bg-[color:var(--success)]/15 px-1.5 py-0.5 text-[color:var(--success)]">
+            <span className="inline-flex items-center gap-0.5 text-[color:var(--success)]">
               <CheckCircle2 className="size-2.5" /> 已确认
             </span>
           )}
-          {chunk.confidence != null ? (
-            <span
-              className={cn(
-                "tabular-nums",
-                needsReview
-                  ? "text-[color:var(--warning-foreground)]"
-                  : tone === "mid"
-                    ? "text-primary"
-                    : "text-muted-foreground",
-              )}
-            >
-              置信度 {Math.round(chunk.confidence * 100)}%{needsReview && " · 待人工核验"}
-            </span>
-          ) : (
-            <span className="text-muted-foreground">未评分</span>
+          {needsReview && (
+            <span className="text-[color:var(--warning-foreground)]">待人工核验</span>
           )}
         </div>
-      </div>
+      )}
 
       <ChunkContentEditor
         chunk={chunk}
@@ -2170,7 +2186,7 @@ function ChunkEditor({
         readOnly={!editing}
       />
 
-      {isLow && chunk.label !== "Image" && editing && (
+      {isLow && chunk.label !== "Image" && editing && active && (
         <div className="mt-2 flex items-center justify-between gap-2 text-[11px]">
           <span className="text-muted-foreground">
             {needsReview
@@ -2196,7 +2212,7 @@ function ChunkEditor({
         </div>
       )}
 
-      {chunk.lastEdit && (
+      {chunk.lastEdit && active && (
         <div className="mt-1.5 text-[11px] text-muted-foreground">
           {chunk.edited ? "最近修改" : "确认于"}：{fmtEditLog(chunk.lastEdit)}
         </div>
@@ -2204,6 +2220,7 @@ function ChunkEditor({
     </div>
   );
 }
+
 
 function AutoResizeTextarea({ value, className, ...props }: React.ComponentProps<"textarea">) {
   const ref = useRef<HTMLTextAreaElement>(null);
