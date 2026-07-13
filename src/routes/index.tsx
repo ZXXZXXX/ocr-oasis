@@ -940,42 +940,6 @@ function Workbench() {
     setRecords((prev) => prev.map((r) => (r.id === recordId ? { ...r, results } : r)));
   }
 
-  function buildExport(r: OcrRecord) {
-    if (!r.results) return {};
-    const documents = (Object.entries(r.results) as [DocType, DocPage[]][])
-      .map(([docType, pages]) =>
-        pages.map((p) => ({
-          documentType: docType,
-          source_image: p.sourceImage,
-          page_box: p.pageBox,
-          chunks: p.chunks.map((c) => ({
-            bbox: c.bbox,
-            label: c.label,
-            content: c.content,
-            ...(c.confidence != null ? { confidence: c.confidence } : {}),
-            ...(c.edited
-              ? {
-                  edited: true,
-                  original: c.original,
-                  lastEdit: c.lastEdit ?? null,
-                }
-              : c.confirmed
-                ? {
-                    confirmed: true,
-                    reviewedBy: c.lastEdit ?? null,
-                  }
-                : {}),
-          })),
-        })),
-      )
-      .flat();
-    return {
-      taskId: r.id,
-      createdAt: new Date(r.createdAt).toISOString(),
-      overallConfidence: (r.confidence ?? 0) / 100,
-      documents,
-    };
-  }
 
 
 
@@ -1398,12 +1362,11 @@ function Workbench() {
                 }
                 onReplaceResults={(results) => replaceResults(detailRecord.id, results)}
                 onSubmit={() => {
-
                   submitVerification(detailRecord.id);
                   setDetailId(null);
                 }}
-                buildExport={buildExport}
               />
+
             )}
           </SheetContent>
         </Sheet>
@@ -1526,22 +1489,21 @@ function DetailView({
   onConfirm,
   onReplaceResults,
   onSubmit,
-  buildExport,
 }: {
-
   record: OcrRecord;
   onChange: (docType: DocType, pageIdx: number, chunkId: string, value: string) => void;
   onConfirm: (docType: DocType, pageIdx: number, chunkId: string) => void;
   onReplaceResults: (results: NonNullable<OcrRecord["results"]>) => void;
   onSubmit: () => void;
-  buildExport: (r: OcrRecord) => unknown;
 }) {
+
 
   const pending = pendingLowConf(record);
   const availableDocTypes = Object.keys(record.results ?? {}) as DocType[];
   const shippingRefImgs = record.images.filter((i) => i.docType === "shipping_slip");
-  type TabValue = DocType | "shipping_ref" | "json";
-  const [activeTab, setActiveTab] = useState<TabValue>(availableDocTypes[0] ?? "json");
+  type TabValue = DocType | "shipping_ref";
+  const [activeTab, setActiveTab] = useState<TabValue>(availableDocTypes[0] ?? "shipping_ref");
+
   const [editing, setEditing] = useState(false);
   // snapshot taken on entering edit mode — used to cancel
   const snapshotRef = useRef<NonNullable<OcrRecord["results"]> | null>(null);
@@ -1656,8 +1618,8 @@ function DetailView({
                 </span>
               </TabsTrigger>
             )}
-            <TabsTrigger value="json">JSON 预览</TabsTrigger>
           </TabsList>
+
         </div>
 
         {availableDocTypes.map((dt) => {
@@ -1705,15 +1667,8 @@ function DetailView({
           </TabsContent>
         )}
 
-        <TabsContent
-          value="json"
-          className="flex-1 overflow-auto px-6 pb-6 pt-4 data-[state=inactive]:hidden"
-        >
-          <pre className="max-h-full overflow-auto rounded-lg border border-border bg-muted/40 p-4 text-xs leading-relaxed">
-            {JSON.stringify(buildExport(record), null, 2)}
-          </pre>
-        </TabsContent>
       </Tabs>
+
 
       {editing && (
         <div className="shrink-0 border-t border-border bg-muted/30 px-6 py-3">
