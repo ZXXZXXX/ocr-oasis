@@ -33,6 +33,12 @@ import {
   ChevronRight,
 } from "lucide-react";
 
+import receiptRtmartAsset from "@/assets/receipt_rtmart.jpg.asset.json";
+import receiptJdAsset from "@/assets/receipt_jd.jpg.asset.json";
+
+
+
+
 
 
 
