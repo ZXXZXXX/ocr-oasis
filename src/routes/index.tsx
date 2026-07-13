@@ -704,18 +704,18 @@ function Workbench() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const pollSync = useServerFn(pollExternalTasks);
-  const [syncCursor, setSyncCursor] = useState<number | undefined>(undefined);
+  const syncCursorRef = useRef<number | undefined>(undefined);
 
   // 后端模拟定时任务：每 30 秒从第三方系统轮询新任务
   useEffect(() => {
     let mounted = true;
     async function tick() {
       try {
-        const res = await pollSync({ data: { cursor: syncCursor } });
+        const res = await pollSync({ data: { cursor: syncCursorRef.current } });
         if (!mounted) return;
         if (res.records.length > 0) {
           setRecords((prev) => [...res.records, ...prev]);
-          setSyncCursor(res.cursor);
+          syncCursorRef.current = res.cursor;
           setProgressDismissed(false);
           setProgressMinimized(false);
         }
@@ -729,7 +729,7 @@ function Workbench() {
       mounted = false;
       clearInterval(timer);
     };
-  }, [pollSync, syncCursor]);
+  }, [pollSync]);
 
   const activeRecords = useMemo(
     () => records.filter((r) => r.status === "recognizing" || r.status === "queued"),
