@@ -1726,6 +1726,9 @@ function DetailView({
     setLastEditedAt(null);
     setEditing(true);
   }
+  useEffect(() => {
+    if (initialEditing) startEdit();
+  }, [initialEditing]);
   function discardAndClose() {
     if (snapshotRef.current) onReplaceResults(snapshotRef.current);
     snapshotRef.current = null;
