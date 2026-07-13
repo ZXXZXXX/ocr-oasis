@@ -1062,8 +1062,23 @@ function Workbench() {
                 <span className="font-medium">验收任务</span>
                 <span className="text-xs text-muted-foreground">
                   共 {filteredRecords.length}&nbsp;项
-                  {(filterActive || quickStatus !== "all") && ` / 全部 ${records.length}`}
+                  {(filterActive || quickStatus !== "all" || searchQuery.trim()) && ` / 全部 ${records.length}`}
                 </span>
+              </div>
+              <div className="mx-4 flex-1 max-w-md">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="搜索 KA 订单号 / 出货传票单号"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-9 w-full pl-9"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+
 
               </div>
               <div className="flex items-center gap-2">
