@@ -1399,7 +1399,7 @@ function Workbench() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-sm font-semibold"
+                            className="text-sm font-semibold disabled:opacity-50"
                             disabled={inProgress || r.status === "failed"}
                             onClick={() => {
                               setDetailId(r.id);
