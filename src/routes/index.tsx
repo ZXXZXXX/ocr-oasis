@@ -1506,6 +1506,7 @@ function DetailView({
   const shippingRefImgs = record.images.filter((i) => i.docType === "shipping_slip");
   type TabValue = DocType | "shipping_ref";
   const [activeTab, setActiveTab] = useState<TabValue>(availableDocTypes[0] ?? "shipping_ref");
+  const [autoFocus, setAutoFocus] = useState(true);
 
   const [editing, setEditing] = useState(false);
   // snapshot taken on entering edit mode — used to cancel
@@ -1594,7 +1595,7 @@ function DetailView({
         onValueChange={(v) => setActiveTab(v as TabValue)}
         className="flex flex-1 flex-col overflow-hidden"
       >
-        <div className="border-b border-border bg-muted/20 px-6 py-2">
+        <div className="flex items-center justify-between gap-3 border-b border-border bg-muted/20 px-6 py-2">
           <TabsList>
             {availableDocTypes.map((dt) => {
               const pages = record.results![dt]!;
@@ -1622,8 +1623,18 @@ function DetailView({
               </TabsTrigger>
             )}
           </TabsList>
-
+          <div className="flex items-center gap-2">
+            <Label htmlFor="auto-focus-switch" className="text-xs text-muted-foreground cursor-pointer">
+              自动聚焦
+            </Label>
+            <Switch
+              id="auto-focus-switch"
+              checked={autoFocus}
+              onCheckedChange={setAutoFocus}
+            />
+          </div>
         </div>
+
 
         {availableDocTypes.map((dt) => {
           const pages = record.results![dt]!;
@@ -1639,6 +1650,7 @@ function DetailView({
                 pages={pages}
                 images={imgs}
                 editing={editing}
+                autoFocus={autoFocus}
                 onChange={(pageIdx, chunkId, v) => onChange(dt, pageIdx, chunkId, v)}
                 onConfirm={(pageIdx, chunkId) => onConfirm(dt, pageIdx, chunkId)}
               />
@@ -1693,6 +1705,7 @@ function DocPanel({
   pages,
   images,
   editing,
+  autoFocus,
   onChange,
   onConfirm,
 }: {
@@ -1700,6 +1713,7 @@ function DocPanel({
   pages: DocPage[];
   images: UploadedImage[];
   editing: boolean;
+  autoFocus: boolean;
   onChange: (pageIdx: number, chunkId: string, value: string) => void;
   onConfirm: (pageIdx: number, chunkId: string) => void;
 }) {
@@ -1757,6 +1771,7 @@ function DocPanel({
               page={page}
               activeChunkId={activeChunkId}
               onSelect={setActiveChunkId}
+              autoFocus={autoFocus}
               viewMap={viewMap}
               setViewMap={setViewMap}
             />
@@ -1817,16 +1832,16 @@ type ImgView = {
   scale: number;
   tx: number; // px offset from centered
   ty: number;
-  rot: number; // degrees, multiples of 90 via buttons
   manual: boolean; // once user adjusts, stop auto-focus on active chunk
 };
-const DEFAULT_IMG_VIEW: ImgView = { scale: 1, tx: 0, ty: 0, rot: 0, manual: false };
+const DEFAULT_IMG_VIEW: ImgView = { scale: 1, tx: 0, ty: 0, manual: false };
 
 function ImageWithBoxes({
   image,
   page,
   activeChunkId,
   onSelect,
+  autoFocus,
   viewMap,
   setViewMap,
 }: {
@@ -1834,6 +1849,7 @@ function ImageWithBoxes({
   page: DocPage;
   activeChunkId: string | null;
   onSelect: (id: string | null) => void;
+  autoFocus: boolean;
   viewMap: Record<string, ImgView>;
   setViewMap: React.Dispatch<React.SetStateAction<Record<string, ImgView>>>;
 }) {
@@ -1855,14 +1871,12 @@ function ImageWithBoxes({
   };
   const zoomBy = (factor: number) =>
     updateView((v) => ({ scale: Math.min(6, Math.max(0.3, v.scale * factor)) }));
-  const rotateBy = (deg: number) =>
-    updateView((v) => ({ rot: (((v.rot + deg) % 360) + 360) % 360 }));
 
-  // Auto-focus on the active chunk only when user has not manually adjusted.
+  // Auto-focus on the active chunk only when enabled and user has not manually adjusted.
   const activeChunk = page.chunks.find((c) => c.id === activeChunkId);
   let transform: string;
   let transitionCls = "";
-  if (!view.manual && activeChunk) {
+  if (autoFocus && !view.manual && activeChunk) {
     const [x1, y1, x2, y2] = activeChunk.bbox;
     const bw = Math.max(1, x2 - x1 + 20);
     const fx = (x1 + x2) / 2 / w;
@@ -1873,8 +1887,9 @@ function ImageWithBoxes({
     transform = `translate(${tx}%, ${ty}%) scale(${scale})`;
     transitionCls = "transition-transform duration-500 ease-out";
   } else {
-    transform = `translate(${view.tx}px, ${view.ty}px) scale(${view.scale}) rotate(${view.rot}deg)`;
+    transform = `translate(${view.tx}px, ${view.ty}px) scale(${view.scale})`;
   }
+
 
   // Wheel to zoom
   const stageRef = useRef<HTMLDivElement>(null);
@@ -1923,27 +1938,6 @@ function ImageWithBoxes({
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 px-2 py-1.5">
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7"
-            onClick={() => rotateBy(-90)}
-            aria-label="逆时针旋转 90°"
-            title="逆时针旋转 90°"
-          >
-            <RotateCcw className="size-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7"
-            onClick={() => rotateBy(90)}
-            aria-label="顺时针旋转 90°"
-            title="顺时针旋转 90°"
-          >
-            <RotateCw className="size-3.5" />
-          </Button>
-          <span className="mx-1 h-4 w-px bg-border" />
           <Button
             variant="ghost"
             size="icon"
@@ -2026,6 +2020,7 @@ function ImageWithBoxes({
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={(e) => {
                       e.stopPropagation();
+                      if (!autoFocus) return;
                       onSelect(c.id);
                     }}
                     className={cn(
@@ -2052,17 +2047,16 @@ function ImageWithBoxes({
           <span className="truncate font-medium">{image.name}</span>
           <span className="text-primary/70">
             · {w} × {h}
-            {view.rot !== 0 && ` · 旋转 ${view.rot}°`}
           </span>
         </div>
-        {activeChunkId && (
+        {view.manual && (
           <Button
             variant="outline"
             size="sm"
             className="h-6 gap-1 border-primary/30 px-2 text-xs text-primary hover:bg-primary/10"
-            onClick={() => onSelect(null)}
+            onClick={resetView}
           >
-            <Minimize2 className="size-3" /> 取消聚焦
+            <Minimize2 className="size-3" /> 重置视图
           </Button>
         )}
       </div>
