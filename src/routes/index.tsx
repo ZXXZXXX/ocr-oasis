@@ -1574,6 +1574,7 @@ function Workbench() {
                   confirmChunk(detailRecord.id, docType, pageIdx, chunkId)
                 }
                 onReplaceResults={(results) => replaceResults(detailRecord.id, results)}
+                onSignatureStatusChange={(value) => updateSignatureStatus(detailRecord.id, value)}
                 onSubmit={(verdict) => {
                   submitVerification(detailRecord.id, verdict);
                   setDetailId(null);
