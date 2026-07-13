@@ -2307,28 +2307,23 @@ function DocPanel({
                 </span>
               </button>
             )}
-            {shippingImages.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setImageTab("shipping_slip")}
-                className={cn(
-                  "inline-flex items-center gap-1 rounded px-2 py-1 text-xs",
-                  imageTab === "shipping_slip"
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent",
-                )}
-              >
-                <ScrollText className="size-3.5" /> 出货传票
-                <span className="rounded bg-black/10 px-1 text-[10px] tabular-nums">
-                  {shippingImages.length}
-                </span>
-              </button>
-            )}
-            {shippingImages.length === 0 && (
-              <span className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground">
-                <ScrollText className="size-3.5" /> 无出货传票
+            <button
+              type="button"
+              onClick={() => setImageTab("shipping_slip")}
+              disabled={shippingImages.length === 0}
+              className={cn(
+                "inline-flex items-center gap-1 rounded px-2 py-1 text-xs",
+                imageTab === "shipping_slip"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-accent",
+                shippingImages.length === 0 && "cursor-default opacity-60",
+              )}
+            >
+              <ScrollText className="size-3.5" /> 出货传票
+              <span className="rounded bg-black/10 px-1 text-[10px] tabular-nums">
+                {shippingImages.length}
               </span>
-            )}
+            </button>
           </div>
         </div>
 
