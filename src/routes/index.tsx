@@ -184,6 +184,32 @@ function makeKaOrderId(ts: number, seq: number): string {
   return `CD${yyyy}${mm}${dd}${tail}`;
 }
 
+function makeShippingSlipNo(ts: number, seq: number): string {
+  const d = new Date(ts);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const tail = String(seq % 100_000).padStart(5, "0");
+  return `SH${yyyy}${mm}${dd}-${tail}`;
+}
+
+function fuzzyMatch(query: string, target: string): boolean {
+  if (!query) return true;
+  const q = query.toLowerCase().trim();
+  const t = target.toLowerCase().trim();
+  if (!q) return true;
+  if (!t.includes(q)) {
+    let i = 0;
+    for (const char of t) {
+      if (char === q[i]) i++;
+      if (i === q.length) return true;
+    }
+    return false;
+  }
+  return true;
+}
+
+
 const fmtTime = (t: number) =>
   new Date(t).toLocaleString("zh-CN", {
     hour12: false,
