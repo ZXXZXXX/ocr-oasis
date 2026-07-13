@@ -2575,13 +2575,23 @@ function EditableTableHtml({
     const el = ref.current;
     if (!el) return;
     if (el.innerHTML !== html) el.innerHTML = html;
+    // 为每个 td 设置 title，hover 时通过原生气泡展示完整内容
+    el.querySelectorAll("td").forEach((td) => {
+      const text = (td.textContent || "").trim();
+      if (text) td.setAttribute("title", text);
+      else td.removeAttribute("title");
+    });
   }, [html]);
 
   return (
     <div
       className={cn(
-        "rounded border bg-background p-2 text-xs outline-none transition-colors",
-        "[&_table]:w-full [&_td]:border [&_td]:border-border [&_td]:px-1.5 [&_td]:py-1 [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-1.5 [&_th]:py-1",
+        "overflow-x-auto rounded border bg-background p-2 text-xs outline-none transition-colors",
+        // 表格宽度自适应容器；表头不换行，保证列宽至少能完整展示列名；
+        // 单元格内容超出宽度时省略号显示，完整内容通过 title 悬浮气泡展示
+        "[&_table]:w-full [&_table]:table-fixed",
+        "[&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-1.5 [&_th]:py-1 [&_th]:whitespace-nowrap",
+        "[&_td]:border [&_td]:border-border [&_td]:px-1.5 [&_td]:py-1 [&_td]:max-w-0 [&_td]:overflow-hidden [&_td]:text-ellipsis [&_td]:whitespace-nowrap",
         readOnly
           ? "border-border"
           : mustEdit
@@ -2596,7 +2606,15 @@ function EditableTableHtml({
         contentEditable={!readOnly}
         suppressContentEditableWarning
         spellCheck={false}
-        onInput={(e) => onChange((e.currentTarget as HTMLDivElement).innerHTML)}
+        onInput={(e) => {
+          const el = e.currentTarget as HTMLDivElement;
+          el.querySelectorAll("td").forEach((td) => {
+            const text = (td.textContent || "").trim();
+            if (text) td.setAttribute("title", text);
+            else td.removeAttribute("title");
+          });
+          onChange(el.innerHTML);
+        }}
       />
     </div>
   );
