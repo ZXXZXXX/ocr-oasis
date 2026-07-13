@@ -1504,7 +1504,7 @@ function DetailView({
   onChange: (docType: DocType, pageIdx: number, chunkId: string, value: string) => void;
   onConfirm: (docType: DocType, pageIdx: number, chunkId: string) => void;
   onReplaceResults: (results: NonNullable<OcrRecord["results"]>) => void;
-  onSubmit: () => void;
+  onSubmit: (verdict?: AiVerdict) => void;
 }) {
 
 
@@ -1515,26 +1515,55 @@ function DetailView({
   const [autoFocus, setAutoFocus] = useState(true);
 
   const [editing, setEditing] = useState(false);
+  const [lastEditedAt, setLastEditedAt] = useState<number | null>(null);
+  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   // snapshot taken on entering edit mode — used to cancel
   const snapshotRef = useRef<NonNullable<OcrRecord["results"]> | null>(null);
+  const hasChanges = lastEditedAt !== null;
 
   function startEdit() {
     // deep-clone current results so cancel can restore
     snapshotRef.current = JSON.parse(JSON.stringify(record.results ?? {})) as NonNullable<
       OcrRecord["results"]
     >;
+    setLastEditedAt(null);
     setEditing(true);
   }
-  function cancelEdit() {
+  function discardAndClose() {
     if (snapshotRef.current) onReplaceResults(snapshotRef.current);
     snapshotRef.current = null;
+    setLastEditedAt(null);
     setEditing(false);
-    toast.info("已取消本次修改");
+    toast.info("已放弃本次修改");
   }
-  function submitEdit() {
+  function keepEditsAndClose() {
     snapshotRef.current = null;
+    setLastEditedAt(null);
     setEditing(false);
-    toast.success("修改已提交");
+    toast.success("修改已保存");
+  }
+  function requestCancel() {
+    if (hasChanges) {
+      setCancelConfirmOpen(true);
+    } else {
+      snapshotRef.current = null;
+      setEditing(false);
+    }
+  }
+  function handleEditChange(
+    docType: DocType,
+    pageIdx: number,
+    chunkId: string,
+    value: string,
+  ) {
+    onChange(docType, pageIdx, chunkId, value);
+    if (editing) setLastEditedAt(Date.now());
+  }
+  function submitVerdict(verdict: AiVerdict) {
+    snapshotRef.current = null;
+    setLastEditedAt(null);
+    setEditing(false);
+    onSubmit(verdict);
   }
 
   return (
