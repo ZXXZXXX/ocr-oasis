@@ -2325,6 +2325,10 @@ function ImageWithBoxes({
     }
   };
 
+  const isDefaultFit = !view.manual && view.scale === 1 && view.tx === 0 && view.ty === 0;
+  const isAutoFocused = autoFocus && !view.manual && !!activeChunk;
+  const showReset = !isDefaultFit || isAutoFocused;
+
   return (
     <div className="flex h-full w-full max-w-full flex-col overflow-hidden rounded-lg border border-border bg-background">
       {/* Toolbar */}
