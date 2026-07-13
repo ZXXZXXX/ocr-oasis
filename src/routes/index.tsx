@@ -1271,7 +1271,7 @@ function Workbench() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="font-semibold text-primary hover:bg-primary/10 hover:text-primary"
+                              className="text-sm font-semibold text-primary hover:bg-primary/10 hover:text-primary"
                               onClick={() => setDetailId(r.id)}
                             >
                               审核
@@ -1281,12 +1281,13 @@ function Workbench() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="font-semibold"
+                            className="text-sm font-semibold"
                             disabled={inProgress || r.status === "failed"}
                             onClick={() => setDetailId(r.id)}
                           >
                             查看
                           </Button>
+
 
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
