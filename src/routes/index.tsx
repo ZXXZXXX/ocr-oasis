@@ -1314,8 +1314,8 @@ function Workbench() {
                   <TableHead className="w-[150px]">同步时间</TableHead>
                   <TableHead>签收状态</TableHead>
                   <TableHead>置信度</TableHead>
-                  <TableHead>AI 结论</TableHead>
-                  <TableHead>审核结论</TableHead>
+                  <TableHead>AI预审结论</TableHead>
+                  <TableHead>最终审核结论</TableHead>
                   <TableHead className="text-right">操作</TableHead>
 
                 </TableRow>
