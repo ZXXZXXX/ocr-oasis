@@ -169,7 +169,9 @@ interface OcrRecord {
   aiVerdict?: AiVerdict; // 识别完成后由AI给出
   verifiedAt?: number; // 人工提交验收结论时间
   verifiedBy?: string;
+  shippingSlipNo?: string; // 出货传票单号，用于搜索
 }
+
 
 // ---------- Helpers ----------
 const uid = () => Math.random().toString(36).slice(2, 10);
