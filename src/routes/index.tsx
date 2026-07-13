@@ -955,18 +955,14 @@ function Workbench() {
               accent="primary"
             />
             <StatCard
-              label="待验收"
-              value={records.filter((r) => r.status !== "recognizing" && r.status !== "failed").length}
-              accent="success"
+              label="待审核"
+              value={records.filter((r) => r.status === "pending_review").length}
+              accent="warning"
             />
             <StatCard
               label="已验收"
-              value={
-                records.filter(
-                  (r) => r.status !== "recognizing" && r.status !== "failed" && pendingLowConf(r) > 0,
-                ).length
-              }
-              accent="warning"
+              value={records.filter((r) => r.status === "verified").length}
+              accent="success"
             />
           </div>
 
