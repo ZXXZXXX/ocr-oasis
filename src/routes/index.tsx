@@ -2555,7 +2555,7 @@ function EditableTableHtml({
   return (
     <div
       className={cn(
-        "max-h-60 overflow-auto rounded border bg-background p-2 text-xs outline-none transition-colors",
+        "rounded border bg-background p-2 text-xs outline-none transition-colors",
         "[&_table]:w-full [&_td]:border [&_td]:border-border [&_td]:px-1.5 [&_td]:py-1 [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-1.5 [&_th]:py-1",
         readOnly
           ? "border-border"
