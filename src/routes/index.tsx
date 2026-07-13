@@ -1521,10 +1521,13 @@ function Workbench() {
                                   "flex-1 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors",
                                   selected
                                     ? cn(
-                                        "border-transparent text-white",
-                                        tone === "high" && "bg-[color:var(--success)]",
-                                        tone === "mid" && "bg-[color:var(--warning)]",
-                                        tone === "low" && "bg-[color:var(--destructive)]",
+                                        "border-transparent",
+                                        tone === "high" &&
+                                          "bg-[color:var(--success)]/15 text-[color:var(--success)]",
+                                        tone === "mid" &&
+                                          "bg-[color:var(--warning)]/25 text-[color:var(--warning-foreground)]",
+                                        tone === "low" &&
+                                          "bg-[color:var(--destructive)]/15 text-[color:var(--destructive)]",
                                       )
                                     : cn(
                                         "border-border bg-background text-muted-foreground hover:bg-accent hover:text-foreground",
