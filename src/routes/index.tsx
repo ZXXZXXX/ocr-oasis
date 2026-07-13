@@ -162,6 +162,16 @@ interface OcrRecord {
 // ---------- Helpers ----------
 const uid = () => Math.random().toString(36).slice(2, 10);
 
+// KA 订单号: CD + yyyymmdd + 7位数
+function makeKaOrderId(ts: number, seq: number): string {
+  const d = new Date(ts);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const tail = String(seq % 10_000_000).padStart(7, "0");
+  return `CD${yyyy}${mm}${dd}${tail}`;
+}
+
 const fmtTime = (t: number) =>
   new Date(t).toLocaleString("zh-CN", {
     hour12: false,
@@ -600,9 +610,10 @@ function seedRecords(): OcrRecord[] {
     ];
     const allPages = Object.values(results).flat() as DocPage[];
     const who = pickDriver(idx);
+    const createdAt = now - s.minutesAgo * 60_000;
     return {
-      id: `task-${1000 + idx}`,
-      createdAt: now - s.minutesAgo * 60_000,
+      id: makeKaOrderId(createdAt, 1_000_000 + idx * 137),
+      createdAt,
       status: s.status,
       progress: 100,
       confidence: averageConfidence(allPages),
@@ -727,9 +738,10 @@ function Workbench() {
       width: 1920,
       height: 720,
     }));
+    const nowTs = Date.now();
     const record: OcrRecord = {
-      id: `task-${Date.now().toString().slice(-6)}`,
-      createdAt: Date.now(),
+      id: makeKaOrderId(nowTs, Math.floor(Math.random() * 10_000_000)),
+      createdAt: nowTs,
       status: "recognizing",
       progress: 4,
       deliveryCount: 1,
@@ -1101,9 +1113,8 @@ function Workbench() {
                       aria-label="全选"
                     />
                   </TableHead>
-                  <TableHead className="w-[140px]">任务 ID</TableHead>
+                  <TableHead className="w-[200px]">KA 订单号</TableHead>
                   <TableHead className="w-[150px]">同步时间</TableHead>
-                  <TableHead>司机 / 车牌</TableHead>
                   <TableHead>签收状态</TableHead>
                   <TableHead className="w-[180px]">识别进度</TableHead>
                   <TableHead>置信度</TableHead>
@@ -1115,7 +1126,7 @@ function Workbench() {
               <TableBody>
                 {filteredRecords.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={10} className="py-16 text-center">
+                    <TableCell colSpan={9} className="py-16 text-center">
                       <div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground">
                         <div className="grid size-12 place-items-center rounded-full bg-secondary">
                           <FileText className="size-5" />
@@ -1150,17 +1161,9 @@ function Workbench() {
                           aria-label="选择"
                         />
                       </TableCell>
-                      <TableCell className="font-mono text-xs text-foreground">#{r.id}</TableCell>
+                      <TableCell className="font-mono text-xs text-foreground">{r.id}</TableCell>
                       <TableCell className="text-sm text-muted-foreground" suppressHydrationWarning>
                         {fmtTime(r.createdAt)}
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        <div className="flex flex-col leading-tight">
-                          <span className="text-foreground">{r.driver}</span>
-                          <span className="font-mono text-xs text-muted-foreground">
-                            {r.plateNo}
-                          </span>
-                        </div>
                       </TableCell>
                       <TableCell>
                         <SignatureBadge value={r.signatureStatus} />
