@@ -758,9 +758,15 @@ function Workbench() {
       } else {
         if (confRange[0] > 0 || confRange[1] < 100) return false;
       }
+      if (searchQuery.trim()) {
+        const kaMatch = fuzzyMatch(searchQuery, r.id);
+        const shippingMatch = r.shippingSlipNo ? fuzzyMatch(searchQuery, r.shippingSlipNo) : false;
+        if (!kaMatch && !shippingMatch) return false;
+      }
       return true;
     });
-  }, [records, dateFrom, dateTo, confRange, quickStatus]);
+  }, [records, dateFrom, dateTo, confRange, quickStatus, searchQuery]);
+
 
   const filterActive = !!dateFrom || !!dateTo || confRange[0] > 0 || confRange[1] < 100;
 
