@@ -1650,6 +1650,7 @@ function DetailView({
                 pages={pages}
                 images={imgs}
                 editing={editing}
+                autoFocus={autoFocus}
                 onChange={(pageIdx, chunkId, v) => onChange(dt, pageIdx, chunkId, v)}
                 onConfirm={(pageIdx, chunkId) => onConfirm(dt, pageIdx, chunkId)}
               />
