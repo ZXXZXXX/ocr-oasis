@@ -1354,7 +1354,7 @@ function Workbench() {
                   <TableHead>签收状态</TableHead>
                   <TableHead>置信度</TableHead>
                   <TableHead>AI 结论</TableHead>
-                  <TableHead>审核状态</TableHead>
+                  <TableHead>审核结论</TableHead>
                   <TableHead className="text-right">操作</TableHead>
 
                 </TableRow>
