@@ -1605,7 +1605,7 @@ function DetailView({
                   </Button>
                 )}
                 {record.status === "pending_review" && (
-                  <Button onClick={onSubmit} className="gap-2">
+                  <Button onClick={() => onSubmit()} className="gap-2">
                     <CheckCircle2 className="size-4" /> 提交验收结论
                   </Button>
                 )}
