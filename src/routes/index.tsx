@@ -1079,9 +1079,6 @@ function Workbench() {
               </div>
               <div className="flex items-center gap-2">
 
-
-              </div>
-              <div className="flex items-center gap-2">
                 {selected.size > 0 && (
                   <span className="mr-1 text-xs text-muted-foreground">已选 {selected.size}</span>
                 )}
