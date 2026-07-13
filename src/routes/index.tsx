@@ -718,7 +718,7 @@ function Workbench() {
   const filterActive = !!dateFrom || !!dateTo || confRange[0] > 0 || confRange[1] < 100;
 
   const selectableIds = filteredRecords
-    .filter((r) => r.status !== "recognizing" && r.status !== "failed")
+    .filter((r) => r.status !== "recognizing" && r.status !== "queued" && r.status !== "failed")
     .map((r) => r.id);
   const allSelected = selectableIds.length > 0 && selectableIds.every((id) => selected.has(id));
   const someSelected = selected.size > 0 && !allSelected;
@@ -929,7 +929,7 @@ function Workbench() {
 
   function downloadBatch() {
     const targets = records.filter(
-      (r) => selected.has(r.id) && r.status !== "recognizing" && r.status !== "failed",
+      (r) => selected.has(r.id) && r.status !== "recognizing" && r.status !== "queued" && r.status !== "failed",
     );
     if (targets.length === 0) return;
     const stillPending = targets.filter((r) => pendingLowConf(r) > 0);
@@ -1173,9 +1173,9 @@ function Workbench() {
                   </TableRow>
                 )}
                 {filteredRecords.map((r) => {
-                  const canSelect = r.status !== "recognizing" && r.status !== "failed";
-                  const pending =
-                    r.status !== "recognizing" && r.status !== "failed" ? pendingLowConf(r) : 0;
+                  const inProgress = r.status === "recognizing" || r.status === "queued";
+                  const canSelect = !inProgress && r.status !== "failed";
+                  const pending = !inProgress && r.status !== "failed" ? pendingLowConf(r) : 0;
                   return (
                     <TableRow key={r.id} className="hover:bg-muted/30">
                       <TableCell>
@@ -1194,12 +1194,16 @@ function Workbench() {
                         <SignatureBadge value={r.signatureStatus} />
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Progress value={r.progress} className="h-1.5 w-32" />
-                          <span className="w-10 text-xs tabular-nums text-muted-foreground">
-                            {Math.round(r.progress)}%
-                          </span>
-                        </div>
+                        {r.status === "queued" ? (
+                          <span className="text-xs text-muted-foreground">排队等待中…</span>
+                        ) : (
+                          <div className="flex items-center gap-3">
+                            <Progress value={r.progress} className="h-1.5 w-32" />
+                            <span className="w-10 text-xs tabular-nums text-muted-foreground">
+                              {Math.round(r.progress)}%
+                            </span>
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell>
                         {r.confidence != null ? (
@@ -1225,7 +1229,7 @@ function Workbench() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                disabled={r.status === "recognizing" || r.status === "failed"}
+                                disabled={inProgress || r.status === "failed"}
                                 onClick={() => setDetailId(r.id)}
                               >
                                 <Eye className="size-4" />
@@ -1238,7 +1242,7 @@ function Workbench() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                disabled={r.status === "recognizing" || r.status === "failed"}
+                                disabled={inProgress || r.status === "failed"}
                                 onClick={() => downloadJson(r)}
                               >
                                 <Download className="size-4" />
@@ -1409,6 +1413,12 @@ function StatCard({
 }
 
 function StatusBadge({ status, pending: _pending }: { status: Status; pending: number }) {
+  if (status === "queued")
+    return (
+      <Badge variant="status" className="gap-1 bg-muted font-normal text-muted-foreground">
+        <Loader2 className="size-3" /> 排队中
+      </Badge>
+    );
   if (status === "recognizing")
     return (
       <Badge variant="status" className="gap-1 bg-secondary font-normal text-secondary-foreground">
