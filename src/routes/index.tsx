@@ -1526,22 +1526,21 @@ function DetailView({
   onConfirm,
   onReplaceResults,
   onSubmit,
-  buildExport,
 }: {
-
   record: OcrRecord;
   onChange: (docType: DocType, pageIdx: number, chunkId: string, value: string) => void;
   onConfirm: (docType: DocType, pageIdx: number, chunkId: string) => void;
   onReplaceResults: (results: NonNullable<OcrRecord["results"]>) => void;
   onSubmit: () => void;
-  buildExport: (r: OcrRecord) => unknown;
 }) {
+
 
   const pending = pendingLowConf(record);
   const availableDocTypes = Object.keys(record.results ?? {}) as DocType[];
   const shippingRefImgs = record.images.filter((i) => i.docType === "shipping_slip");
-  type TabValue = DocType | "shipping_ref" | "json";
-  const [activeTab, setActiveTab] = useState<TabValue>(availableDocTypes[0] ?? "json");
+  type TabValue = DocType | "shipping_ref";
+  const [activeTab, setActiveTab] = useState<TabValue>(availableDocTypes[0] ?? "shipping_ref");
+
   const [editing, setEditing] = useState(false);
   // snapshot taken on entering edit mode — used to cancel
   const snapshotRef = useRef<NonNullable<OcrRecord["results"]> | null>(null);
