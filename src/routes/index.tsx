@@ -703,8 +703,33 @@ function Workbench() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
+  const pollSync = useServerFn(pollExternalTasks);
+  const [syncCursor, setSyncCursor] = useState<number | undefined>(undefined);
 
-
+  // 后端模拟定时任务：每 30 秒从第三方系统轮询新任务
+  useEffect(() => {
+    let mounted = true;
+    async function tick() {
+      try {
+        const res = await pollSync({ data: { cursor: syncCursor } });
+        if (!mounted) return;
+        if (res.records.length > 0) {
+          setRecords((prev) => [...res.records, ...prev]);
+          setSyncCursor(res.cursor);
+          setProgressDismissed(false);
+          setProgressMinimized(false);
+        }
+      } catch {
+        // 模拟失败时静默忽略，避免打断用户操作
+      }
+    }
+    tick();
+    const timer = setInterval(tick, 30_000);
+    return () => {
+      mounted = false;
+      clearInterval(timer);
+    };
+  }, [pollSync, syncCursor]);
 
   const activeRecords = useMemo(
     () => records.filter((r) => r.status === "recognizing" || r.status === "queued"),
