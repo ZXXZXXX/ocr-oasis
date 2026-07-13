@@ -1371,8 +1371,8 @@ function Workbench() {
                   confirmChunk(detailRecord.id, docType, pageIdx, chunkId)
                 }
                 onReplaceResults={(results) => replaceResults(detailRecord.id, results)}
-                onSubmit={() => {
-                  submitVerification(detailRecord.id);
+                onSubmit={(verdict) => {
+                  submitVerification(detailRecord.id, verdict);
                   setDetailId(null);
                 }}
               />
