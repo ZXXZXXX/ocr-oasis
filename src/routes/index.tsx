@@ -29,6 +29,8 @@ import {
   GripVertical,
   ThumbsUp,
   ThumbsDown,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 
