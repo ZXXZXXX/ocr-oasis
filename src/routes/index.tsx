@@ -26,6 +26,7 @@ import {
   Image as ImageIcon,
   MoreHorizontal,
   Search,
+  GripVertical,
 } from "lucide-react";
 
 
