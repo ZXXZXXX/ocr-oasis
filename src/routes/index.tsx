@@ -821,7 +821,9 @@ function Workbench() {
         driver: who.driver,
         plateNo: who.plate,
         signatureStatus,
+        shippingSlipNo: makeShippingSlipNo(nowTs + i, Math.floor(Math.random() * 100_000)),
       };
+
     });
 
 
