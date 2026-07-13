@@ -1645,8 +1645,8 @@ function ConfidenceBadge({ score }: { score: number }) {
     score >= 90
       ? "text-[color:var(--success)] bg-[color:var(--success)]/10"
       : score >= 80
-        ? "text-primary bg-primary/10"
-        : "text-[color:var(--warning-foreground)] bg-[color:var(--warning)]/25";
+        ? "text-orange-500 bg-orange-500/10"
+        : "text-red-500 bg-red-500/10";
   return (
     <span
       className={cn(
@@ -2332,9 +2332,9 @@ function ImageWithBoxes({
                 const isActive = c.id === activeChunkId;
                 const color =
                   tone === "low"
-                    ? "border-[color:var(--warning)] bg-[color:var(--warning)]/15"
+                    ? "border-red-500 bg-red-500/15"
                     : tone === "mid"
-                      ? "border-primary bg-primary/10"
+                      ? "border-orange-500 bg-orange-500/10"
                       : "border-[color:var(--success)]/70 bg-[color:var(--success)]/5";
                 return (
                   <button
@@ -2431,9 +2431,9 @@ function ChunkEditor({
 
   const dotColor =
     tone === "low"
-      ? "bg-[color:var(--warning)]"
+      ? "bg-red-500"
       : tone === "mid"
-        ? "bg-primary"
+        ? "bg-orange-500"
         : "bg-[color:var(--success)]";
 
   const meta = LABEL_META[chunk.label];
