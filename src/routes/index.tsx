@@ -1595,7 +1595,7 @@ function DetailView({
         onValueChange={(v) => setActiveTab(v as TabValue)}
         className="flex flex-1 flex-col overflow-hidden"
       >
-        <div className="border-b border-border bg-muted/20 px-6 py-2">
+        <div className="flex items-center justify-between gap-3 border-b border-border bg-muted/20 px-6 py-2">
           <TabsList>
             {availableDocTypes.map((dt) => {
               const pages = record.results![dt]!;
@@ -1623,8 +1623,18 @@ function DetailView({
               </TabsTrigger>
             )}
           </TabsList>
-
+          <div className="flex items-center gap-2">
+            <Label htmlFor="auto-focus-switch" className="text-xs text-muted-foreground cursor-pointer">
+              自动聚焦
+            </Label>
+            <Switch
+              id="auto-focus-switch"
+              checked={autoFocus}
+              onCheckedChange={setAutoFocus}
+            />
+          </div>
         </div>
+
 
         {availableDocTypes.map((dt) => {
           const pages = record.results![dt]!;
