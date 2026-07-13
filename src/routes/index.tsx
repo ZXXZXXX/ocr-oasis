@@ -22,7 +22,9 @@ import {
   Heading,
   Table as TableIcon,
   Image as ImageIcon,
+  MoreHorizontal,
 } from "lucide-react";
+
 
 import { Button } from "@/components/ui/button";
 import {
@@ -62,7 +64,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 
@@ -1216,34 +1225,42 @@ function Workbench() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                disabled={inProgress || r.status === "failed"}
-                                onClick={() => setDetailId(r.id)}
-                              >
-                                <Eye className="size-4" />
+                          {r.status === "pending_review" && (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => setDetailId(r.id)}
+                            >
+                              审核
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={inProgress || r.status === "failed"}
+                            onClick={() => setDetailId(r.id)}
+                          >
+                            查看
+                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreHorizontal className="size-4" />
                               </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>查看识别结果</TooltipContent>
-                          </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
                                 onClick={() => setDeleteId(r.id)}
                               >
-                                <Trash2 className="size-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>删除</TooltipContent>
-                          </Tooltip>
+                                <Trash2 className="mr-2 size-4" />
+                                删除
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </TableCell>
+
                     </TableRow>
                   );
                 })}
