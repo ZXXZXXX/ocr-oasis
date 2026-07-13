@@ -1533,13 +1533,13 @@ function Workbench() {
                         <Label className="text-xs text-muted-foreground">置信度</Label>
                         <div className="flex gap-2">
                           {(["high", "mid", "low"] as const).map((tone) => {
-                            const selected = selectedConfidenceTones.has(tone);
+                            const selected = draftConfidenceTones.has(tone);
                             return (
                               <button
                                 key={tone}
                                 type="button"
                                 onClick={() => {
-                                  setSelectedConfidenceTones((prev) => {
+                                  setDraftConfidenceTones((prev) => {
                                     const next = new Set(prev);
                                     if (next.has(tone)) {
                                       next.delete(tone);
