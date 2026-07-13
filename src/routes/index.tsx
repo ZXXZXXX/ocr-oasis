@@ -1771,6 +1771,7 @@ function DocPanel({
               page={page}
               activeChunkId={activeChunkId}
               onSelect={setActiveChunkId}
+              autoFocus={autoFocus}
               viewMap={viewMap}
               setViewMap={setViewMap}
             />
