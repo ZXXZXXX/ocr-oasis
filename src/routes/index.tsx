@@ -1007,7 +1007,17 @@ function Workbench() {
                 {selected.size > 0 && (
                   <span className="mr-1 text-xs text-muted-foreground">已选 {selected.size}</span>
                 )}
+                <Button
+                  variant={quickStatus === "pending_review" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() =>
+                    setQuickStatus((prev) => (prev === "pending_review" ? "all" : "pending_review"))
+                  }
+                >
+                  待审核
+                </Button>
                 <Popover open={filterOpen} onOpenChange={setFilterOpen}>
+
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
