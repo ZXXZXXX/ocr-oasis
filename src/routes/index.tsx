@@ -1690,12 +1690,14 @@ function ConfidenceBadge({ score }: { score: number }) {
 // ---------- Detail view ----------
 function DetailView({
   record,
+  initialEditing = false,
   onChange,
   onConfirm,
   onReplaceResults,
   onSubmit,
 }: {
   record: OcrRecord;
+  initialEditing?: boolean;
   onChange: (docType: DocType, pageIdx: number, chunkId: string, value: string) => void;
   onConfirm: (docType: DocType, pageIdx: number, chunkId: string) => void;
   onReplaceResults: (results: NonNullable<OcrRecord["results"]>) => void;
