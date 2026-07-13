@@ -1106,12 +1106,32 @@ function Workbench() {
 
   // Filters
   const [filterOpen, setFilterOpen] = useState(false);
+
+  // Applied filters (only update after clicking "完成")
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [selectedConfidenceTones, setSelectedConfidenceTones] = useState<Set<"high" | "mid" | "low">>(
     new Set(["high", "mid", "low"]),
   );
   const [aiVerdictFilter, setAiVerdictFilter] = useState<"all" | "pass" | "fail">("all");
+
+  // Draft filters for the popover UI
+  const [draftDateFrom, setDraftDateFrom] = useState("");
+  const [draftDateTo, setDraftDateTo] = useState("");
+  const [draftConfidenceTones, setDraftConfidenceTones] = useState<Set<"high" | "mid" | "low">>(
+    new Set(["high", "mid", "low"]),
+  );
+  const [draftAiVerdictFilter, setDraftAiVerdictFilter] = useState<"all" | "pass" | "fail">("all");
+
+  useEffect(() => {
+    if (filterOpen) {
+      setDraftDateFrom(dateFrom);
+      setDraftDateTo(dateTo);
+      setDraftConfidenceTones(new Set(selectedConfidenceTones));
+      setDraftAiVerdictFilter(aiVerdictFilter);
+    }
+  }, [filterOpen, dateFrom, dateTo, selectedConfidenceTones, aiVerdictFilter]);
+
   const [quickStatus, setQuickStatus] = useState<"all" | "pending_review">("all");
   const [searchQuery, setSearchQuery] = useState("");
   
