@@ -1218,10 +1218,15 @@ function Workbench() {
                       <TableCell>
                         {r.aiVerdict ? (
                           <VerdictBadge value={r.aiVerdict} />
+                        ) : r.status === "recognizing" ? (
+                          <span className="text-xs text-secondary-foreground">AI 识别中</span>
+                        ) : r.status === "queued" ? (
+                          <span className="text-xs text-muted-foreground">排队中</span>
                         ) : (
                           <span className="text-xs text-muted-foreground">—</span>
                         )}
                       </TableCell>
+
                       <TableCell>
                         <StatusBadge status={r.status} pending={pending} />
                       </TableCell>
