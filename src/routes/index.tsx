@@ -1645,8 +1645,8 @@ function ConfidenceBadge({ score }: { score: number }) {
     score >= 90
       ? "text-[color:var(--success)] bg-[color:var(--success)]/10"
       : score >= 80
-        ? "text-primary bg-primary/10"
-        : "text-[color:var(--warning-foreground)] bg-[color:var(--warning)]/25";
+        ? "text-orange-500 bg-orange-500/10"
+        : "text-red-500 bg-red-500/10";
   return (
     <span
       className={cn(
