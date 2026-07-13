@@ -977,23 +977,6 @@ function Workbench() {
     };
   }
 
-  function downloadJson(r: OcrRecord) {
-    const pending = pendingLowConf(r);
-    if (pending > 0) {
-      toast.error(`还有 ${pending} 项低置信度分块未确认，无法导出`);
-      return;
-    }
-    const blob = new Blob([JSON.stringify(buildExport(r), null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `ocr-${r.id}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success("JSON 已下载");
-  }
 
 
   function deleteRecord(id: string) {
