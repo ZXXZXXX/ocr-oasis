@@ -1599,21 +1599,15 @@ function DetailView({
           <div className="flex items-center gap-2">
             {!editing && (
               <>
-                {record.status === "pending_review" && (
-                  <Button variant="outline" onClick={startEdit} className="gap-2">
-                    <Pencil className="size-4" /> 编辑识别结果
+                {record.status === "pending_review" ? (
+                  <Button onClick={startEdit} className="gap-2">
+                    <Pencil className="size-4" /> 开始审核
                   </Button>
-                )}
-                {record.status === "pending_review" && (
-                  <Button onClick={() => onSubmit()} className="gap-2">
-                    <CheckCircle2 className="size-4" /> 提交验收结论
-                  </Button>
-                )}
-                {record.status === "verified" && (
+                ) : record.status === "verified" ? (
                   <span className="inline-flex items-center gap-1 rounded-md bg-[color:var(--success)]/15 px-2 py-1 text-xs text-[color:var(--success)]">
                     <CheckCircle2 className="size-3.5" /> 已验收并回传
                   </span>
-                )}
+                ) : null}
               </>
             )}
             <SheetClose asChild>
