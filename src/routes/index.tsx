@@ -729,11 +729,10 @@ function Workbench() {
     });
   }, [records, dateFrom, dateTo, confRange, quickStatus]);
 
-  const filterActive =
-    quickStatus !== "all" || !!dateFrom || !!dateTo || confRange[0] > 0 || confRange[1] < 100;
-
+  const filterActive = !!dateFrom || !!dateTo || confRange[0] > 0 || confRange[1] < 100;
 
   const selectableIds = filteredRecords
+
     .filter((r) => r.status !== "recognizing" && r.status !== "queued" && r.status !== "failed")
     .map((r) => r.id);
   const allSelected = selectableIds.length > 0 && selectableIds.every((id) => selected.has(id));
@@ -968,11 +967,10 @@ function Workbench() {
     setDateFrom("");
     setDateTo("");
     setConfRange([0, 100]);
-    setQuickStatus("all");
   }
 
-
   return (
+
     <TooltipProvider>
       <div className="min-h-screen bg-background text-foreground">
         <header className="sticky top-0 z-30 border-b border-border/70 bg-background/80 backdrop-blur">
@@ -1021,8 +1019,9 @@ function Workbench() {
                 <span className="font-medium">验收任务</span>
                 <span className="text-xs text-muted-foreground">
                   共 {filteredRecords.length}&nbsp;项
-                  {filterActive && ` / 全部 ${records.length}`}
+                  {(filterActive || quickStatus !== "all") && ` / 全部 ${records.length}`}
                 </span>
+
               </div>
               <div className="flex items-center gap-2">
                 {selected.size > 0 && (
