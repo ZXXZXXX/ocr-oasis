@@ -2427,7 +2427,9 @@ function ChunkContentEditor({
   const ring = mustEdit
     ? "border-[color:var(--warning)] focus-visible:ring-[color:var(--warning)]"
     : "";
-  const roCls = readOnly ? "cursor-default bg-muted/40" : "";
+  const roCls = readOnly
+    ? "cursor-default border-none bg-background shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+    : "";
 
   if (chunk.label === "Image") {
     return (
