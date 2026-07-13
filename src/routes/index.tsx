@@ -1366,7 +1366,8 @@ function Workbench() {
   function resetFilters() {
     setDateFrom("");
     setDateTo("");
-    setConfRange([0, 100]);
+    setSelectedConfidenceTones(new Set(["high", "mid", "low"]));
+    setAiVerdictFilter("all");
   }
 
   return (
