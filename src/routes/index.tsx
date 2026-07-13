@@ -539,7 +539,9 @@ function mockJdReceiptChunks(): Chunk[] {
   return raw.map((c) => ({ ...c, id: uid() }));
 }
 
+function fabricateResult(images: UploadedImage[]) {
   const results: Partial<Record<DocType, DocPage[]>> = {};
+
   const deliveryImgs = images.filter((i) => i.docType === "delivery_note");
   const shippingImgs = images.filter((i) => i.docType === "shipping_slip");
 
