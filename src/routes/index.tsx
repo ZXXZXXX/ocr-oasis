@@ -1283,11 +1283,13 @@ function Workbench() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            className="font-semibold"
                             disabled={inProgress || r.status === "failed"}
                             onClick={() => setDetailId(r.id)}
                           >
                             查看
                           </Button>
+
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon">
