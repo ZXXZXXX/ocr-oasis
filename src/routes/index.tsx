@@ -8,7 +8,6 @@ import {
   ScrollText,
   X,
   Minimize2,
-  Download,
   CheckCircle2,
   AlertTriangle,
   Loader2,
@@ -25,6 +24,7 @@ import {
   MoreHorizontal,
   Search,
 } from "lucide-react";
+
 
 
 
