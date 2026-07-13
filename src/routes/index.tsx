@@ -1135,11 +1135,6 @@ function Workbench() {
 
   function deleteRecord(id: string) {
     setRecords((p) => p.filter((r) => r.id !== id));
-    setSelected((prev) => {
-      const n = new Set(prev);
-      n.delete(id);
-      return n;
-    });
     if (detailId === id) setDetailId(null);
   }
 
