@@ -1676,7 +1676,7 @@ function DocPanel({
       if (!resizingRef.current || !containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
       const pct = ((e.clientX - rect.left) / rect.width) * 100;
-      setLeftPct(Math.min(80, Math.max(50, pct)));
+      setLeftPct(Math.min(70, Math.max(50, pct)));
     };
     const handleUp = () => {
       resizingRef.current = false;
