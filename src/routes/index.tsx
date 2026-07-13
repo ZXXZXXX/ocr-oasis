@@ -1705,6 +1705,7 @@ function DocPanel({
   pages,
   images,
   editing,
+  autoFocus,
   onChange,
   onConfirm,
 }: {
@@ -1712,6 +1713,7 @@ function DocPanel({
   pages: DocPage[];
   images: UploadedImage[];
   editing: boolean;
+  autoFocus: boolean;
   onChange: (pageIdx: number, chunkId: string, value: string) => void;
   onConfirm: (pageIdx: number, chunkId: string) => void;
 }) {
