@@ -194,6 +194,7 @@ interface OcrRecord {
   plateNo: string;
   signatureStatus: SignatureStatus;
   aiVerdict?: AiVerdict; // 识别完成后由AI给出
+  aiRejectionReason?: string; // AI 不通过原因
   verifiedAt?: number; // 人工提交验收结论时间
   verifiedBy?: string;
   shippingSlipNo?: string; // 出货传票单号，用于搜索
@@ -305,6 +306,26 @@ function pendingLowConf(r: OcrRecord): number {
       !c.edited &&
       !c.confirmed,
   ).length;
+}
+
+// 生成 AI 不通过原因说明
+function makeAiRejectionReason(record: OcrRecord): string | undefined {
+  if (record.aiVerdict !== "fail") return undefined;
+  const pending = pendingLowConf(record);
+  const parts: string[] = [];
+  if (record.confidence != null && record.confidence < 80) {
+    parts.push("整体识别置信度偏低");
+  }
+  if (pending > 0) {
+    parts.push(`存在 ${pending} 处低置信度识别字段未确认`);
+  }
+  if (record.signatureStatus === "partial") {
+    parts.push("签收状态为部分签收");
+  }
+  if (parts.length === 0) {
+    return "AI 预审未通过，请人工复核";
+  }
+  return parts.join("；") + "，请人工复核";
 }
 
 // Extract plain text from a simple HTML string (handles <p>, <br>, entities)
@@ -895,7 +916,7 @@ function seedRecords(): OcrRecord[] {
     const allPages = Object.values(results).flat() as DocPage[];
     const who = pickDriver(idx);
     const createdAt = now - s.minutesAgo * 60_000;
-    return {
+    const record: OcrRecord = {
       id: makeKaOrderId(createdAt, 1_000_000 + idx * 137),
       createdAt,
       status: s.status,
@@ -913,6 +934,7 @@ function seedRecords(): OcrRecord[] {
       verifiedBy: s.status === "verified" ? CURRENT_USER : undefined,
       shippingSlipNo: makeShippingSlipNo(createdAt, 1_000 + idx * 137),
     };
+    return { ...record, aiRejectionReason: makeAiRejectionReason(record) };
   });
 
   // 真实照片任务（大润发 商品收货单 + 京东 送货验收单）
@@ -1047,7 +1069,7 @@ function seedRecords(): OcrRecord[] {
       ],
     };
     const pages = Object.values(results).flat() as DocPage[];
-    return {
+    const record: OcrRecord = {
       id: makeKaOrderId(createdAt, s.idSeed),
       createdAt,
       status: "pending_review",
@@ -1062,6 +1084,7 @@ function seedRecords(): OcrRecord[] {
       signatureStatus: s.signatureStatus,
       aiVerdict: s.aiVerdict,
     };
+    return { ...record, aiRejectionReason: makeAiRejectionReason(record) };
   });
 
   return [realRecord, ...noSlipRecords, ...records];
@@ -1109,7 +1132,7 @@ function Workbench() {
             const result = fabricateResult(r.images);
             // AI 结论：置信度 >= 80 通过，否则不通过
             const verdict: AiVerdict = result.confidence >= 80 ? "pass" : "fail";
-            return {
+            const updated: OcrRecord = {
               ...r,
               progress: 100,
               status: "pending_review",
@@ -1117,6 +1140,7 @@ function Workbench() {
               results: result.results,
               aiVerdict: verdict,
             };
+            return { ...updated, aiRejectionReason: makeAiRejectionReason(updated) };
           }
           return { ...r, progress: next };
         }),
@@ -2025,6 +2049,18 @@ function DetailView({
           </div>
         </div>
       </SheetHeader>
+
+      {record.status === "pending_review" &&
+        record.aiVerdict === "fail" &&
+        record.aiRejectionReason && (
+          <div className="mx-6 mt-4 flex items-start gap-3 rounded-xl border border-[color:var(--destructive)]/20 bg-[color:var(--destructive)]/10 px-4 py-3 text-xs text-[color:var(--destructive)]">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+            <div className="flex-1 leading-relaxed">
+              <span className="font-semibold">AI 预审不通过原因：</span>
+              {record.aiRejectionReason}
+            </div>
+          </div>
+        )}
 
       <DocPanel
         deliveryPages={deliveryPages}
