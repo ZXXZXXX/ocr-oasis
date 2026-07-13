@@ -1237,13 +1237,13 @@ function Workbench() {
                   <span className="mr-1 text-xs text-muted-foreground">已选 {selected.size}</span>
                 )}
                 <div className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-1.5">
-                  <span className="text-sm font-medium">仅查看待审核</span>
+                  <span className="text-sm font-medium">仅查看未审核</span>
                   <Switch
                     checked={quickStatus === "pending_review"}
                     onCheckedChange={(checked) =>
                       setQuickStatus(checked ? "pending_review" : "all")
                     }
-                    aria-label="仅查看待审核"
+                    aria-label="仅查看未审核"
                   />
                 </div>
 
