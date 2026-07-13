@@ -2264,11 +2264,12 @@ function ImageWithBoxes({
   const zoomBy = (factor: number) =>
     updateView((v) => ({ scale: Math.min(6, Math.max(0.3, v.scale * factor)) }));
 
-  // Auto-focus on the active chunk only when enabled and user has not manually adjusted.
+  // A click on a bbox or a chunk always focuses the corresponding region,
+  // regardless of the auto-focus toggle or prior manual pan/zoom.
   const activeChunk = page.chunks.find((c) => c.id === activeChunkId);
   let transform: string;
   let transitionCls = "";
-  if (autoFocus && !view.manual && activeChunk) {
+  if (activeChunk) {
     const [x1, y1, x2, y2] = activeChunk.bbox;
     const bw = Math.max(1, x2 - x1 + 20);
     const fx = (x1 + x2) / 2 / w;
@@ -2326,7 +2327,7 @@ function ImageWithBoxes({
   };
 
   const isDefaultFit = !view.manual && view.scale === 1 && view.tx === 0 && view.ty === 0;
-  const isAutoFocused = autoFocus && !view.manual && !!activeChunk;
+  const isAutoFocused = !!activeChunk;
   const showReset = !isDefaultFit || isAutoFocused;
 
   return (
