@@ -1428,8 +1428,8 @@ function Workbench() {
                   confirmChunk(detailRecord.id, docType, pageIdx, chunkId)
                 }
                 onReplaceResults={(results) => replaceResults(detailRecord.id, results)}
-                onDownload={() => downloadJson(detailRecord)}
                 onSubmit={() => {
+
                   submitVerification(detailRecord.id);
                   setDetailId(null);
                 }}
