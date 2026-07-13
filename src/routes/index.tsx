@@ -62,7 +62,9 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   DropdownMenu,
@@ -1028,15 +1030,17 @@ function Workbench() {
                 {selected.size > 0 && (
                   <span className="mr-1 text-xs text-muted-foreground">已选 {selected.size}</span>
                 )}
-                <Button
-                  variant={quickStatus === "pending_review" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() =>
-                    setQuickStatus((prev) => (prev === "pending_review" ? "all" : "pending_review"))
-                  }
-                >
-                  待审核
-                </Button>
+                <div className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-1.5">
+                  <span className="text-sm font-medium">仅查看待审核</span>
+                  <Switch
+                    checked={quickStatus === "pending_review"}
+                    onCheckedChange={(checked) =>
+                      setQuickStatus(checked ? "pending_review" : "all")
+                    }
+                    aria-label="仅查看待审核"
+                  />
+                </div>
+
                 <Popover open={filterOpen} onOpenChange={setFilterOpen}>
 
                   <PopoverTrigger asChild>
