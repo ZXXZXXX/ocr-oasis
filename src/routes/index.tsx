@@ -1335,14 +1335,14 @@ function Workbench() {
                 {activeRecords.map((r) => (
                   <div key={r.id}>
                     <div className="mb-1 flex items-center justify-between text-xs">
-                      <span className="font-mono text-muted-foreground">#{r.id}</span>
+                      <span className="font-mono text-muted-foreground">{r.id}</span>
                       <span className="tabular-nums text-foreground">
-                        {Math.round(r.progress)}%
+                        {r.status === "queued" ? "排队中" : `${Math.round(r.progress)}%`}
                       </span>
                     </div>
-                    <Progress value={r.progress} className="h-1.5" />
+                    <Progress value={r.status === "queued" ? 0 : r.progress} className="h-1.5" />
                     <div className="mt-1 text-[11px] text-muted-foreground">
-                      {r.images.length} 张图片 · 正在进行结构化识别
+                      {r.images.length} 张图片 · {r.status === "queued" ? `等待识别（最多同时识别 ${MAX_CONCURRENT_OCR} 条）` : "正在进行结构化识别"}
                     </div>
                   </div>
                 ))}
