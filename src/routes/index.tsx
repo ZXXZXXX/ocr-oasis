@@ -1620,32 +1620,53 @@ function DetailView({
 }
 
 function DocPanel({
-  pages,
-  images,
+  deliveryPages,
+  deliveryImages,
+  shippingImages,
   editing,
   autoFocus,
+  setAutoFocus,
   onChange,
   onConfirm,
 }: {
-  docType: DocType;
-  pages: DocPage[];
-  images: UploadedImage[];
+  deliveryPages: DocPage[];
+  deliveryImages: UploadedImage[];
+  shippingImages: UploadedImage[];
   editing: boolean;
   autoFocus: boolean;
+  setAutoFocus: (v: boolean) => void;
   onChange: (pageIdx: number, chunkId: string, value: string) => void;
   onConfirm: (pageIdx: number, chunkId: string) => void;
 }) {
   const [pageIdx, setPageIdx] = useState(0);
+  const [shippingIdx, setShippingIdx] = useState(0);
   const [activeChunkId, setActiveChunkId] = useState<string | null>(null);
-  // Per-image zoom/pan/rotate state — persists while the detail sheet is open
-  // (this component unmounts on sheet close, resetting everything).
   const [viewMap, setViewMap] = useState<Record<string, ImgView>>({});
-  const page = pages[pageIdx];
-  const image = images.find((i) => i.id === page?.imageId) ?? images[pageIdx];
+  const [imageTab, setImageTab] = useState<"delivery_note" | "shipping_slip">(
+    deliveryImages.length ? "delivery_note" : "shipping_slip",
+  );
+
+  const page = deliveryPages[pageIdx];
+  const deliveryImage =
+    deliveryImages.find((i) => i.id === page?.imageId) ?? deliveryImages[pageIdx];
+  const shippingImage = shippingImages[shippingIdx];
+
+  const showingShipping = imageTab === "shipping_slip" && !!shippingImage;
+  const leftImage = showingShipping ? shippingImage : deliveryImage;
+  const leftPage: DocPage | undefined =
+    showingShipping && shippingImage
+      ? {
+          imageId: shippingImage.id,
+          sourceImage: shippingImage.name,
+          pageBox: [0, 0, shippingImage.width, shippingImage.height],
+          chunks: [],
+        }
+      : page;
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const chunkRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  // Resizable split: left (image) width percentage, clamped to >= 50%.
+  // Resizable split: left (image) width percentage, clamped to 50%~80%.
   const [leftPct, setLeftPct] = useState(50);
   const containerRef = useRef<HTMLDivElement>(null);
   const resizingRef = useRef(false);
@@ -1682,15 +1703,69 @@ function DocPanel({
   }, [activeChunkId, pageIdx]);
 
   return (
-    <div ref={containerRef} className="flex h-full overflow-hidden">
-      {/* Preview with bbox overlay */}
+    <div ref={containerRef} className="flex flex-1 overflow-hidden">
+      {/* LEFT: image (tabs switch between delivery_note & shipping_slip) */}
       <div
-        className="flex flex-col overflow-hidden border-r border-border bg-muted/30"
+        className="flex flex-col overflow-hidden bg-muted/30"
         style={{ flex: `0 0 ${leftPct}%`, minWidth: 0 }}
       >
-        {pages.length > 1 && (
+        <div className="flex items-center justify-between gap-3 border-b border-border bg-background/60 px-3 py-1.5">
+          <div className="flex items-center gap-1">
+            {deliveryImages.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setImageTab("delivery_note")}
+                className={cn(
+                  "inline-flex items-center gap-1 rounded px-2 py-1 text-xs",
+                  imageTab === "delivery_note"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-accent",
+                )}
+              >
+                <Truck className="size-3.5" /> 送货单
+                <span className="rounded bg-black/10 px-1 text-[10px] tabular-nums">
+                  {deliveryImages.length}
+                </span>
+              </button>
+            )}
+            {shippingImages.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setImageTab("shipping_slip")}
+                className={cn(
+                  "inline-flex items-center gap-1 rounded px-2 py-1 text-xs",
+                  imageTab === "shipping_slip"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-accent",
+                )}
+              >
+                <ScrollText className="size-3.5" /> 出货传票
+                <span className="rounded bg-black/10 px-1 text-[10px] tabular-nums">
+                  {shippingImages.length}
+                </span>
+              </button>
+            )}
+          </div>
+          {!showingShipping && (
+            <div className="flex items-center gap-2">
+              <Label
+                htmlFor="auto-focus-switch"
+                className="text-xs text-muted-foreground cursor-pointer"
+              >
+                自动聚焦
+              </Label>
+              <Switch
+                id="auto-focus-switch"
+                checked={autoFocus}
+                onCheckedChange={setAutoFocus}
+              />
+            </div>
+          )}
+        </div>
+
+        {!showingShipping && deliveryPages.length > 1 && (
           <div className="flex items-center gap-1 border-b border-border bg-background/60 px-3 py-2">
-            {pages.map((_, i) => (
+            {deliveryPages.map((_, i) => (
               <button
                 key={i}
                 type="button"
@@ -1710,14 +1785,34 @@ function DocPanel({
             ))}
           </div>
         )}
+        {showingShipping && shippingImages.length > 1 && (
+          <div className="flex items-center gap-1 border-b border-border bg-background/60 px-3 py-2">
+            {shippingImages.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setShippingIdx(i)}
+                className={cn(
+                  "rounded px-2 py-0.5 text-xs",
+                  i === shippingIdx
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-accent",
+                )}
+              >
+                第 {i + 1} 张
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="flex-1 flex items-center justify-center overflow-hidden p-4">
-          {image && page ? (
+          {leftImage && leftPage ? (
             <ImageWithBoxes
-              image={image}
-              page={page}
-              activeChunkId={activeChunkId}
+              image={leftImage}
+              page={leftPage}
+              activeChunkId={showingShipping ? null : activeChunkId}
               onSelect={setActiveChunkId}
-              autoFocus={autoFocus}
+              autoFocus={!showingShipping && autoFocus}
               viewMap={viewMap}
               setViewMap={setViewMap}
             />
@@ -1731,7 +1826,7 @@ function DocPanel({
 
       {/* Resizer */}
       <div
-        className="relative z-10 flex shrink-0 items-center justify-center hover:bg-primary/5 active:bg-primary/10"
+        className="relative z-10 flex shrink-0 items-stretch justify-center border-x border-border hover:bg-primary/5 active:bg-primary/10"
         style={{ width: 8, cursor: "col-resize" }}
         onMouseDown={(e) => {
           e.preventDefault();
@@ -1740,13 +1835,17 @@ function DocPanel({
           document.body.style.userSelect = "none";
         }}
       >
-        <div className="flex h-8 w-5 items-center justify-center rounded-full bg-muted/50 hover:bg-primary/10">
-          <GripVertical className="size-3 text-muted-foreground" />
+        <div className="pointer-events-none absolute top-1/2 -translate-y-1/2 flex h-20 w-5 items-center justify-center rounded-full bg-muted hover:bg-primary/20">
+          <GripVertical className="size-4 text-muted-foreground" />
         </div>
       </div>
 
-      {/* Chunks editor */}
-      <div ref={scrollRef} className="flex flex-1 flex-col overflow-y-auto" style={{ minWidth: 0 }}>
+      {/* RIGHT: recognition results (always delivery_note) */}
+      <div
+        ref={scrollRef}
+        className="flex flex-1 flex-col overflow-y-auto"
+        style={{ minWidth: 0 }}
+      >
         <div className="space-y-0.5 px-4 py-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium text-foreground">
@@ -1784,11 +1883,17 @@ function DocPanel({
               />
             </div>
           ))}
+          {!page && (
+            <div className="rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
+              暂无识别结果
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
+
 
 type ImgView = {
   scale: number;
