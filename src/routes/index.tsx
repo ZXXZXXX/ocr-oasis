@@ -1711,7 +1711,7 @@ function DetailView({
   const shippingImages = record.images.filter((i) => i.docType === "shipping_slip");
   const [autoFocus, setAutoFocus] = useState(true);
 
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(initialEditing);
   const [lastEditedAt, setLastEditedAt] = useState<number | null>(null);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   // snapshot taken on entering edit mode — used to cancel
