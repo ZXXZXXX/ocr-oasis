@@ -86,6 +86,7 @@ import { toast } from "sonner";
 
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
+import { pollExternalTasks } from "@/lib/sync.functions";
 
 export const Route = createFileRoute("/")({
   component: Workbench,
@@ -701,8 +702,32 @@ function Workbench() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
+  const syncCursorRef = useRef<number | undefined>(undefined);
 
-
+  // 后端模拟定时任务：每 30 秒从第三方系统轮询新任务
+  useEffect(() => {
+    let mounted = true;
+    async function tick() {
+      try {
+        const res = await pollExternalTasks({ data: { cursor: syncCursorRef.current } });
+        if (!mounted) return;
+        if (res.records.length > 0) {
+          setRecords((prev) => [...res.records, ...prev]);
+          syncCursorRef.current = res.cursor;
+          setProgressDismissed(false);
+          setProgressMinimized(false);
+        }
+      } catch {
+        // 模拟失败时静默忽略，避免打断用户操作
+      }
+    }
+    tick();
+    const timer = setInterval(tick, 3_000);
+    return () => {
+      mounted = false;
+      clearInterval(timer);
+    };
+  }, []);
 
   const activeRecords = useMemo(
     () => records.filter((r) => r.status === "recognizing" || r.status === "queued"),
