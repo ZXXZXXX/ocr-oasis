@@ -2114,24 +2114,70 @@ function ChunkContentEditor({
 
   // Section-Header / Text: edit plain text; store back as <p>...</p>
   const text = htmlToText(chunk.content);
-  const isMulti = text.length > 60 || text.includes("\n");
   const handle = (v: string) => onChange(textToHtml(v));
 
-  return isMulti ? (
+  // Section header: render as a distinctive section title (not a form field).
+  if (chunk.label === "Section-Header") {
+    return (
+      <AutoResizeTextarea
+        value={text}
+        readOnly={readOnly}
+        onChange={(e) => handle(e.target.value)}
+        className={cn(
+          "min-h-9 border-none bg-transparent px-0 text-base font-semibold text-foreground shadow-none focus-visible:ring-0",
+          mustEdit && "text-[color:var(--warning-foreground)]",
+          roCls,
+        )}
+      />
+    );
+  }
+
+  // Text: try to parse "字段: 值" into a labeled form row so reviewers can
+  // scan structured fields quickly and only edit the value part.
+  const kv = parseKeyValue(text);
+  const isMulti = text.length > 60 || text.includes("\n");
+
+  if (kv && !isMulti) {
+    const handleValue = (newVal: string) =>
+      handle(`${kv.label}${kv.sep}${newVal}`);
+    return (
+      <div className="flex items-start gap-3">
+        <div className="w-24 shrink-0 pt-2 text-xs font-medium text-muted-foreground">
+          {kv.label}
+        </div>
+        <div className="min-w-0 flex-1">
+          <AutoResizeTextarea
+            value={kv.value}
+            readOnly={readOnly}
+            onChange={(e) => handleValue(e.target.value)}
+            placeholder="（空）"
+            className={cn("min-h-9", ring, roCls)}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return (
     <AutoResizeTextarea
       value={text}
       readOnly={readOnly}
       onChange={(e) => handle(e.target.value)}
-      className={cn("min-h-16", ring, roCls)}
-    />
-  ) : (
-    <AutoResizeTextarea
-      value={text}
-      readOnly={readOnly}
-      onChange={(e) => handle(e.target.value)}
-      className={cn("min-h-9", ring, roCls)}
+      className={cn(isMulti ? "min-h-16" : "min-h-9", ring, roCls)}
     />
   );
+}
+
+// Parse "标签: 值" / "标签：值" — keeps the original separator so round-trips
+// don't lose punctuation. Returns null if no clear label part is present.
+function parseKeyValue(
+  text: string,
+): { label: string; sep: string; value: string } | null {
+  const m = text.match(/^\s*([^：:\n]{1,20}?)\s*([：:])\s*([\s\S]*)$/);
+  if (!m) return null;
+  const label = m[1].trim();
+  if (!label) return null;
+  return { label, sep: `${m[2]} `, value: m[3] };
 }
 
 function EditableTableHtml({
