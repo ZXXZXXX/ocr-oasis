@@ -1393,6 +1393,10 @@ function Workbench() {
                   replaceResults(detailRecord.id, results)
                 }
                 onDownload={() => downloadJson(detailRecord)}
+                onSubmit={() => {
+                  submitVerification(detailRecord.id);
+                  setDetailId(null);
+                }}
                 buildExport={buildExport}
               />
             )}
