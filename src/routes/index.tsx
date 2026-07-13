@@ -155,6 +155,13 @@ interface OcrRecord {
   images: UploadedImage[];
   // one page per source image, grouped by doc type
   results?: Partial<Record<DocType, DocPage[]>>;
+  // 新增：任务级字段
+  driver: string;
+  plateNo: string;
+  signatureStatus: SignatureStatus;
+  aiVerdict?: AiVerdict; // 识别完成后由AI给出
+  verifiedAt?: number;   // 人工提交验收结论时间
+  verifiedBy?: string;
 }
 
 // ---------- Helpers ----------
