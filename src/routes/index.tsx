@@ -1421,7 +1421,10 @@ function Workbench() {
                               variant="ghost"
                               size="sm"
                               className="text-sm font-semibold text-primary hover:bg-primary/10 hover:text-primary"
-                              onClick={() => setDetailId(r.id)}
+                              onClick={() => {
+                                setDetailId(r.id);
+                                setDetailEditing(true);
+                              }}
                             >
                               审核
                             </Button>
