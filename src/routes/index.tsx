@@ -1853,7 +1853,7 @@ function DocPanel({
             </h3>
             <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
               {!editing && (
-                <span className="text-muted-foreground">点击顶部「编辑」进入编辑态</span>
+                <span className="text-muted-foreground">{"\n"}</span>
               )}
               <span className="inline-flex items-center gap-1">
                 <span className="size-2 rounded-sm bg-[color:var(--success)]" />高
