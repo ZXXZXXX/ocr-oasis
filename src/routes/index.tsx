@@ -1571,47 +1571,60 @@ function DetailView({
     <>
       <SheetHeader className="border-b border-border px-6 py-4">
         <div className="flex items-start justify-between gap-4">
-          <div>
+          <div className="min-w-0">
             <SheetTitle className="flex flex-wrap items-center gap-2">
-              识别结果
+              验收任务详情
+              <StatusBadge status={record.status} pending={pending} />
+              {record.aiVerdict && <VerdictBadge value={record.aiVerdict} />}
+              <SignatureBadge value={record.signatureStatus} />
               <ConfidenceBadge score={record.confidence ?? 0} />
-              {editing ? (
+              {editing && (
                 <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
                   <Pencil className="size-3" /> 编辑中
                 </span>
-              ) : pending > 0 ? (
-                <span className="inline-flex items-center gap-1 text-xs text-[color:var(--warning-foreground)]">
-                  <AlertTriangle className="size-3" />
-                  尚有 {pending} 个低置信度分块需人工核验后才能下载
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 text-xs text-[color:var(--success)]">
-                  <CheckCircle2 className="size-3" />
-                  已全部通过核验
-                </span>
               )}
             </SheetTitle>
-            <SheetDescription className="mt-1 font-mono text-xs">
-              #{record.id} · {fmtTime(record.createdAt)}
+            <SheetDescription className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs">
+              <span>#{record.id}</span>
+              <span>{record.driver} · {record.plateNo}</span>
+              <span>同步 {fmtTime(record.createdAt)}</span>
+              {record.verifiedAt && (
+                <span className="text-[color:var(--success)]">
+                  已验收 {fmtTime(record.verifiedAt)} · {record.verifiedBy}
+                </span>
+              )}
             </SheetDescription>
           </div>
           <div className="flex items-center gap-2">
             {!editing && (
               <>
+                {record.status === "pending_review" && (
+                  <Button
+                    variant="outline"
+                    onClick={startEdit}
+                    className="gap-2"
+                  >
+                    <Pencil className="size-4" /> 编辑识别结果
+                  </Button>
+                )}
                 <Button
-                  variant="outline"
-                  onClick={startEdit}
-                  className="gap-2"
-                >
-                  <Pencil className="size-4" /> 编辑
-                </Button>
-                <Button
+                  variant="ghost"
                   onClick={onDownload}
                   disabled={pending > 0}
                   className="gap-2"
                 >
-                  <Download className="size-4" /> 下载 JSON
+                  <Download className="size-4" /> JSON
                 </Button>
+                {record.status === "pending_review" && (
+                  <Button onClick={onSubmit} className="gap-2">
+                    <CheckCircle2 className="size-4" /> 提交验收结论
+                  </Button>
+                )}
+                {record.status === "verified" && (
+                  <span className="inline-flex items-center gap-1 rounded-md bg-[color:var(--success)]/15 px-2 py-1 text-xs text-[color:var(--success)]">
+                    <CheckCircle2 className="size-3.5" /> 已验收并回传
+                  </span>
+                )}
               </>
             )}
             <SheetClose asChild>
