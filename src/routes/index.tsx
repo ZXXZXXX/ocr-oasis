@@ -2398,6 +2398,7 @@ function ChunkEditor({
           {chunk.edited ? "最近修改" : "确认于"}：{fmtEditLog(chunk.lastEdit)}
         </div>
       )}
+      </div>
     </div>
   );
 }
