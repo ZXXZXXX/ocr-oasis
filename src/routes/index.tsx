@@ -1808,46 +1808,199 @@ function DocPanel({
   );
 }
 
+type ImgView = {
+  scale: number;
+  tx: number; // px offset from centered
+  ty: number;
+  rot: number; // degrees, multiples of 90 via buttons
+  manual: boolean; // once user adjusts, stop auto-focus on active chunk
+};
+const DEFAULT_IMG_VIEW: ImgView = { scale: 1, tx: 0, ty: 0, rot: 0, manual: false };
+
 function ImageWithBoxes({
   image,
   page,
   activeChunkId,
   onSelect,
+  viewMap,
+  setViewMap,
 }: {
   image: UploadedImage;
   page: DocPage;
   activeChunkId: string | null;
   onSelect: (id: string | null) => void;
+  viewMap: Record<string, ImgView>;
+  setViewMap: React.Dispatch<React.SetStateAction<Record<string, ImgView>>>;
 }) {
   const [w, h] = [page.pageBox[2] || image.width, page.pageBox[3] || image.height];
+  const view = viewMap[image.id] ?? DEFAULT_IMG_VIEW;
+
+  const updateView = (patch: Partial<ImgView> | ((v: ImgView) => Partial<ImgView>)) => {
+    setViewMap((m) => {
+      const cur = m[image.id] ?? DEFAULT_IMG_VIEW;
+      const next = typeof patch === "function" ? patch(cur) : patch;
+      return { ...m, [image.id]: { ...cur, ...next, manual: true } };
+    });
+  };
+  const resetView = () => {
+    setViewMap((m) => {
+      const { [image.id]: _drop, ...rest } = m;
+      return rest;
+    });
+  };
+  const zoomBy = (factor: number) =>
+    updateView((v) => ({ scale: Math.min(6, Math.max(0.3, v.scale * factor)) }));
+  const rotateBy = (deg: number) =>
+    updateView((v) => ({ rot: (((v.rot + deg) % 360) + 360) % 360 }));
+
+  // Auto-focus on the active chunk only when user has not manually adjusted.
   const activeChunk = page.chunks.find((c) => c.id === activeChunkId);
-  let transform = "translate(0%, 0%) scale(1)";
-  if (activeChunk) {
+  let transform: string;
+  let transitionCls = "";
+  if (!view.manual && activeChunk) {
     const [x1, y1, x2, y2] = activeChunk.bbox;
-    const bw = Math.max(1, x2 - x1 + 20); // 左右各加 10px
+    const bw = Math.max(1, x2 - x1 + 20);
     const fx = (x1 + x2) / 2 / w;
     const fy = (y1 + y2) / 2 / h;
-    // 以所选框宽度 + 20px 作为可视宽度限制，按容器宽度缩放
     const scale = Math.min(4, Math.max(1, w / bw));
     const tx = (0.5 - fx) * 100;
     const ty = (0.5 - fy) * 100;
     transform = `translate(${tx}%, ${ty}%) scale(${scale})`;
+    transitionCls = "transition-transform duration-500 ease-out";
+  } else {
+    transform = `translate(${view.tx}px, ${view.ty}px) scale(${view.scale}) rotate(${view.rot}deg)`;
   }
+
+  // Wheel to zoom
+  const stageRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = stageRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey || Math.abs(e.deltaY) > 0) {
+        e.preventDefault();
+        const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+        updateView((v) => ({ scale: Math.min(6, Math.max(0.3, v.scale * factor)) }));
+      }
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [image.id]);
+
+  // Drag to pan
+  const dragRef = useRef<{ x: number; y: number; tx: number; ty: number } | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const onPointerDown = (e: React.PointerEvent) => {
+    if ((e.target as HTMLElement).closest("[data-bbox]")) return; // let bbox clicks through
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    dragRef.current = { x: e.clientX, y: e.clientY, tx: view.tx, ty: view.ty };
+    setDragging(true);
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!dragRef.current) return;
+    const dx = e.clientX - dragRef.current.x;
+    const dy = e.clientY - dragRef.current.y;
+    updateView({ tx: dragRef.current.tx + dx, ty: dragRef.current.ty + dy });
+  };
+  const onPointerUp = (e: React.PointerEvent) => {
+    dragRef.current = null;
+    setDragging(false);
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+  };
+
   return (
     <div className="flex h-full w-full max-w-full flex-col overflow-hidden rounded-lg border border-border bg-background">
-      <div className="flex-1 flex items-center justify-center overflow-auto p-4">
+      {/* Toolbar */}
+      <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 px-2 py-1.5">
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7"
+            onClick={() => rotateBy(-90)}
+            aria-label="逆时针旋转 90°"
+            title="逆时针旋转 90°"
+          >
+            <RotateCcw className="size-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7"
+            onClick={() => rotateBy(90)}
+            aria-label="顺时针旋转 90°"
+            title="顺时针旋转 90°"
+          >
+            <RotateCw className="size-3.5" />
+          </Button>
+          <span className="mx-1 h-4 w-px bg-border" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7"
+            onClick={() => zoomBy(1 / 1.2)}
+            aria-label="缩小"
+            title="缩小"
+          >
+            <ZoomOut className="size-3.5" />
+          </Button>
+          <span className="min-w-10 text-center text-[11px] tabular-nums text-muted-foreground">
+            {Math.round(view.scale * 100)}%
+          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7"
+            onClick={() => zoomBy(1.2)}
+            aria-label="放大"
+            title="放大"
+          >
+            <ZoomIn className="size-3.5" />
+          </Button>
+        </div>
+        <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+          {view.manual && (
+            <button
+              type="button"
+              onClick={resetView}
+              className="rounded px-1.5 py-0.5 hover:bg-accent hover:text-foreground"
+            >
+              重置视图
+            </button>
+          )}
+          <span className="hidden sm:inline">拖动平移 · 滚轮缩放</span>
+        </div>
+      </div>
+
+      <div
+        ref={stageRef}
+        className={cn(
+          "flex-1 flex items-center justify-center overflow-hidden p-4 select-none",
+          dragging ? "cursor-grabbing" : "cursor-grab",
+        )}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+      >
         <div
-          className="relative w-full max-w-full overflow-hidden"
+          className="relative w-full max-w-full"
           style={{ aspectRatio: `${w} / ${h}` }}
         >
           <div
-            className="absolute inset-0 transition-transform duration-500 ease-out"
+            className={cn("absolute inset-0", transitionCls)}
             style={{ transform, transformOrigin: "50% 50%" }}
           >
             <img
               src={image.url}
               alt={image.name}
-              className="absolute inset-0 h-full w-full object-contain"
+              draggable={false}
+              className="absolute inset-0 h-full w-full object-contain pointer-events-none"
             />
             <div className="absolute inset-0">
               {page.chunks.map((c) => {
@@ -1864,7 +2017,12 @@ function ImageWithBoxes({
                   <button
                     type="button"
                     key={c.id}
-                    onClick={() => onSelect(c.id)}
+                    data-bbox
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelect(c.id);
+                    }}
                     className={cn(
                       "absolute cursor-pointer border transition-all hover:z-10 hover:shadow-md",
                       color,
@@ -1889,6 +2047,7 @@ function ImageWithBoxes({
           <span className="truncate font-medium">{image.name}</span>
           <span className="text-primary/70">
             · {w} × {h}
+            {view.rot !== 0 && ` · 旋转 ${view.rot}°`}
           </span>
         </div>
         {activeChunkId && (
