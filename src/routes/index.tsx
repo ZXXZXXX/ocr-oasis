@@ -1516,15 +1516,15 @@ function Workbench() {
                         <div className="flex items-center gap-2">
                           <Input
                             type="date"
-                            value={dateFrom}
-                            onChange={(e) => setDateFrom(e.target.value)}
+                            value={draftDateFrom}
+                            onChange={(e) => setDraftDateFrom(e.target.value)}
                             className="h-9 flex-1"
                           />
                           <span className="text-xs text-muted-foreground">至</span>
                           <Input
                             type="date"
-                            value={dateTo}
-                            onChange={(e) => setDateTo(e.target.value)}
+                            value={draftDateTo}
+                            onChange={(e) => setDraftDateTo(e.target.value)}
                             className="h-9 flex-1"
                           />
                         </div>
