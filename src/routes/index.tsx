@@ -1423,12 +1423,12 @@ function SignatureBadge({ value }: { value: SignatureStatus }) {
 function VerdictBadge({ value }: { value: AiVerdict }) {
   if (value === "pass")
     return (
-      <Badge variant="status" className="gap-1 border-0 bg-[color:var(--success)]/15 font-normal text-[color:var(--success)]">
+      <Badge variant="status" className="w-20 justify-center gap-1 border-0 bg-[color:var(--success)]/15 font-normal text-[color:var(--success)]">
         <CheckCircle2 className="size-3" /> {VERDICT_LABEL[value]}
       </Badge>
     );
   return (
-    <Badge variant="status" className="gap-1 bg-destructive font-normal text-destructive-foreground shadow">
+    <Badge variant="status" className="w-20 justify-center gap-1 border-0 bg-[color:var(--warning)]/20 font-normal text-[color:var(--warning-foreground)]">
       <AlertTriangle className="size-3" /> {VERDICT_LABEL[value]}
     </Badge>
   );
