@@ -2327,7 +2327,7 @@ function ImageWithBoxes({
   };
 
   const isDefaultFit = !view.manual && view.scale === 1 && view.tx === 0 && view.ty === 0;
-  const isAutoFocused = autoFocus && !view.manual && !!activeChunk;
+  const isAutoFocused = !!activeChunk;
   const showReset = !isDefaultFit || isAutoFocused;
 
   return (
