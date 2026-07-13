@@ -1704,6 +1704,34 @@ function DetailView({
           );
         })}
 
+        {shippingRefImgs.length > 0 && (
+          <TabsContent
+            value="shipping_ref"
+            className="flex-1 overflow-auto px-6 pb-6 pt-4 data-[state=inactive]:hidden"
+          >
+            <div className="mb-3 text-xs text-muted-foreground">
+              出货传票仅作参考图查看，不参与 OCR 识别与结构化提取。
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {shippingRefImgs.map((img) => (
+                <div
+                  key={img.id}
+                  className="overflow-hidden rounded-lg border border-border bg-muted/20"
+                >
+                  <img
+                    src={img.url}
+                    alt={img.name}
+                    className="h-auto w-full object-contain"
+                  />
+                  <div className="border-t border-border bg-primary/10 px-3 py-1.5 text-xs text-foreground">
+                    {img.name}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </TabsContent>
+        )}
+
         <TabsContent
           value="json"
           className="flex-1 overflow-auto px-6 pb-6 pt-4 data-[state=inactive]:hidden"
