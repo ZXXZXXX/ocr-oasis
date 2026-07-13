@@ -1288,13 +1288,15 @@ function Workbench() {
                         <div className="flex justify-end gap-1">
                           {r.status === "pending_review" && (
                             <Button
-                              variant="default"
+                              variant="ghost"
                               size="sm"
+                              className="font-semibold text-primary hover:bg-primary/10 hover:text-primary"
                               onClick={() => setDetailId(r.id)}
                             >
                               审核
                             </Button>
                           )}
+
                           <Button
                             variant="ghost"
                             size="sm"
