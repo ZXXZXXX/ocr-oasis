@@ -722,7 +722,7 @@ function Workbench() {
       }
     }
     tick();
-    const timer = setInterval(tick, 30_000);
+    const timer = setInterval(tick, 3_000);
     return () => {
       mounted = false;
       clearInterval(timer);
