@@ -1654,8 +1654,8 @@ function DetailView({
                 </span>
               </TabsTrigger>
             )}
-            <TabsTrigger value="json">JSON 预览</TabsTrigger>
           </TabsList>
+
         </div>
 
         {availableDocTypes.map((dt) => {
@@ -1703,15 +1703,8 @@ function DetailView({
           </TabsContent>
         )}
 
-        <TabsContent
-          value="json"
-          className="flex-1 overflow-auto px-6 pb-6 pt-4 data-[state=inactive]:hidden"
-        >
-          <pre className="max-h-full overflow-auto rounded-lg border border-border bg-muted/40 p-4 text-xs leading-relaxed">
-            {JSON.stringify(buildExport(record), null, 2)}
-          </pre>
-        </TabsContent>
       </Tabs>
+
 
       {editing && (
         <div className="shrink-0 border-t border-border bg-muted/30 px-6 py-3">
