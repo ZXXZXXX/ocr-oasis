@@ -2167,21 +2167,37 @@ function ImageWithBoxes({
         </div>
       </div>
       <div className="flex items-center justify-between gap-2 border-t border-primary/20 bg-primary/5 px-3 py-1.5 text-xs text-primary">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="truncate font-medium">{image.name}</span>
-          <span className="text-primary/70">
-            · {w} × {h}
-          </span>
-        </div>
-        {view.manual && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-6 gap-1 border-primary/30 px-2 text-xs text-primary hover:bg-primary/10"
-            onClick={resetView}
-          >
-            <Minimize2 className="size-3" /> 重置视图
-          </Button>
+        {navCount && navCount > 1 ? (
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-6 gap-1 border-primary/30 px-2 text-xs text-primary hover:bg-primary/10 disabled:opacity-50"
+              onClick={onPrev}
+              disabled={navIndex === 0}
+            >
+              <ChevronLeft className="size-3.5" /> 上一页
+            </Button>
+            <span className="tabular-nums">
+              第 {((navIndex ?? 0) + 1)} / {navCount} {navLabel}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-6 gap-1 border-primary/30 px-2 text-xs text-primary hover:bg-primary/10 disabled:opacity-50"
+              onClick={onNext}
+              disabled={navIndex === navCount - 1}
+            >
+              下一页 <ChevronRight className="size-3.5" />
+            </Button>
+          </>
+        ) : (
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="truncate font-medium">{image.name}</span>
+            <span className="text-primary/70">
+              · {w} × {h}
+            </span>
+          </div>
         )}
       </div>
     </div>
