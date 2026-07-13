@@ -1842,8 +1842,35 @@ function DocPanel({
               activeChunkId={showingShipping ? null : activeChunkId}
               onSelect={setActiveChunkId}
               autoFocus={!showingShipping && autoFocus}
+              setAutoFocus={setAutoFocus}
+              showAutoFocus={!showingShipping}
               viewMap={viewMap}
               setViewMap={setViewMap}
+              navIndex={showingShipping ? shippingIdx : pageIdx}
+              navCount={showingShipping ? shippingImages.length : deliveryPages.length}
+              onPrev={() => {
+                if (showingShipping) {
+                  setShippingIdx((i) => Math.max(0, i - 1));
+                } else {
+                  setPageIdx((i) => {
+                    const next = Math.max(0, i - 1);
+                    if (next !== i) setActiveChunkId(null);
+                    return next;
+                  });
+                }
+              }}
+              onNext={() => {
+                if (showingShipping) {
+                  setShippingIdx((i) => Math.min(shippingImages.length - 1, i + 1));
+                } else {
+                  setPageIdx((i) => {
+                    const next = Math.min(deliveryPages.length - 1, i + 1);
+                    if (next !== i) setActiveChunkId(null);
+                    return next;
+                  });
+                }
+              }}
+              navLabel={showingShipping ? "张" : "页"}
             />
           ) : (
             <div className="rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
