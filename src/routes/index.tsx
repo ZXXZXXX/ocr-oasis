@@ -940,42 +940,6 @@ function Workbench() {
     setRecords((prev) => prev.map((r) => (r.id === recordId ? { ...r, results } : r)));
   }
 
-  function buildExport(r: OcrRecord) {
-    if (!r.results) return {};
-    const documents = (Object.entries(r.results) as [DocType, DocPage[]][])
-      .map(([docType, pages]) =>
-        pages.map((p) => ({
-          documentType: docType,
-          source_image: p.sourceImage,
-          page_box: p.pageBox,
-          chunks: p.chunks.map((c) => ({
-            bbox: c.bbox,
-            label: c.label,
-            content: c.content,
-            ...(c.confidence != null ? { confidence: c.confidence } : {}),
-            ...(c.edited
-              ? {
-                  edited: true,
-                  original: c.original,
-                  lastEdit: c.lastEdit ?? null,
-                }
-              : c.confirmed
-                ? {
-                    confirmed: true,
-                    reviewedBy: c.lastEdit ?? null,
-                  }
-                : {}),
-          })),
-        })),
-      )
-      .flat();
-    return {
-      taskId: r.id,
-      createdAt: new Date(r.createdAt).toISOString(),
-      overallConfidence: (r.confidence ?? 0) / 100,
-      documents,
-    };
-  }
 
 
 
