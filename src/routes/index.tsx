@@ -26,6 +26,7 @@ import {
   Image as ImageIcon,
   MoreHorizontal,
   Search,
+  GripVertical,
 } from "lucide-react";
 
 
@@ -1727,6 +1728,31 @@ function DocPanel({
   const scrollRef = useRef<HTMLDivElement>(null);
   const chunkRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
+  // Resizable split: left (image) width percentage, clamped to >= 50%.
+  const [leftPct, setLeftPct] = useState(50);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const resizingRef = useRef(false);
+
+  useEffect(() => {
+    const handleMove = (e: MouseEvent) => {
+      if (!resizingRef.current || !containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const pct = ((e.clientX - rect.left) / rect.width) * 100;
+      setLeftPct(Math.min(85, Math.max(50, pct)));
+    };
+    const handleUp = () => {
+      resizingRef.current = false;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseup", handleUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseup", handleUp);
+    };
+  }, []);
+
   useEffect(() => {
     if (!activeChunkId) return;
     const el = chunkRefs.current[activeChunkId];
@@ -1739,9 +1765,12 @@ function DocPanel({
   }, [activeChunkId, pageIdx]);
 
   return (
-    <div className="grid h-full grid-cols-1 overflow-hidden md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
+    <div ref={containerRef} className="flex h-full overflow-hidden">
       {/* Preview with bbox overlay */}
-      <div className="flex flex-col overflow-hidden border-r border-border bg-muted/30">
+      <div
+        className="flex flex-col overflow-hidden border-r border-border bg-muted/30"
+        style={{ flex: `0 0 ${leftPct}%`, minWidth: 0 }}
+      >
         {pages.length > 1 && (
           <div className="flex items-center gap-1 border-b border-border bg-background/60 px-3 py-2">
             {pages.map((_, i) => (
@@ -1783,8 +1812,24 @@ function DocPanel({
         </div>
       </div>
 
+      {/* Resizer */}
+      <div
+        className="relative z-10 flex shrink-0 items-center justify-center hover:bg-primary/5 active:bg-primary/10"
+        style={{ width: 8, cursor: "col-resize" }}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          resizingRef.current = true;
+          document.body.style.cursor = "col-resize";
+          document.body.style.userSelect = "none";
+        }}
+      >
+        <div className="flex h-8 w-5 items-center justify-center rounded-full bg-muted/50 hover:bg-primary/10">
+          <GripVertical className="size-3 text-muted-foreground" />
+        </div>
+      </div>
+
       {/* Chunks editor */}
-      <div ref={scrollRef} className="flex flex-col overflow-y-auto">
+      <div ref={scrollRef} className="flex flex-1 flex-col overflow-y-auto" style={{ minWidth: 0 }}>
         <div className="space-y-0.5 px-4 py-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium text-foreground">
