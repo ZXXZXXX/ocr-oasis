@@ -971,7 +971,7 @@ function Workbench() {
               accent="warning"
             />
             <StatCard
-              label="已提交任务"
+              label="已审核任务"
               value={records.filter((r) => r.status === "verified").length}
               accent="success"
             />
@@ -1401,7 +1401,7 @@ function StatusBadge({ status, pending: _pending }: { status: Status; pending: n
     );
   return (
     <Badge variant="status" className="gap-1 border-0 bg-[color:var(--success)]/15 font-normal text-[color:var(--success)]">
-      <CheckCircle2 className="size-3" /> 已提交
+      <CheckCircle2 className="size-3" /> 已审核
     </Badge>
   );
 }
