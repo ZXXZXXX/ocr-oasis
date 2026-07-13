@@ -81,7 +81,18 @@ const LOW_CONF_THRESHOLD = 0.8;
 
 // ---------- Types ----------
 type DocType = "delivery_note" | "shipping_slip";
-type Status = "recognizing" | "done" | "failed";
+type Status = "recognizing" | "pending_review" | "verified" | "failed";
+type SignatureStatus = "perfect" | "partial";
+type AiVerdict = "pass" | "fail";
+
+const SIGNATURE_LABEL: Record<SignatureStatus, string> = {
+  perfect: "完美签收",
+  partial: "部分签收",
+};
+const VERDICT_LABEL: Record<AiVerdict, string> = {
+  pass: "通过",
+  fail: "不通过",
+};
 type ChunkLabel = "Section-Header" | "Text" | "Table" | "Image";
 
 const DOC_LABEL: Record<DocType, string> = {
