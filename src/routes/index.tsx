@@ -1401,7 +1401,7 @@ function StatusBadge({ status, pending: _pending }: { status: Status; pending: n
     );
   return (
     <Badge variant="status" className="gap-1 border-0 bg-[color:var(--success)]/15 font-normal text-[color:var(--success)]">
-      <CheckCircle2 className="size-3" /> 已验收
+      <CheckCircle2 className="size-3" /> 已提交
     </Badge>
   );
 }
