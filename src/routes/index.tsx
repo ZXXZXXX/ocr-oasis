@@ -1179,17 +1179,18 @@ function Workbench() {
                   <TableHead className="w-[200px]">KA 订单号</TableHead>
                   <TableHead className="w-[150px]">同步时间</TableHead>
                   <TableHead>签收状态</TableHead>
-                  <TableHead className="w-[180px]">识别进度</TableHead>
                   <TableHead>置信度</TableHead>
                   <TableHead>AI 结论</TableHead>
                   <TableHead>审核状态</TableHead>
                   <TableHead className="text-right">操作</TableHead>
+
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredRecords.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={9} className="py-16 text-center">
+                    <TableCell colSpan={8} className="py-16 text-center">
+
                       <div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground">
                         <div className="grid size-12 place-items-center rounded-full bg-secondary">
                           <FileText className="size-5" />
@@ -1230,18 +1231,6 @@ function Workbench() {
                       </TableCell>
                       <TableCell>
                         <SignatureBadge value={r.signatureStatus} />
-                      </TableCell>
-                      <TableCell>
-                        {r.status === "queued" ? (
-                          <span className="text-xs text-muted-foreground">排队等待中…</span>
-                        ) : (
-                          <div className="flex items-center gap-3">
-                            <Progress value={r.progress} className="h-1.5 w-32" />
-                            <span className="w-10 text-xs tabular-nums text-muted-foreground">
-                              {Math.round(r.progress)}%
-                            </span>
-                          </div>
-                        )}
                       </TableCell>
                       <TableCell>
                         {r.confidence != null ? (
