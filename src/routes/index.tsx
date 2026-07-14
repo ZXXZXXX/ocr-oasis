@@ -2416,53 +2416,51 @@ function DocPanel({
       </div>
 
       {/* RIGHT: recognition results (always delivery_note) */}
-      <div
-        ref={scrollRef}
-        className="flex flex-1 flex-col overflow-y-auto"
-        style={{ minWidth: 0 }}
-      >
-        <div className="space-y-0.5 px-4 py-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-foreground">
-              识别分块 · {page?.chunks.length ?? 0}
-            </h3>
-            <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-              {!editing && (
-                <span className="text-muted-foreground">{"\n"}</span>
-              )}
-              <span className="inline-flex items-center gap-1">
-                <span className={cn("size-2 rounded-sm", confidenceDotClasses("high"))} />高
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <span className={cn("size-2 rounded-sm", confidenceDotClasses("mid"))} />中
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <span className={cn("size-2 rounded-sm", confidenceDotClasses("low"))} />低
-              </span>
-            </div>
+      <div className="flex flex-1 flex-col overflow-hidden" style={{ minWidth: 0 }}>
+        <div className="flex items-center justify-between gap-3 border-b border-border bg-background/60 px-3 py-1.5">
+          <h3 className="text-xs font-medium text-foreground">
+            识别分块 · {page?.chunks.length ?? 0}
+          </h3>
+          <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+            <span className="inline-flex items-center gap-1">
+              <span className={cn("size-2 rounded-sm", confidenceDotClasses("high"))} />高
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <span className={cn("size-2 rounded-sm", confidenceDotClasses("mid"))} />中
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <span className={cn("size-2 rounded-sm", confidenceDotClasses("low"))} />低
+            </span>
           </div>
-          {page?.chunks.map((c) => (
-            <div
-              key={c.id}
-              ref={(el) => {
-                chunkRefs.current[c.id] = el;
-              }}
-            >
-              <ChunkEditor
-                chunk={c}
-                active={activeChunkId === c.id}
-                editing={editing}
-                onFocus={() => setActiveChunkId(c.id)}
-                onChange={(v) => onChange(pageIdx, c.id, v)}
-                onConfirm={() => onConfirm(pageIdx, c.id)}
-              />
-            </div>
-          ))}
-          {!page && (
-            <div className="rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
-              暂无识别结果
-            </div>
-          )}
+        </div>
+        <div
+          ref={scrollRef}
+          className="flex-1 overflow-y-auto"
+        >
+          <div className="space-y-0.5 px-4 py-3">
+            {page?.chunks.map((c) => (
+              <div
+                key={c.id}
+                ref={(el) => {
+                  chunkRefs.current[c.id] = el;
+                }}
+              >
+                <ChunkEditor
+                  chunk={c}
+                  active={activeChunkId === c.id}
+                  editing={editing}
+                  onFocus={() => setActiveChunkId(c.id)}
+                  onChange={(v) => onChange(pageIdx, c.id, v)}
+                  onConfirm={() => onConfirm(pageIdx, c.id)}
+                />
+              </div>
+            ))}
+            {!page && (
+              <div className="rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
+                暂无识别结果
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
