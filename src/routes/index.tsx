@@ -127,6 +127,13 @@ const VERDICT_LABEL: Record<AiVerdict, string> = {
   pass: "通过",
   fail: "不通过",
 };
+const STATUS_LABEL: Record<Status, string> = {
+  queued: "排队中",
+  recognizing: "AI 识别中",
+  pending_review: "待审核",
+  verified: "已审核",
+  failed: "识别异常",
+};
 type ChunkLabel = "Section-Header" | "Text" | "Table" | "Image";
 
 const DOC_LABEL: Record<DocType, string> = {
@@ -1869,6 +1876,13 @@ function StatCard({
     </div>
   );
 }
+function NeutralTag({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-0.5 text-xs font-normal text-foreground">
+      {children}
+    </span>
+  );
+}
 
 function StatusBadge({ status, pending: _pending }: { status: Status; pending: number }) {
   if (status === "queued")
@@ -2061,23 +2075,10 @@ function DetailView({
           <div className="min-w-0">
             <SheetTitle className="flex flex-wrap items-center gap-2">
               任务详情
-              <StatusBadge status={record.status} pending={pending} />
-              {editing ? (
-                <Select
-                  value={record.signatureStatus}
-                  onValueChange={(v) => onSignatureStatusChange(v as SignatureStatus)}
-                >
-                  <SelectTrigger className="h-7 w-28 px-2 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="perfect">{SIGNATURE_LABEL.perfect}</SelectItem>
-                    <SelectItem value="partial">{SIGNATURE_LABEL.partial}</SelectItem>
-                  </SelectContent>
-                </Select>
-              ) : (
-                <SignatureBadge value={record.signatureStatus} />
-              )}
+              <NeutralTag>
+                {STATUS_LABEL[record.status] ?? record.status}
+              </NeutralTag>
+              <NeutralTag>{SIGNATURE_LABEL[record.signatureStatus]}</NeutralTag>
               {editing && (
                 <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
                   <Pencil className="size-3" /> 编辑中
@@ -2415,53 +2416,51 @@ function DocPanel({
       </div>
 
       {/* RIGHT: recognition results (always delivery_note) */}
-      <div
-        ref={scrollRef}
-        className="flex flex-1 flex-col overflow-y-auto"
-        style={{ minWidth: 0 }}
-      >
-        <div className="space-y-0.5 px-4 py-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-foreground">
-              识别分块 · {page?.chunks.length ?? 0}
-            </h3>
-            <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-              {!editing && (
-                <span className="text-muted-foreground">{"\n"}</span>
-              )}
-              <span className="inline-flex items-center gap-1">
-                <span className={cn("size-2 rounded-sm", confidenceDotClasses("high"))} />高
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <span className={cn("size-2 rounded-sm", confidenceDotClasses("mid"))} />中
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <span className={cn("size-2 rounded-sm", confidenceDotClasses("low"))} />低
-              </span>
-            </div>
+      <div className="flex flex-1 flex-col overflow-hidden" style={{ minWidth: 0 }}>
+        <div className="flex items-center justify-between gap-3 border-b border-border bg-background/60 px-3 py-1.5">
+          <h3 className="text-xs font-medium text-foreground">
+            识别分块 · {page?.chunks.length ?? 0}
+          </h3>
+          <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+            <span className="inline-flex items-center gap-1">
+              <span className={cn("size-2 rounded-sm", confidenceDotClasses("high"))} />高
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <span className={cn("size-2 rounded-sm", confidenceDotClasses("mid"))} />中
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <span className={cn("size-2 rounded-sm", confidenceDotClasses("low"))} />低
+            </span>
           </div>
-          {page?.chunks.map((c) => (
-            <div
-              key={c.id}
-              ref={(el) => {
-                chunkRefs.current[c.id] = el;
-              }}
-            >
-              <ChunkEditor
-                chunk={c}
-                active={activeChunkId === c.id}
-                editing={editing}
-                onFocus={() => setActiveChunkId(c.id)}
-                onChange={(v) => onChange(pageIdx, c.id, v)}
-                onConfirm={() => onConfirm(pageIdx, c.id)}
-              />
-            </div>
-          ))}
-          {!page && (
-            <div className="rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
-              暂无识别结果
-            </div>
-          )}
+        </div>
+        <div
+          ref={scrollRef}
+          className="flex-1 overflow-y-auto"
+        >
+          <div className="space-y-0.5 px-4 py-3">
+            {page?.chunks.map((c) => (
+              <div
+                key={c.id}
+                ref={(el) => {
+                  chunkRefs.current[c.id] = el;
+                }}
+              >
+                <ChunkEditor
+                  chunk={c}
+                  active={activeChunkId === c.id}
+                  editing={editing}
+                  onFocus={() => setActiveChunkId(c.id)}
+                  onChange={(v) => onChange(pageIdx, c.id, v)}
+                  onConfirm={() => onConfirm(pageIdx, c.id)}
+                />
+              </div>
+            ))}
+            {!page && (
+              <div className="rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
+                暂无识别结果
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
