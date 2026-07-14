@@ -2325,7 +2325,16 @@ function DocPanel({
           pageBox: [0, 0, shippingImage.width, shippingImage.height],
           chunks: [],
         }
-      : page;
+      : page ??
+        (deliveryImage
+          ? {
+              imageId: deliveryImage.id,
+              sourceImage: deliveryImage.name,
+              pageBox: [0, 0, deliveryImage.width, deliveryImage.height],
+              chunks: [],
+            }
+          : undefined);
+
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const chunkRefs = useRef<Record<string, HTMLDivElement | null>>({});
