@@ -1413,10 +1413,6 @@ function Workbench() {
                 </p>
               </div>
             </div>
-            <Button onClick={syncNewTask} className="gap-2" variant="outline">
-              <RotateCcw className="size-4" />
-              手动同步新任务
-            </Button>
           </div>
         </header>
 
@@ -1619,15 +1615,12 @@ function Workbench() {
                         <div className="text-sm">
                           {records.length === 0 ? "还没有审核单记录" : "没有符合当前筛选条件的记录"}
                         </div>
-                        {records.length === 0 ? (
-                          <Button variant="outline" size="sm" onClick={syncNewTask}>
-                            <RotateCcw className="mr-1 size-4" /> 手动同步新任务
-                          </Button>
-                        ) : (
+                        {records.length > 0 && (
                           <Button variant="outline" size="sm" onClick={resetFilters}>
                             <RotateCcw className="mr-1 size-4" /> 重置筛选
                           </Button>
                         )}
+
                       </div>
                     </TableCell>
                   </TableRow>
