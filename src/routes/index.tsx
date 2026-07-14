@@ -2061,23 +2061,10 @@ function DetailView({
           <div className="min-w-0">
             <SheetTitle className="flex flex-wrap items-center gap-2">
               任务详情
-              <StatusBadge status={record.status} pending={pending} />
-              {editing ? (
-                <Select
-                  value={record.signatureStatus}
-                  onValueChange={(v) => onSignatureStatusChange(v as SignatureStatus)}
-                >
-                  <SelectTrigger className="h-7 w-28 px-2 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="perfect">{SIGNATURE_LABEL.perfect}</SelectItem>
-                    <SelectItem value="partial">{SIGNATURE_LABEL.partial}</SelectItem>
-                  </SelectContent>
-                </Select>
-              ) : (
-                <SignatureBadge value={record.signatureStatus} />
-              )}
+              <NeutralTag>
+                {STATUS_LABEL[record.status] ?? record.status}
+              </NeutralTag>
+              <NeutralTag>{SIGNATURE_LABEL[record.signatureStatus]}</NeutralTag>
               {editing && (
                 <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
                   <Pencil className="size-3" /> 编辑中
