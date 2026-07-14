@@ -127,6 +127,13 @@ const VERDICT_LABEL: Record<AiVerdict, string> = {
   pass: "通过",
   fail: "不通过",
 };
+const STATUS_LABEL: Record<Status, string> = {
+  queued: "排队中",
+  recognizing: "AI 识别中",
+  pending_review: "待审核",
+  verified: "已审核",
+  failed: "识别异常",
+};
 type ChunkLabel = "Section-Header" | "Text" | "Table" | "Image";
 
 const DOC_LABEL: Record<DocType, string> = {
