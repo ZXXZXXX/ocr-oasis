@@ -1876,6 +1876,13 @@ function StatCard({
     </div>
   );
 }
+function NeutralTag({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-0.5 text-xs font-normal text-foreground">
+      {children}
+    </span>
+  );
+}
 
 function StatusBadge({ status, pending: _pending }: { status: Status; pending: number }) {
   if (status === "queued")
