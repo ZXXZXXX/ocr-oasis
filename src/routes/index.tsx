@@ -1266,58 +1266,6 @@ function Workbench() {
     aiVerdictFilter !== "all";
 
 
-  // 手动模拟：从用户系统同步若干条新的验收任务，先进入排队，由调度器按创建时间升序识别
-  const syncCounter = useRef(0);
-  function syncNewTask() {
-    syncCounter.current += 1;
-    const seq = syncCounter.current;
-    const docTypes: DocType[] = ["delivery_note", "shipping_slip"];
-    const count = Math.floor(Math.random() * 21); // 0 ~ 20
-    const nowTs = Date.now();
-
-    const newRecords: OcrRecord[] = Array.from({ length: count }, (_, i) => {
-      const who = pickDriver(records.length + seq + i);
-      const signatureStatus: SignatureStatus = Math.random() < 0.6 ? "perfect" : "partial";
-      const rid = uid();
-      const images: UploadedImage[] = docTypes.map((dt) => ({
-        id: `img-${rid}-${dt}`,
-        name: `${dt === "delivery_note" ? "delivery" : "shipping"}_${rid}.jpg`,
-        url: placeholderImg(
-          1920,
-          720,
-          dt === "delivery_note" ? "送货单（同步）" : "出货传票（参考）",
-        ),
-        docType: dt,
-        width: 1920,
-        height: 720,
-      }));
-      return {
-        id: makeKaOrderId(nowTs + i, Math.floor(Math.random() * 10_000_000)),
-        createdAt: nowTs + i,
-        status: "queued" as Status,
-        progress: 0,
-        deliveryCount: 1,
-        shippingCount: 1,
-        images,
-        driver: who.driver,
-        plateNo: who.plate,
-        signatureStatus,
-        shippingSlipNo: makeShippingSlipNo(nowTs + i, Math.floor(Math.random() * 100_000)),
-      };
-
-    });
-
-
-    if (newRecords.length === 0) {
-      toast.info("本次未同步到新任务");
-      return;
-    }
-
-    setRecords((p) => [...newRecords, ...p]);
-    setProgressDismissed(false);
-    setProgressMinimized(false);
-    toast.success(`已同步 ${newRecords.length} 条新任务`);
-  }
 
 
   // 提交人工验收结论 → 状态置为已验收，模拟自动回传用户系统
@@ -1465,10 +1413,6 @@ function Workbench() {
                 </p>
               </div>
             </div>
-            <Button onClick={syncNewTask} className="gap-2" variant="outline">
-              <RotateCcw className="size-4" />
-              手动同步新任务
-            </Button>
           </div>
         </header>
 
@@ -1671,15 +1615,12 @@ function Workbench() {
                         <div className="text-sm">
                           {records.length === 0 ? "还没有审核单记录" : "没有符合当前筛选条件的记录"}
                         </div>
-                        {records.length === 0 ? (
-                          <Button variant="outline" size="sm" onClick={syncNewTask}>
-                            <RotateCcw className="mr-1 size-4" /> 手动同步新任务
-                          </Button>
-                        ) : (
+                        {records.length > 0 && (
                           <Button variant="outline" size="sm" onClick={resetFilters}>
                             <RotateCcw className="mr-1 size-4" /> 重置筛选
                           </Button>
                         )}
+
                       </div>
                     </TableCell>
                   </TableRow>
