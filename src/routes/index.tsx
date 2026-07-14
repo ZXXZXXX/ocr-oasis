@@ -111,6 +111,9 @@ export const Route = createFileRoute("/")({
 // ---------- Constants ----------
 const CURRENT_USER = "审核员 · 李婷";
 const LOW_CONF_THRESHOLD = 0.8;
+const AI_FAILURE_REASONS = ["图片无法识别", "图片质量过低"] as const;
+const AI_FAILURE_CHANCE = 0.1; // 模拟识别失败概率
+
 
 // ---------- Types ----------
 type DocType = "delivery_note" | "shipping_slip";
@@ -202,10 +205,12 @@ interface OcrRecord {
   signatureStatus: SignatureStatus;
   aiVerdict?: AiVerdict; // 识别完成后由AI给出
   aiRejectionReason?: string; // AI 不通过原因
+  failedReason?: string; // AI 识别失败原因，如 "图片无法识别" / "图片质量过低"
   verifiedAt?: number; // 人工提交验收结论时间
   verifiedBy?: string;
   shippingSlipNo?: string; // 出货传票单号，用于搜索
 }
+
 
 
 // ---------- Helpers ----------
@@ -858,10 +863,11 @@ function seedRecords(): OcrRecord[] {
   const now = Date.now();
   type Seed = {
     minutesAgo: number;
-    mode: "high" | "mid" | "low";
+    mode?: "high" | "mid" | "low";
     signatureStatus: SignatureStatus;
-    status: Extract<Status, "pending_review" | "verified">;
-    aiVerdict: AiVerdict;
+    status: Extract<Status, "pending_review" | "verified" | "failed">;
+    aiVerdict?: AiVerdict;
+    failedReason?: string;
   };
   // 送货单始终有；出货传票作为参考图，一定附带
   const seeds: Seed[] = [
@@ -893,7 +899,20 @@ function seedRecords(): OcrRecord[] {
       status: "verified",
       aiVerdict: "pass",
     },
+    {
+      minutesAgo: 90,
+      signatureStatus: "perfect",
+      status: "failed",
+      failedReason: "图片无法识别",
+    },
+    {
+      minutesAgo: 140,
+      signatureStatus: "partial",
+      status: "failed",
+      failedReason: "图片质量过低",
+    },
   ];
+
   const docTypes: DocType[] = ["delivery_note", "shipping_slip"];
   const records: OcrRecord[] = seeds.map((s, idx) => {
     const images: UploadedImage[] = docTypes.map((dt) => ({
@@ -908,18 +927,21 @@ function seedRecords(): OcrRecord[] {
       width: 1920,
       height: 720,
     }));
-    // 只对送货单执行 OCR
+    // 只对送货单执行 OCR；识别失败的任务无结果
+    const isFailed = s.status === "failed";
     const results: Partial<Record<DocType, DocPage[]>> = {};
-    const dImg = images.find((i) => i.docType === "delivery_note")!;
-    const rand = createRand(idx + 1);
-    results.delivery_note = [
-      {
-        imageId: dImg.id,
-        sourceImage: dImg.name,
-        pageBox: [0, 0, dImg.width, dImg.height],
-        chunks: adjustChunkConfidences(mockDeliveryChunks(), s.mode, rand),
-      },
-    ];
+    if (!isFailed) {
+      const dImg = images.find((i) => i.docType === "delivery_note")!;
+      const rand = createRand(idx + 1);
+      results.delivery_note = [
+        {
+          imageId: dImg.id,
+          sourceImage: dImg.name,
+          pageBox: [0, 0, dImg.width, dImg.height],
+          chunks: adjustChunkConfidences(mockDeliveryChunks(), s.mode!, rand),
+        },
+      ];
+    }
     const allPages = Object.values(results).flat() as DocPage[];
     const who = pickDriver(idx);
     const createdAt = now - s.minutesAgo * 60_000;
@@ -928,7 +950,7 @@ function seedRecords(): OcrRecord[] {
       createdAt,
       status: s.status,
       progress: 100,
-      confidence: averageConfidence(allPages),
+      confidence: isFailed ? undefined : averageConfidence(allPages),
       deliveryCount: 1,
       shippingCount: 1,
       images,
@@ -936,12 +958,14 @@ function seedRecords(): OcrRecord[] {
       driver: who.driver,
       plateNo: who.plate,
       signatureStatus: s.signatureStatus,
-      aiVerdict: s.aiVerdict,
+      aiVerdict: isFailed ? undefined : s.aiVerdict,
+      failedReason: isFailed ? s.failedReason : undefined,
       verifiedAt: s.status === "verified" ? now - (s.minutesAgo - 10) * 60_000 : undefined,
       verifiedBy: s.status === "verified" ? CURRENT_USER : undefined,
       shippingSlipNo: makeShippingSlipNo(createdAt, 1_000 + idx * 137),
     };
-    return { ...record, aiRejectionReason: makeAiRejectionReason(record) };
+    return { ...record, aiRejectionReason: isFailed ? undefined : makeAiRejectionReason(record) };
+
   });
 
   // 真实照片任务（大润发 商品收货单 + 京东 送货验收单）
@@ -1159,6 +1183,19 @@ function Workbench() {
           if (r.status !== "recognizing") return r;
           const next = Math.min(100, r.progress + 4 + Math.random() * 6);
           if (next >= 100) {
+            if (Math.random() < AI_FAILURE_CHANCE) {
+              return {
+                ...r,
+                progress: 100,
+                status: "failed",
+                confidence: undefined,
+                results: undefined,
+                aiVerdict: undefined,
+                aiRejectionReason: undefined,
+                failedReason:
+                  AI_FAILURE_REASONS[Math.floor(Math.random() * AI_FAILURE_REASONS.length)],
+              };
+            }
             const result = fabricateResult(r.images);
             // AI 结论：置信度 >= 80 通过，否则不通过
             const verdict: AiVerdict = result.confidence >= 80 ? "pass" : "fail";
@@ -1172,6 +1209,7 @@ function Workbench() {
             };
             return { ...updated, aiRejectionReason: makeAiRejectionReason(updated) };
           }
+
           return { ...r, progress: next };
         }),
       );
@@ -1286,10 +1324,11 @@ function Workbench() {
   function submitVerification(id: string, verdict?: AiVerdict) {
     const target = records.find((r) => r.id === id);
     if (!target) return;
-    if (target.status !== "pending_review") {
+    if (target.status !== "pending_review" && target.status !== "failed") {
       toast.error("该任务当前状态无法提交验收");
       return;
     }
+
     const finalVerdict: AiVerdict = verdict ?? target.aiVerdict ?? "pass";
     setRecords((prev) =>
       prev.map((r) =>
@@ -1682,7 +1721,7 @@ function Workbench() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
-                          {r.status === "pending_review" && (
+                          {(r.status === "pending_review" || r.status === "failed") && (
                             <Button
                               variant="ghost"
                               size="sm"
@@ -1700,7 +1739,7 @@ function Workbench() {
                             variant="ghost"
                             size="sm"
                             className="text-sm font-semibold"
-                            disabled={inProgress || r.status === "failed"}
+                            disabled={inProgress}
                             onClick={() => {
                               setDetailId(r.id);
                               setDetailEditing(false);
@@ -1708,6 +1747,7 @@ function Workbench() {
                           >
                             查看
                           </Button>
+
 
 
                           <DropdownMenu>
@@ -1823,7 +1863,7 @@ function Workbench() {
             side="right"
             className="flex w-[75vw] flex-col gap-0 p-0 sm:max-w-[75vw] [&>button]:hidden"
           >
-            {detailRecord && detailRecord.results && (
+            {detailRecord && (
               <DetailView
                 record={detailRecord}
                 initialEditing={detailEditing}
@@ -1843,6 +1883,7 @@ function Workbench() {
 
             )}
           </SheetContent>
+
         </Sheet>
 
         <Toaster position="top-center" richColors />
@@ -2147,6 +2188,7 @@ function DetailView({
         editing={editing}
         autoFocus={autoFocus}
         setAutoFocus={setAutoFocus}
+        failureReason={record.failedReason}
         onChange={(pageIdx, chunkId, v) =>
           handleEditChange("delivery_note", pageIdx, chunkId, v)
         }
@@ -2155,11 +2197,16 @@ function DetailView({
 
 
 
-      {editing && (
+
+      {(editing || record.status === "failed") && (
         <div className="shrink-0 border-t border-border bg-background px-6 py-3 shadow-[0_-4px_12px_-8px_rgba(0,0,0,0.15)]">
           <div className="flex items-center justify-between gap-4">
             <div className="text-xs text-muted-foreground">
-              {lastEditedAt ? (
+              {record.status === "failed" ? (
+                <span className="text-[color:var(--destructive)]">
+                  AI 识别失败，请进行人工验收
+                </span>
+              ) : lastEditedAt ? (
                 <span className="inline-flex items-center gap-1">
                   <Pencil className="size-3" />
                   最后修改：{fmtTime(lastEditedAt)}
@@ -2169,9 +2216,17 @@ function DetailView({
               )}
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={requestCancel} className="gap-2">
-                <X className="size-4" /> 取消
-              </Button>
+              {record.status === "failed" ? (
+                <SheetClose asChild>
+                  <Button variant="outline" className="gap-2">
+                    <X className="size-4" /> 取消
+                  </Button>
+                </SheetClose>
+              ) : (
+                <Button variant="outline" onClick={requestCancel} className="gap-2">
+                  <X className="size-4" /> 取消
+                </Button>
+              )}
               <Button
                 variant="outline"
                 onClick={() => submitVerdict("fail")}
@@ -2189,6 +2244,7 @@ function DetailView({
           </div>
         </div>
       )}
+
 
       <AlertDialog open={cancelConfirmOpen} onOpenChange={setCancelConfirmOpen}>
         <AlertDialogContent>
@@ -2231,6 +2287,7 @@ function DocPanel({
   editing,
   autoFocus,
   setAutoFocus,
+  failureReason,
   onChange,
   onConfirm,
 }: {
@@ -2240,9 +2297,11 @@ function DocPanel({
   editing: boolean;
   autoFocus: boolean;
   setAutoFocus: (v: boolean) => void;
+  failureReason?: string;
   onChange: (pageIdx: number, chunkId: string, value: string) => void;
   onConfirm: (pageIdx: number, chunkId: string) => void;
 }) {
+
   const [pageIdx, setPageIdx] = useState(0);
   const [shippingIdx, setShippingIdx] = useState(0);
   const [activeChunkId, setActiveChunkId] = useState<string | null>(null);
@@ -2419,50 +2478,65 @@ function DocPanel({
       <div className="flex flex-1 flex-col overflow-hidden" style={{ minWidth: 0 }}>
         <div className="flex items-center justify-between gap-3 border-b border-border bg-background/60 px-3 py-1.5">
           <h3 className="text-xs font-medium text-foreground">
-            识别分块 · {page?.chunks.length ?? 0}
+            {failureReason ? "识别失败" : `识别分块 · ${page?.chunks.length ?? 0}`}
           </h3>
-          <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-            <span className="inline-flex items-center gap-1">
-              <span className={cn("size-2 rounded-sm", confidenceDotClasses("high"))} />高
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <span className={cn("size-2 rounded-sm", confidenceDotClasses("mid"))} />中
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <span className={cn("size-2 rounded-sm", confidenceDotClasses("low"))} />低
-            </span>
-          </div>
+          {!failureReason && (
+            <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+              <span className="inline-flex items-center gap-1">
+                <span className={cn("size-2 rounded-sm", confidenceDotClasses("high"))} />高
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className={cn("size-2 rounded-sm", confidenceDotClasses("mid"))} />中
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className={cn("size-2 rounded-sm", confidenceDotClasses("low"))} />低
+              </span>
+            </div>
+          )}
         </div>
         <div
           ref={scrollRef}
           className="flex-1 overflow-y-auto"
         >
           <div className="space-y-0.5 px-4 py-3">
-            {page?.chunks.map((c) => (
-              <div
-                key={c.id}
-                ref={(el) => {
-                  chunkRefs.current[c.id] = el;
-                }}
-              >
-                <ChunkEditor
-                  chunk={c}
-                  active={activeChunkId === c.id}
-                  editing={editing}
-                  onFocus={() => setActiveChunkId(c.id)}
-                  onChange={(v) => onChange(pageIdx, c.id, v)}
-                  onConfirm={() => onConfirm(pageIdx, c.id)}
-                />
+            {failureReason ? (
+              <div className="flex h-full flex-col items-center justify-center rounded-lg border border-dashed border-[color:var(--destructive)]/30 bg-[color:var(--destructive)]/5 p-8 text-center">
+                <AlertTriangle className="mb-2 size-8 text-[color:var(--destructive)]" />
+                <div className="text-sm font-medium text-[color:var(--destructive)]">
+                  AI 识别失败原因
+                </div>
+                <div className="mt-1 text-xs text-muted-foreground">{failureReason}</div>
               </div>
-            ))}
-            {!page && (
-              <div className="rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
-                暂无识别结果
-              </div>
+            ) : (
+              <>
+                {page?.chunks.map((c) => (
+                  <div
+                    key={c.id}
+                    ref={(el) => {
+                      chunkRefs.current[c.id] = el;
+                    }}
+                  >
+                    <ChunkEditor
+                      chunk={c}
+                      active={activeChunkId === c.id}
+                      editing={editing}
+                      onFocus={() => setActiveChunkId(c.id)}
+                      onChange={(v) => onChange(pageIdx, c.id, v)}
+                      onConfirm={() => onConfirm(pageIdx, c.id)}
+                    />
+                  </div>
+                ))}
+                {!page && (
+                  <div className="rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
+                    暂无识别结果
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
       </div>
+
     </div>
   );
 }
