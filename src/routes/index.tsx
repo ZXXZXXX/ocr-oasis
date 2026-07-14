@@ -2052,7 +2052,11 @@ function DetailView({
   const deliveryPages = record.results?.delivery_note ?? [];
   const deliveryImages = record.images.filter((i) => i.docType === "delivery_note");
   const shippingImages = record.images.filter((i) => i.docType === "shipping_slip");
+  useEffect(() => {
+    console.log("[DEBUG] record id", record.id, "status", record.status, "images", record.images.length, "deliveryImages", deliveryImages.length, "shippingImages", shippingImages.length, "failedReason", record.failedReason);
+  }, [record.id, record.status, record.images.length, deliveryImages.length, shippingImages.length, record.failedReason]);
   const [autoFocus, setAutoFocus] = useState(true);
+
 
   const [editing, setEditing] = useState(initialEditing);
   const [lastEditedAt, setLastEditedAt] = useState<number | null>(null);
