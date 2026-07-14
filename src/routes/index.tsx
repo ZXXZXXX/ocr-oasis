@@ -2383,7 +2383,7 @@ function DocPanel({
         className="flex flex-col overflow-hidden bg-muted/30"
         style={{ flex: `0 0 ${leftPct}%`, minWidth: 0 }}
       >
-        <div className="flex items-center justify-between gap-3 border-b border-border bg-background/60 px-3 py-1.5">
+        <div className="flex h-10 items-center justify-between gap-3 border-b border-border bg-background/60 px-3 py-1.5">
           <div className="flex items-center gap-1">
             {deliveryImages.length > 0 && (
               <button
@@ -2486,9 +2486,9 @@ function DocPanel({
 
       {/* RIGHT: recognition results (always delivery_note) */}
       <div className="flex flex-1 flex-col overflow-hidden" style={{ minWidth: 0 }}>
-        <div className="flex items-center justify-between gap-3 border-b border-border bg-background/60 px-3 py-1.5">
+        <div className="flex h-10 items-center justify-between gap-3 border-b border-border bg-background/60 px-3 py-1.5">
           <h3 className="text-xs font-medium text-foreground">
-            {failureReason ? "识别失败" : `识别分块 · ${page?.chunks.length ?? 0}`}
+            {failureReason ? "识别失败" : `识别结果 · ${showingShipping ? "出货传票" : "送货单"}`}
           </h3>
           {!failureReason && (
             <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
