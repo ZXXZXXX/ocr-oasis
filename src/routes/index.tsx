@@ -3041,14 +3041,35 @@ function ChunkEditor({
 }
 
 
-function AutoResizeTextarea({ value, className, ...props }: React.ComponentProps<"textarea">) {
+function AutoResizeTextarea({
+  value,
+  maxRows = 5,
+  className,
+  ...props
+}: React.ComponentProps<"textarea"> & { maxRows?: number }) {
   const ref = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    // Measure single-row height via a hidden clone to avoid touching React state.
+    const clone = el.cloneNode(true) as HTMLTextAreaElement;
+    clone.style.height = "auto";
+    clone.style.overflow = "hidden";
+    clone.style.position = "fixed";
+    clone.style.visibility = "hidden";
+    clone.style.top = "-9999px";
+    clone.value = "M";
+    document.body.appendChild(clone);
+    const rowHeight = clone.scrollHeight;
+    document.body.removeChild(clone);
+
+    const maxHeight = rowHeight * maxRows;
     el.style.height = "auto";
-    el.style.height = `${el.scrollHeight}px`;
-  }, [value]);
+    el.style.overflow = "hidden";
+    const targetHeight = Math.min(el.scrollHeight, maxHeight);
+    el.style.height = `${targetHeight}px`;
+    el.style.overflow = el.scrollHeight > maxHeight ? "auto" : "hidden";
+  }, [value, maxRows]);
   return (
     <Textarea
       ref={ref}
