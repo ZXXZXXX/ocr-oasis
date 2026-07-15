@@ -31,6 +31,11 @@ import {
   ThumbsDown,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ArrowUp,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
 } from "lucide-react";
 
 import receiptRtmartAsset from "@/assets/receipt_rtmart.jpg.asset.json";
@@ -307,6 +312,30 @@ function collectChunks(r: OcrRecord): Chunk[] {
     pages.forEach((p) => out.push(...p.chunks)),
   );
   return out;
+}
+
+// 将 chunks 按上/中/下三段分组：
+// 上区 = 首个 Table 之前；中区 = 首个 Table 到最后一个 Table（含之间任意块）；下区 = 最后一个 Table 之后
+// 无 Table 时全部归入上区。
+function groupChunksByRegion(chunks: Chunk[]): {
+  top: Chunk[];
+  middle: Chunk[];
+  bottom: Chunk[];
+} {
+  const first = chunks.findIndex((c) => c.label === "Table");
+  if (first === -1) return { top: chunks, middle: [], bottom: [] };
+  let last = first;
+  for (let i = chunks.length - 1; i >= first; i--) {
+    if (chunks[i].label === "Table") {
+      last = i;
+      break;
+    }
+  }
+  return {
+    top: chunks.slice(0, first),
+    middle: chunks.slice(first, last + 1),
+    bottom: chunks.slice(last + 1),
+  };
 }
 
 function pendingLowConf(r: OcrRecord): number {
@@ -2458,9 +2487,10 @@ function DocPanel({
                 </div>
                 <div className="mt-1 text-xs text-muted-foreground">{failureReason}</div>
               </div>
-            ) : (
-              <>
-                {page?.chunks.map((c) => (
+            ) : page ? (
+              (() => {
+                const groups = groupChunksByRegion(page.chunks);
+                const renderChunk = (c: Chunk) => (
                   <div
                     key={c.id}
                     ref={(el) => {
@@ -2476,13 +2506,34 @@ function DocPanel({
                       onConfirm={() => onConfirm(pageIdx, c.id)}
                     />
                   </div>
-                ))}
-                {!page && (
-                  <div className="rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
-                    暂无识别结果
+                );
+                return (
+                  <div className="space-y-3">
+                    {groups.top.length > 0 && (
+                      <ChunkRegion title="基本信息" count={groups.top.length}>
+                        {groups.top.map(renderChunk)}
+                      </ChunkRegion>
+                    )}
+                    {groups.middle.length > 0 && (
+                      <ChunkRegion title="货品明细" count={groups.middle.length}>
+                        {groups.middle.map(renderChunk)}
+                      </ChunkRegion>
+                    )}
+                    {groups.bottom.length > 0 && (
+                      <ChunkRegion
+                        title="本单信息 / 签字盖章"
+                        count={groups.bottom.length}
+                      >
+                        {groups.bottom.map(renderChunk)}
+                      </ChunkRegion>
+                    )}
                   </div>
-                )}
-              </>
+                );
+              })()
+            ) : (
+              <div className="rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
+                暂无识别结果
+              </div>
             )}
           </div>
         </div>
@@ -2491,6 +2542,43 @@ function DocPanel({
     </div>
   );
 }
+
+function ChunkRegion({
+  title,
+  count,
+  children,
+}: {
+  title: string;
+  count: number;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(true);
+  return (
+    <section className="overflow-hidden rounded-md border border-border bg-background/40">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between gap-2 border-b border-border bg-muted/40 px-3 py-1.5 text-left text-xs font-medium text-foreground hover:bg-muted/60"
+      >
+        <span className="flex items-center gap-1.5">
+          <ChevronDown
+            className={cn(
+              "size-3.5 text-muted-foreground transition-transform",
+              !open && "-rotate-90",
+            )}
+          />
+          {title}
+        </span>
+        <span className="text-[11px] font-normal text-muted-foreground">
+          {count} 项
+        </span>
+      </button>
+      {open && <div className="space-y-0.5 px-3 py-2">{children}</div>}
+    </section>
+  );
+}
+
+
 
 
 type ImgView = {
@@ -3093,6 +3181,8 @@ function EditableTableHtml({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
+  // 选中单元格：bodyRow 为 tbody 内行号（0 起）；-1 表示位于 thead
+  const [sel, setSel] = useState<{ bodyRow: number; col: number } | null>(null);
 
   const syncTitles = (el: HTMLElement) => {
     el.querySelectorAll("td").forEach((td) => {
@@ -3156,34 +3246,212 @@ function EditableTableHtml({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // 记录选中单元格：点击 td / th 时更新
+  const handleCellFocus = (e: React.MouseEvent | React.FocusEvent) => {
+    const target = e.target as HTMLElement;
+    const cell = target.closest("td, th") as HTMLTableCellElement | null;
+    if (!cell) return;
+    const row = cell.parentElement as HTMLTableRowElement | null;
+    if (!row) return;
+    const inThead = !!row.closest("thead");
+    const col = cell.cellIndex;
+    if (inThead) {
+      setSel({ bodyRow: -1, col });
+    } else {
+      const tbody = row.parentElement as HTMLTableSectionElement | null;
+      if (!tbody) return;
+      const bodyRow = Array.from(tbody.children).indexOf(row);
+      setSel({ bodyRow, col });
+    }
+  };
+
+  const commit = () => {
+    const el = ref.current;
+    if (!el) return;
+    syncTitles(el);
+    onChange(el.innerHTML);
+    // 布局可能因行列数变化需要重新计算
+    requestAnimationFrame(layoutTable);
+  };
+
+  const getTable = () => ref.current?.querySelector("table") as HTMLTableElement | null;
+
+  const insertRow = (offset: 0 | 1) => {
+    const table = getTable();
+    if (!table) return;
+    const tbody = table.querySelector("tbody");
+    if (!tbody) return;
+    const colCount =
+      (table.querySelector("thead tr")?.children.length ??
+        tbody.querySelector("tr")?.children.length) ||
+      1;
+    const tr = document.createElement("tr");
+    for (let i = 0; i < colCount; i++) {
+      const td = document.createElement("td");
+      td.innerHTML = "&nbsp;";
+      tr.appendChild(td);
+    }
+    const rows = Array.from(tbody.children);
+    const idx = sel && sel.bodyRow >= 0 ? sel.bodyRow : rows.length - 1;
+    const ref = rows[idx] ?? null;
+    if (offset === 0) {
+      tbody.insertBefore(tr, ref);
+    } else {
+      tbody.insertBefore(tr, ref ? ref.nextSibling : null);
+    }
+    commit();
+  };
+
+  const deleteRow = () => {
+    if (!sel || sel.bodyRow < 0) return;
+    const table = getTable();
+    const tbody = table?.querySelector("tbody");
+    if (!tbody) return;
+    const row = tbody.children[sel.bodyRow];
+    if (!row) return;
+    row.remove();
+    setSel(null);
+    commit();
+  };
+
+  const insertCol = (offset: 0 | 1) => {
+    const table = getTable();
+    if (!table) return;
+    const thead = table.querySelector("thead");
+    const tbody = table.querySelector("tbody");
+    const headRow = thead?.querySelector("tr");
+    const colCount =
+      headRow?.children.length ?? tbody?.querySelector("tr")?.children.length ?? 0;
+    if (colCount === 0) return;
+    const at = sel ? sel.col + offset : colCount;
+    const insertInto = (row: Element, cellTag: "th" | "td") => {
+      const cell = document.createElement(cellTag);
+      cell.innerHTML = "&nbsp;";
+      const before = row.children[at] ?? null;
+      row.insertBefore(cell, before);
+    };
+    if (headRow) insertInto(headRow, "th");
+    tbody?.querySelectorAll(":scope > tr").forEach((tr) => insertInto(tr, "td"));
+    commit();
+  };
+
+  const deleteCol = () => {
+    if (!sel) return;
+    const table = getTable();
+    if (!table) return;
+    const removeAt = (row: Element) => {
+      const c = row.children[sel.col];
+      if (c) c.remove();
+    };
+    table.querySelectorAll("thead > tr").forEach(removeAt);
+    table.querySelectorAll("tbody > tr").forEach(removeAt);
+    setSel(null);
+    commit();
+  };
+
+  const hasRowSel = !!sel && sel.bodyRow >= 0;
+  const hasColSel = !!sel;
+
+  const btn =
+    "inline-flex items-center gap-1 rounded border border-border bg-background px-1.5 py-1 text-[11px] text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed";
+
   return (
-    <div
-      ref={wrapRef}
-      className={cn(
-        "overflow-x-auto rounded border bg-background p-2 text-xs outline-none transition-colors",
-        // 单元格样式：超出宽度省略号 + title 悬浮气泡展示完整内容
-        "[&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-1.5 [&_th]:py-1 [&_th]:whitespace-nowrap",
-        "[&_td]:border [&_td]:border-border [&_td]:px-1.5 [&_td]:py-1 [&_td]:overflow-hidden [&_td]:text-ellipsis [&_td]:whitespace-nowrap",
-        readOnly
-          ? "border-border"
-          : mustEdit
-            ? "border-[color:var(--warning)] focus-within:ring-2 focus-within:ring-[color:var(--warning)]"
-            : "border-border focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/30",
-        !readOnly && "[&_td]:cursor-text [&_th]:cursor-text",
+    <div className="space-y-1.5" onClick={(e) => e.stopPropagation()}>
+      {!readOnly && (
+        <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+          <span className="mr-1">行</span>
+          <button
+            type="button"
+            className={btn}
+            onClick={() => insertRow(0)}
+            disabled={!hasRowSel}
+            title="在选中行上方插入"
+          >
+            <ArrowUp className="size-3" /> <Plus className="size-3" />
+          </button>
+          <button
+            type="button"
+            className={btn}
+            onClick={() => insertRow(1)}
+            title={hasRowSel ? "在选中行下方插入" : "在末尾追加一行"}
+          >
+            <ArrowDown className="size-3" /> <Plus className="size-3" />
+          </button>
+          <button
+            type="button"
+            className={btn}
+            onClick={deleteRow}
+            disabled={!hasRowSel}
+            title="删除选中行"
+          >
+            <Trash2 className="size-3" />
+          </button>
+          <span className="mx-1 h-3 w-px bg-border" />
+          <span className="mr-1">列</span>
+          <button
+            type="button"
+            className={btn}
+            onClick={() => insertCol(0)}
+            disabled={!hasColSel}
+            title="在选中列左侧插入"
+          >
+            <ArrowLeft className="size-3" /> <Plus className="size-3" />
+          </button>
+          <button
+            type="button"
+            className={btn}
+            onClick={() => insertCol(1)}
+            title={hasColSel ? "在选中列右侧插入" : "在末尾追加一列"}
+          >
+            <ArrowRight className="size-3" /> <Plus className="size-3" />
+          </button>
+          <button
+            type="button"
+            className={btn}
+            onClick={deleteCol}
+            disabled={!hasColSel}
+            title="删除选中列"
+          >
+            <Trash2 className="size-3" />
+          </button>
+          <span className="ml-auto text-[10px]">
+            {sel
+              ? sel.bodyRow < 0
+                ? `已选中：表头 · 第 ${sel.col + 1} 列`
+                : `已选中：第 ${sel.bodyRow + 1} 行 · 第 ${sel.col + 1} 列`
+              : "点击单元格以选择行 / 列"}
+          </span>
+        </div>
       )}
-      onClick={(e) => e.stopPropagation()}
-    >
       <div
-        ref={ref}
-        contentEditable={!readOnly}
-        suppressContentEditableWarning
-        spellCheck={false}
-        onInput={(e) => {
-          const el = e.currentTarget as HTMLDivElement;
-          syncTitles(el);
-          onChange(el.innerHTML);
-        }}
-      />
+        ref={wrapRef}
+        className={cn(
+          "overflow-x-auto rounded border bg-background p-2 text-xs outline-none transition-colors",
+          // 单元格样式：超出宽度省略号 + title 悬浮气泡展示完整内容
+          "[&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-1.5 [&_th]:py-1 [&_th]:whitespace-nowrap",
+          "[&_td]:border [&_td]:border-border [&_td]:px-1.5 [&_td]:py-1 [&_td]:overflow-hidden [&_td]:text-ellipsis [&_td]:whitespace-nowrap",
+          readOnly
+            ? "border-border"
+            : mustEdit
+              ? "border-[color:var(--warning)] focus-within:ring-2 focus-within:ring-[color:var(--warning)]"
+              : "border-border focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/30",
+          !readOnly && "[&_td]:cursor-text [&_th]:cursor-text",
+        )}
+        onClickCapture={handleCellFocus}
+      >
+        <div
+          ref={ref}
+          contentEditable={!readOnly}
+          suppressContentEditableWarning
+          spellCheck={false}
+          onInput={(e) => {
+            const el = e.currentTarget as HTMLDivElement;
+            syncTitles(el);
+            onChange(el.innerHTML);
+          }}
+        />
+      </div>
     </div>
   );
 }
+
