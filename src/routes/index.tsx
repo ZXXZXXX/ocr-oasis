@@ -1380,13 +1380,6 @@ function Workbench() {
     });
   }
 
-  function confirmChunk(recordId: string, docType: DocType, pageIdx: number, chunkId: string) {
-    mutateChunk(recordId, docType, pageIdx, chunkId, (c) => ({
-      ...c,
-      confirmed: !c.confirmed,
-      lastEdit: !c.confirmed ? { by: CURRENT_USER, at: new Date().toISOString() } : c.lastEdit,
-    }));
-  }
 
   function replaceResults(recordId: string, results: NonNullable<OcrRecord["results"]>) {
     setRecords((prev) => prev.map((r) => (r.id === recordId ? { ...r, results } : r)));
