@@ -2621,7 +2621,8 @@ function ImageWithBoxes({
     }
   };
 
-  const isDefaultFit = !view.manual && view.scale === 1 && view.tx === 0 && view.ty === 0;
+  const isDefaultFit =
+    !view.manual && view.scale === 1 && view.tx === 0 && view.ty === 0 && view.rotation === 0;
   const isAutoFocused = !!activeChunk;
   const showReset = !isDefaultFit || isAutoFocused;
 
@@ -2652,6 +2653,27 @@ function ImageWithBoxes({
             title="放大"
           >
             <ZoomIn className="size-3.5" />
+          </Button>
+          <div className="mx-1 h-4 w-px bg-border" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7"
+            onClick={() => rotateBy(-90)}
+            aria-label="逆时针旋转"
+            title="逆时针旋转"
+          >
+            <RotateCcw className="size-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7"
+            onClick={() => rotateBy(90)}
+            aria-label="顺时针旋转"
+            title="顺时针旋转"
+          >
+            <RotateCw className="size-3.5" />
           </Button>
         </div>
         <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
