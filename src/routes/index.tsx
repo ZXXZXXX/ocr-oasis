@@ -1840,6 +1840,36 @@ function Workbench() {
                 })}
               </TableBody>
             </Table>
+
+            {filteredRecords.length > 0 && (
+              <div className="flex items-center justify-center gap-2 border-t border-border px-4 py-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  aria-label="上一页"
+                >
+                  <ChevronLeft className="size-4" />
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  <span className="font-medium text-foreground">{page}</span>
+                  {" / "}
+                  {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  aria-label="下一页"
+                >
+                  <ChevronRight className="size-4" />
+                </Button>
+              </div>
+            )}
           </div>
         </main>
 
