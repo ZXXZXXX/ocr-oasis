@@ -2666,7 +2666,7 @@ function ImageWithBoxes({
       <div
         ref={stageRef}
         className={cn(
-          "flex-1 flex items-center justify-center overflow-hidden p-4 select-none",
+          "relative flex-1 flex items-center justify-center overflow-hidden p-4 select-none",
           dragging ? "cursor-grabbing" : "cursor-grab",
         )}
         onPointerDown={onPointerDown}
