@@ -728,6 +728,113 @@ function mockKualuTjChunks(): Chunk[] {
   return raw.map((c) => ({ ...c, id: uid() }));
 }
 
+// ---------- 商品编码映射（KA货号 ↔ 物料编码 ↔ 品名）演示数据库 ----------
+type ProductRec = { ka: string; material: string; name: string };
+const PRODUCT_DB: ProductRec[] = [
+  { ka: "608001", material: "4001001", name: "冰红茶1L" },
+  { ka: "608002", material: "4001002", name: "冰红茶500ml" },
+  { ka: "608003", material: "4001003", name: "冰红茶250ml" },
+  { ka: "608004", material: "4001004", name: "绿茶1L" },
+  { ka: "608005", material: "4001005", name: "绿茶500ml" },
+  { ka: "608006", material: "4001006", name: "绿茶2L" },
+  { ka: "608007", material: "4001007", name: "阿萨姆奶茶500ml" },
+  { ka: "608008", material: "4001008", name: "柠檬红茶250ml" },
+  { ka: "608009", material: "4001009", name: "鲜橙多2L" },
+  { ka: "608010", material: "4001010", name: "鲜橙多橙汁饮料310ml" },
+  { ka: "608011", material: "4001011", name: "海之言柠檬味1L" },
+  { ka: "608012", material: "4016432", name: "来一桶老坛酸菜牛肉面" },
+  { ka: "608013", material: "4016133", name: "来一桶红烧牛肉面" },
+];
+
+const RE_KA_HDR = /(KA.*(货号|编码))|(^\s*货号\s*$)/i;
+const RE_MAT_HDR = /物料(编码|代号|代码)|产品代号|物料号/;
+const RE_NAME_HDR = /品名|商品名称|品名称/;
+
+function findProductByName(raw: string): ProductRec | null {
+  const name = raw.replace(/<[^>]+>/g, "").replace(/\s+/g, "");
+  if (!name) return null;
+  let best: ProductRec | null = null;
+  let bestScore = 0;
+  for (const p of PRODUCT_DB) {
+    const pn = p.name.replace(/\s+/g, "");
+    let score = 0;
+    if (name.includes(pn)) score = pn.length;
+    else if (pn.includes(name)) score = name.length;
+    else {
+      // token overlap fallback
+      const tokens = pn.match(/[\u4e00-\u9fa5]+|\d+[a-zA-Z]*/g) ?? [];
+      score = tokens.reduce((s, t) => (name.includes(t) ? s + t.length : s), 0);
+    }
+    if (score > bestScore) {
+      best = p;
+      bestScore = score;
+    }
+  }
+  return bestScore >= 2 ? best : null;
+}
+
+function enrichTableHtml(html: string): string {
+  if (!/<table[\s\S]*?<thead/i.test(html)) return html;
+  const theadMatch = html.match(/<thead>([\s\S]*?)<\/thead>/i);
+  const tbodyMatch = html.match(/<tbody>([\s\S]*?)<\/tbody>/i);
+  if (!theadMatch || !tbodyMatch) return html;
+
+  const theadInner = theadMatch[1];
+  const headerCells = Array.from(theadInner.matchAll(/<th[^>]*>([\s\S]*?)<\/th>/gi)).map((m) =>
+    m[1].replace(/<[^>]+>/g, "").trim(),
+  );
+  const hasKa = headerCells.some((h) => RE_KA_HDR.test(h));
+  const hasMat = headerCells.some((h) => RE_MAT_HDR.test(h));
+  if (hasKa && hasMat) return html;
+
+  const nameIdx = headerCells.findIndex((h) => RE_NAME_HDR.test(h));
+  if (nameIdx < 0) return html;
+
+  const FILL_TH = ' style="background:#f3f4f6;color:#374151"';
+  const FILL_TD = ' style="background:#f3f4f6;color:#374151"';
+  const MISS_HTML = '<span style="color:#9ca3af;font-style:italic">无匹配数据</span>';
+
+  const addKa = !hasKa;
+  const addMat = !hasMat;
+  const extraTh =
+    (addKa ? `<th${FILL_TH}>KA货号</th>` : "") + (addMat ? `<th${FILL_TH}>物料编码</th>` : "");
+  const newThead = theadInner.replace(/<\/tr>\s*$/i, `${extraTh}</tr>`);
+
+  const rowMatches = Array.from(tbodyMatch[1].matchAll(/<tr>([\s\S]*?)<\/tr>/gi));
+  const newRows = rowMatches
+    .map((rm) => {
+      const rowHtml = rm[1];
+      const tdMatches = Array.from(rowHtml.matchAll(/<td([^>]*)>([\s\S]*?)<\/td>/gi));
+      // 总计等合并行：留空补全列
+      if (tdMatches.length > 0 && /colspan\s*=/i.test(tdMatches[0][1])) {
+        const extra =
+          (addKa ? `<td${FILL_TD}></td>` : "") + (addMat ? `<td${FILL_TD}></td>` : "");
+        return `<tr>${rowHtml}${extra}</tr>`;
+      }
+      const nameCell = tdMatches[nameIdx]?.[2] ?? "";
+      const prod = findProductByName(nameCell);
+      const kaTd = addKa
+        ? `<td${FILL_TD}>${prod ? prod.ka : MISS_HTML}</td>`
+        : "";
+      const matTd = addMat
+        ? `<td${FILL_TD}>${prod ? prod.material : MISS_HTML}</td>`
+        : "";
+      return `<tr>${rowHtml}${kaTd}${matTd}</tr>`;
+    })
+    .join("");
+
+  return html
+    .replace(/<thead>[\s\S]*?<\/thead>/i, `<thead>${newThead}</thead>`)
+    .replace(/<tbody>[\s\S]*?<\/tbody>/i, `<tbody>${newRows}</tbody>`);
+}
+
+function enrichTableChunks(chunks: Chunk[]): Chunk[] {
+  return chunks.map((c) =>
+    c.label === "Table" ? { ...c, content: enrichTableHtml(c.content) } : c,
+  );
+}
+
+
 
 
 function fabricateResult(images: UploadedImage[]) {
