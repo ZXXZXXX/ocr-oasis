@@ -2163,7 +2163,6 @@ function DetailView({
         onChange={(pageIdx, chunkId, v) =>
           handleEditChange("delivery_note", pageIdx, chunkId, v)
         }
-        onConfirm={(pageIdx, chunkId) => onConfirm("delivery_note", pageIdx, chunkId)}
       />
 
 
