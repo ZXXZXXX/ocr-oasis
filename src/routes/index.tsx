@@ -2935,7 +2935,7 @@ function ImageWithBoxes({
 
         {(!navCount || navCount <= 1) && (
           <div
-            className="absolute bottom-4 left-4 z-20 max-w-[40%] truncate rounded-full border border-border/50 bg-background/90 px-2 py-1 text-xs text-muted-foreground backdrop-blur-sm"
+            className="absolute top-4 left-4 z-20 max-w-[40%] truncate rounded-full border border-border/50 bg-background/90 px-2 py-1 text-xs text-muted-foreground backdrop-blur-sm"
             onPointerDown={(e) => e.stopPropagation()}
           >
             <span className="font-medium text-foreground">{image.name}</span>
