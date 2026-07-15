@@ -2965,6 +2965,7 @@ function AutoResizeTextarea({ value, className, ...props }: React.ComponentProps
     <Textarea
       ref={ref}
       value={value}
+      rows={1}
       className={cn("resize-none overflow-hidden !min-h-9 py-1", className)}
       {...props}
     />
