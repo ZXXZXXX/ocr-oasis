@@ -2390,8 +2390,10 @@ function DocPanel({
   onChange: (pageIdx: number, chunkId: string, value: string) => void;
 }) {
 
-  const [pageIdx, setPageIdx] = useState(0);
+  // Image (left) and result (right) navigation are independent.
+  const [deliveryImgIdx, setDeliveryImgIdx] = useState(0);
   const [shippingIdx, setShippingIdx] = useState(0);
+  const [pageIdx, setPageIdx] = useState(0);
   const [activeChunkId, setActiveChunkId] = useState<string | null>(null);
   const [viewMap, setViewMap] = useState<Record<string, ImgView>>({});
   const [imageTab, setImageTab] = useState<"delivery_note" | "shipping_slip">(
@@ -2399,12 +2401,14 @@ function DocPanel({
   );
 
   const page = deliveryPages[pageIdx];
-  const deliveryImage =
-    deliveryImages.find((i) => i.id === page?.imageId) ?? deliveryImages[pageIdx];
+  const deliveryImage = deliveryImages[deliveryImgIdx];
   const shippingImage = shippingImages[shippingIdx];
 
   const showingShipping = imageTab === "shipping_slip" && !!shippingImage;
   const leftImage = showingShipping ? shippingImage : deliveryImage;
+  const leftDeliveryPage = deliveryImage
+    ? deliveryPages.find((p) => p.imageId === deliveryImage.id)
+    : undefined;
   const leftPage: DocPage | undefined =
     showingShipping && shippingImage
       ? {
@@ -2413,7 +2417,7 @@ function DocPanel({
           pageBox: [0, 0, shippingImage.width, shippingImage.height],
           chunks: [],
         }
-      : page ??
+      : leftDeliveryPage ??
         (deliveryImage
           ? {
               imageId: deliveryImage.id,
