@@ -808,11 +808,11 @@ function enrichTableHtml(html: string): string {
     newThead = theadInner.replace(/<tr([^>]*)>/i, `<tr$1><th${FILL_TH}>序号</th>${extraTh}`);
   } else {
     // 在已有序号列后插入 KA/物料 列
-    const thMatches = Array.from(theadInner.matchAll(/<th[^>]*>[\s\S]*?<\/th>/gi));
-    thMatches.splice(serialIdx + 1, 0, ...(extraTh ? [extraTh] : []));
+    const ths = Array.from(theadInner.matchAll(/<th[^>]*>[\s\S]*?<\/th>/gi)).map((m) => m[0]);
+    ths.splice(serialIdx + 1, 0, ...(extraTh ? [extraTh] : []));
     newThead = theadInner.replace(
       /<tr([^>]*)>[\s\S]*<\/tr>/i,
-      `<tr$1>${thMatches.map((m) => m[0]).join("")}</tr>`,
+      `<tr$1>${ths.join("")}</tr>`,
     );
   }
 
