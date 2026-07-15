@@ -2260,7 +2260,6 @@ function DocPanel({
   setAutoFocus,
   failureReason,
   onChange,
-  onConfirm,
 }: {
   deliveryPages: DocPage[];
   deliveryImages: UploadedImage[];
@@ -2270,7 +2269,6 @@ function DocPanel({
   setAutoFocus: (v: boolean) => void;
   failureReason?: string;
   onChange: (pageIdx: number, chunkId: string, value: string) => void;
-  onConfirm: (pageIdx: number, chunkId: string) => void;
 }) {
 
   const [pageIdx, setPageIdx] = useState(0);
