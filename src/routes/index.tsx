@@ -2543,6 +2543,43 @@ function DocPanel({
   );
 }
 
+function ChunkRegion({
+  title,
+  count,
+  children,
+}: {
+  title: string;
+  count: number;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(true);
+  return (
+    <section className="overflow-hidden rounded-md border border-border bg-background/40">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between gap-2 border-b border-border bg-muted/40 px-3 py-1.5 text-left text-xs font-medium text-foreground hover:bg-muted/60"
+      >
+        <span className="flex items-center gap-1.5">
+          <ChevronDown
+            className={cn(
+              "size-3.5 text-muted-foreground transition-transform",
+              !open && "-rotate-90",
+            )}
+          />
+          {title}
+        </span>
+        <span className="text-[11px] font-normal text-muted-foreground">
+          {count} 项
+        </span>
+      </button>
+      {open && <div className="space-y-0.5 px-3 py-2">{children}</div>}
+    </section>
+  );
+}
+
+
+
 
 type ImgView = {
   scale: number;
