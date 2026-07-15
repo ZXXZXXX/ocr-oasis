@@ -3050,7 +3050,7 @@ function ChunkContentEditor({
             readOnly={readOnly}
             onChange={(e) => handleValue(e.target.value)}
             placeholder="（空）"
-            className={cn("min-h-9", ring, roCls)}
+            className={cn(ring, roCls)}
           />
         </div>
       </div>
@@ -3062,7 +3062,7 @@ function ChunkContentEditor({
       value={text}
       readOnly={readOnly}
       onChange={(e) => handle(e.target.value)}
-      className={cn("min-h-9", ring, roCls)}
+      className={cn(ring, roCls)}
     />
   );
 }
