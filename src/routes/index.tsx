@@ -2574,7 +2574,7 @@ function DocPanel({
   const chunkRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   // Resizable split: left (image) width percentage, clamped to 50%~80%.
-  const [leftPct, setLeftPct] = useState(50);
+  const [leftPct, setLeftPct] = useState(40);
   const containerRef = useRef<HTMLDivElement>(null);
   const resizingRef = useRef(false);
 
@@ -2583,7 +2583,7 @@ function DocPanel({
       if (!resizingRef.current || !containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
       const pct = ((e.clientX - rect.left) / rect.width) * 100;
-      setLeftPct(Math.min(70, Math.max(50, pct)));
+      setLeftPct(Math.min(60, Math.max(35, pct)));
     };
     const handleUp = () => {
       resizingRef.current = false;
