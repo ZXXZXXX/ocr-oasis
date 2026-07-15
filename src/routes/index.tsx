@@ -1306,6 +1306,11 @@ function Workbench() {
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
 
+  // 筛选/搜索变化时重置到第一页
+  useEffect(() => {
+    setPage(1);
+  }, [dateFrom, dateTo, selectedConfidenceTones, aiVerdictFilter, quickStatus, searchQuery]);
+
 
   const activeRecords = useMemo(
     () => records.filter((r) => r.status === "recognizing" || r.status === "queued"),
