@@ -1439,21 +1439,6 @@ function Workbench() {
         </header>
 
         <main className="mx-auto max-w-[1400px] px-6 py-6">
-          <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3">
-            <StatCard label="验收任务" value={records.length} />
-            <StatCard
-              label="待审核任务"
-              value={records.filter((r) => r.status === "pending_review").length}
-              accent="warning"
-            />
-            <StatCard
-              label="已审核任务"
-              value={records.filter((r) => r.status === "verified").length}
-              accent="success"
-            />
-          </div>
-
-
           <div className="overflow-hidden rounded-xl border border-border bg-card">
             <div className="flex items-center justify-between border-b border-border px-5 py-3">
               <div className="flex items-center gap-3 text-sm">
@@ -1853,30 +1838,6 @@ function Workbench() {
 }
 
 // ---------- Sub components ----------
-function StatCard({
-  label,
-  value,
-  accent,
-}: {
-  label: string;
-  value: number;
-  accent?: "primary" | "success" | "warning";
-}) {
-  const tone =
-    accent === "primary"
-      ? "text-primary"
-      : accent === "success"
-        ? "text-[color:var(--success)]"
-        : accent === "warning"
-          ? "text-[color:var(--warning-foreground)]"
-          : "text-foreground";
-  return (
-    <div className="rounded-xl border border-border bg-card px-4 py-3">
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className={cn("mt-1 text-2xl font-semibold tabular-nums", tone)}>{value}</div>
-    </div>
-  );
-}
 function NeutralTag({ children }: { children: React.ReactNode }) {
   return (
     <span className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-0.5 text-xs font-normal text-foreground">
