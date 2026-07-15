@@ -31,6 +31,11 @@ import {
   ThumbsDown,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ArrowUp,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
 } from "lucide-react";
 
 import receiptRtmartAsset from "@/assets/receipt_rtmart.jpg.asset.json";
