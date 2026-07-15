@@ -785,42 +785,45 @@ function enrichTableHtml(html: string): string {
   );
   const hasKa = headerCells.some((h) => RE_KA_HDR.test(h));
   const hasMat = headerCells.some((h) => RE_MAT_HDR.test(h));
-  if (hasKa && hasMat) return html;
-
   const nameIdx = headerCells.findIndex((h) => RE_NAME_HDR.test(h));
-  if (nameIdx < 0) return html;
+  const addKa = !hasKa;
+  const addMat = !hasMat;
+
+  // 没有缺失 KA/物料 编码且不需要补全时，仍然要补充序号列
+  if (!addKa && !addMat && headerCells.some((h) => /^序号$/.test(h))) return html;
 
   const FILL_TH = ' style="background:#f3f4f6;color:#374151"';
   const FILL_TD = ' style="background:#f3f4f6;color:#374151"';
   const MISS_HTML = '<span style="color:#9ca3af;font-style:italic">无匹配数据</span>';
 
-  const addKa = !hasKa;
-  const addMat = !hasMat;
+  // 序号列始终放在最前面，其次是 KA货号、物料编码
   const extraTh =
-    (addKa ? `<th${FILL_TH}>KA货号</th>` : "") + (addMat ? `<th${FILL_TH}>物料编码</th>` : "");
-  // 补充列放在最前面
+    `<th${FILL_TH}>序号</th>` +
+    (addKa ? `<th${FILL_TH}>KA货号</th>` : "") +
+    (addMat ? `<th${FILL_TH}>物料编码</th>` : "");
   const newThead = theadInner.replace(/<tr([^>]*)>/i, `<tr$1>${extraTh}`);
 
   const rowMatches = Array.from(tbodyMatch[1].matchAll(/<tr>([\s\S]*?)<\/tr>/gi));
   const newRows = rowMatches
-    .map((rm) => {
+    .map((rm, rowIndex) => {
       const rowHtml = rm[1];
       const tdMatches = Array.from(rowHtml.matchAll(/<td([^>]*)>([\s\S]*?)<\/td>/gi));
-      const extra =
+      const serialTd = `<td${FILL_TD}>${rowIndex + 1}</td>`;
+      const extraFill =
         (addKa ? `<td${FILL_TD}></td>` : "") + (addMat ? `<td${FILL_TD}></td>` : "");
-      // 总计等合并行：留空补全列
+      // 总计等合并行：序号与补全列均留空
       if (tdMatches.length > 0 && /colspan\s*=/i.test(tdMatches[0][1])) {
-        return `<tr>${extra}${rowHtml}</tr>`;
+        return `<tr>${serialTd}${extraFill}${rowHtml}</tr>`;
       }
-      const nameCell = tdMatches[nameIdx]?.[2] ?? "";
-      const prod = findProductByName(nameCell);
+      const nameCell = nameIdx >= 0 ? tdMatches[nameIdx]?.[2] ?? "" : "";
+      const prod = nameCell ? findProductByName(nameCell) : null;
       const kaTd = addKa
         ? `<td${FILL_TD}>${prod ? prod.ka : MISS_HTML}</td>`
         : "";
       const matTd = addMat
         ? `<td${FILL_TD}>${prod ? prod.material : MISS_HTML}</td>`
         : "";
-      return `<tr>${kaTd}${matTd}${rowHtml}</tr>`;
+      return `<tr>${serialTd}${kaTd}${matTd}${rowHtml}</tr>`;
     })
     .join("");
 
