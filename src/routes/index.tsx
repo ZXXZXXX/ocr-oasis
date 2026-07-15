@@ -2503,7 +2503,6 @@ function DocPanel({
                       editing={editing}
                       onFocus={() => setActiveChunkId(c.id)}
                       onChange={(v) => onChange(pageIdx, c.id, v)}
-                      onConfirm={() => onConfirm(pageIdx, c.id)}
                     />
                   </div>
                 );
