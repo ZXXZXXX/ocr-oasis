@@ -1345,7 +1345,64 @@ function seedRecords(): OcrRecord[] {
     return { ...record, aiRejectionReason: makeAiRejectionReason(record) };
   });
 
-  return [realRecord, ...noSlipRecords, ...records];
+  // 多送货单任务：长沙统一企业 · 零食很忙SRM送货单（同一验收任务包含2张送货单照片）
+  const tongyiCreatedAt = now - 6 * 60_000;
+  const tongyiImages: UploadedImage[] = [
+    {
+      id: "img-tongyi-p1",
+      name: "tongyi_srm_p1.jpg",
+      url: tongyiSrmP1Asset.url,
+      docType: "delivery_note",
+      width: 1920,
+      height: 870,
+    },
+    {
+      id: "img-tongyi-p2",
+      name: "tongyi_srm_p2.jpg",
+      url: tongyiSrmP2Asset.url,
+      docType: "delivery_note",
+      width: 1920,
+      height: 870,
+    },
+  ];
+  const tongyiResults: Partial<Record<DocType, DocPage[]>> = {
+    delivery_note: [
+      {
+        imageId: tongyiImages[0]!.id,
+        sourceImage: tongyiImages[0]!.name,
+        pageBox: [0, 0, tongyiImages[0]!.width, tongyiImages[0]!.height],
+        chunks: enrichTableChunks(mockTongyiSrmP1Chunks()),
+      },
+      {
+        imageId: tongyiImages[1]!.id,
+        sourceImage: tongyiImages[1]!.name,
+        pageBox: [0, 0, tongyiImages[1]!.width, tongyiImages[1]!.height],
+        chunks: enrichTableChunks(mockTongyiSrmP2Chunks()),
+      },
+    ],
+  };
+  const tongyiPages = Object.values(tongyiResults).flat() as DocPage[];
+  const tongyiRecord: OcrRecord = {
+    id: makeKaOrderId(tongyiCreatedAt, 3_290_450),
+    createdAt: tongyiCreatedAt,
+    status: "pending_review",
+    progress: 100,
+    confidence: averageConfidence(tongyiPages),
+    deliveryCount: 2,
+    shippingCount: 0,
+    images: tongyiImages,
+    results: tongyiResults,
+    driver: "向涛军",
+    plateNo: "湘A·88231",
+    signatureStatus: "perfect",
+    aiVerdict: "pass",
+  };
+  const tongyiRecordFinal: OcrRecord = {
+    ...tongyiRecord,
+    aiRejectionReason: makeAiRejectionReason(tongyiRecord),
+  };
+
+  return [tongyiRecordFinal, realRecord, ...noSlipRecords, ...records];
 }
 
 
