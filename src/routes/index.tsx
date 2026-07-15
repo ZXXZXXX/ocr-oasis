@@ -2103,7 +2103,7 @@ function Workbench() {
         <Sheet open={!!detailRecord} onOpenChange={(o) => { if (!o) { setDetailId(null); setDetailEditing(false); }}}>
           <SheetContent
             side="right"
-            className="flex w-[75vw] flex-col gap-0 p-0 sm:max-w-[75vw] [&>button]:hidden"
+            className="flex w-[95vw] flex-col gap-0 p-0 sm:max-w-[95vw] [&>button]:hidden"
           >
             {detailRecord && (
               <DetailView
@@ -2574,7 +2574,7 @@ function DocPanel({
   const chunkRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   // Resizable split: left (image) width percentage, clamped to 50%~80%.
-  const [leftPct, setLeftPct] = useState(50);
+  const [leftPct, setLeftPct] = useState(38);
   const containerRef = useRef<HTMLDivElement>(null);
   const resizingRef = useRef(false);
 
@@ -2583,7 +2583,7 @@ function DocPanel({
       if (!resizingRef.current || !containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
       const pct = ((e.clientX - rect.left) / rect.width) * 100;
-      setLeftPct(Math.min(70, Math.max(50, pct)));
+      setLeftPct(Math.min(60, Math.max(30, pct)));
     };
     const handleUp = () => {
       resizingRef.current = false;
@@ -2808,9 +2808,11 @@ function DocPanel({
                       </ChunkRegion>
                     )}
                     {groups.middle.length > 0 && (
-                      <ChunkRegion title="货品明细" count={groups.middle.length}>
-                        {groups.middle.map(renderChunk)}
-                      </ChunkRegion>
+                      <div className="rounded-lg border border-border/80 bg-accent/30 p-3">
+                        <ChunkRegion title="货品明细" count={groups.middle.length}>
+                          {groups.middle.map(renderChunk)}
+                        </ChunkRegion>
+                      </div>
                     )}
                     {groups.bottom.length > 0 && (
                       <ChunkRegion
@@ -3735,10 +3737,10 @@ function EditableTableHtml({
       <div
         ref={wrapRef}
         className={cn(
-          "overflow-x-auto rounded border bg-background p-2 text-xs outline-none transition-colors",
-          // 单元格样式：超出宽度省略号 + title 悬浮气泡展示完整内容
-          "[&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-1.5 [&_th]:py-1 [&_th]:whitespace-nowrap",
-          "[&_td]:border [&_td]:border-border [&_td]:px-1.5 [&_td]:py-1 [&_td]:overflow-hidden [&_td]:text-ellipsis [&_td]:whitespace-nowrap",
+          "overflow-x-auto rounded border bg-background p-2 text-xs outline-none transition-colors min-h-[260px]",
+          // 单元格样式：超出宽度省略号 + title 悬浮气泡展示完整内容；核心数据加大内边距与行高
+          "[&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-2.5 [&_th]:py-1.5 [&_th]:text-xs [&_th]:font-medium [&_th]:whitespace-nowrap",
+          "[&_td]:border [&_td]:border-border [&_td]:px-2.5 [&_td]:py-1.5 [&_td]:text-xs [&_td]:leading-relaxed [&_td]:overflow-hidden [&_td]:text-ellipsis [&_td]:whitespace-nowrap",
           readOnly
             ? "border-border"
             : mustEdit
