@@ -2808,11 +2808,9 @@ function DocPanel({
                       </ChunkRegion>
                     )}
                     {groups.middle.length > 0 && (
-                      <div className="rounded-lg border border-border/80 bg-accent/30 p-3">
-                        <ChunkRegion title="货品明细" count={groups.middle.length}>
-                          {groups.middle.map(renderChunk)}
-                        </ChunkRegion>
-                      </div>
+                      <ChunkRegion title="货品明细" count={groups.middle.length}>
+                        {groups.middle.map(renderChunk)}
+                      </ChunkRegion>
                     )}
                     {groups.bottom.length > 0 && (
                       <ChunkRegion
