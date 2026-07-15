@@ -798,18 +798,19 @@ function enrichTableHtml(html: string): string {
   const addMat = !hasMat;
   const extraTh =
     (addKa ? `<th${FILL_TH}>KA货号</th>` : "") + (addMat ? `<th${FILL_TH}>物料编码</th>` : "");
-  const newThead = theadInner.replace(/<\/tr>\s*$/i, `${extraTh}</tr>`);
+  // 补充列放在最前面
+  const newThead = theadInner.replace(/<tr([^>]*)>/i, `<tr$1>${extraTh}`);
 
   const rowMatches = Array.from(tbodyMatch[1].matchAll(/<tr>([\s\S]*?)<\/tr>/gi));
   const newRows = rowMatches
     .map((rm) => {
       const rowHtml = rm[1];
       const tdMatches = Array.from(rowHtml.matchAll(/<td([^>]*)>([\s\S]*?)<\/td>/gi));
+      const extra =
+        (addKa ? `<td${FILL_TD}></td>` : "") + (addMat ? `<td${FILL_TD}></td>` : "");
       // 总计等合并行：留空补全列
       if (tdMatches.length > 0 && /colspan\s*=/i.test(tdMatches[0][1])) {
-        const extra =
-          (addKa ? `<td${FILL_TD}></td>` : "") + (addMat ? `<td${FILL_TD}></td>` : "");
-        return `<tr>${rowHtml}${extra}</tr>`;
+        return `<tr>${extra}${rowHtml}</tr>`;
       }
       const nameCell = tdMatches[nameIdx]?.[2] ?? "";
       const prod = findProductByName(nameCell);
@@ -819,7 +820,7 @@ function enrichTableHtml(html: string): string {
       const matTd = addMat
         ? `<td${FILL_TD}>${prod ? prod.material : MISS_HTML}</td>`
         : "";
-      return `<tr>${rowHtml}${kaTd}${matTd}</tr>`;
+      return `<tr>${kaTd}${matTd}${rowHtml}</tr>`;
     })
     .join("");
 
