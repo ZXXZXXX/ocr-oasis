@@ -785,42 +785,66 @@ function enrichTableHtml(html: string): string {
   );
   const hasKa = headerCells.some((h) => RE_KA_HDR.test(h));
   const hasMat = headerCells.some((h) => RE_MAT_HDR.test(h));
-  if (hasKa && hasMat) return html;
-
   const nameIdx = headerCells.findIndex((h) => RE_NAME_HDR.test(h));
-  if (nameIdx < 0) return html;
+  const serialIdx = headerCells.findIndex((h) => /^序号$/.test(h));
+  const addKa = !hasKa;
+  const addMat = !hasMat;
+  const addSerial = serialIdx < 0;
+
+  // 无需任何补全
+  if (!addSerial && !addKa && !addMat) return html;
 
   const FILL_TH = ' style="background:#f3f4f6;color:#374151"';
   const FILL_TD = ' style="background:#f3f4f6;color:#374151"';
   const MISS_HTML = '<span style="color:#9ca3af;font-style:italic">无匹配数据</span>';
 
-  const addKa = !hasKa;
-  const addMat = !hasMat;
-  const extraTh =
-    (addKa ? `<th${FILL_TH}>KA货号</th>` : "") + (addMat ? `<th${FILL_TH}>物料编码</th>` : "");
-  // 补充列放在最前面
-  const newThead = theadInner.replace(/<tr([^>]*)>/i, `<tr$1>${extraTh}`);
+  const kaTh = addKa ? `<th${FILL_TH}>KA货号</th>` : "";
+  const matTh = addMat ? `<th${FILL_TH}>物料编码</th>` : "";
+  const extraTh = kaTh + matTh;
+
+  let newThead: string;
+  if (addSerial) {
+    // 序号 + KA + 物料 放在最前面
+    newThead = theadInner.replace(/<tr([^>]*)>/i, `<tr$1><th${FILL_TH}>序号</th>${extraTh}`);
+  } else {
+    // 在已有序号列后插入 KA/物料 列
+    const ths = Array.from(theadInner.matchAll(/<th[^>]*>[\s\S]*?<\/th>/gi)).map((m) => m[0]);
+    ths.splice(serialIdx + 1, 0, ...(extraTh ? [extraTh] : []));
+    newThead = theadInner.replace(
+      /<tr([^>]*)>[\s\S]*<\/tr>/i,
+      `<tr$1>${ths.join("")}</tr>`,
+    );
+  }
 
   const rowMatches = Array.from(tbodyMatch[1].matchAll(/<tr>([\s\S]*?)<\/tr>/gi));
   const newRows = rowMatches
-    .map((rm) => {
+    .map((rm, rowIndex) => {
       const rowHtml = rm[1];
       const tdMatches = Array.from(rowHtml.matchAll(/<td([^>]*)>([\s\S]*?)<\/td>/gi));
-      const extra =
-        (addKa ? `<td${FILL_TD}></td>` : "") + (addMat ? `<td${FILL_TD}></td>` : "");
-      // 总计等合并行：留空补全列
-      if (tdMatches.length > 0 && /colspan\s*=/i.test(tdMatches[0][1])) {
-        return `<tr>${extra}${rowHtml}</tr>`;
+      const nameCell = nameIdx >= 0 ? tdMatches[nameIdx]?.[2] ?? "" : "";
+      const prod = nameCell ? findProductByName(nameCell) : null;
+      const kaTd = addKa ? `<td${FILL_TD}>${prod ? prod.ka : MISS_HTML}</td>` : "";
+      const matTd = addMat ? `<td${FILL_TD}>${prod ? prod.material : MISS_HTML}</td>` : "";
+      const extraTd = kaTd + matTd;
+
+      if (addSerial) {
+        const serialTd = `<td${FILL_TD}>${rowIndex + 1}</td>`;
+        const emptyFill = (addKa ? `<td${FILL_TD}></td>` : "") + (addMat ? `<td${FILL_TD}></td>` : "");
+        // 总计等合并行：补全列均留空
+        if (tdMatches.length > 0 && /colspan\s*=/i.test(tdMatches[0][1])) {
+          return `<tr>${serialTd}${emptyFill}${rowHtml}</tr>`;
+        }
+        return `<tr>${serialTd}${extraTd}${rowHtml}</tr>`;
       }
-      const nameCell = tdMatches[nameIdx]?.[2] ?? "";
-      const prod = findProductByName(nameCell);
-      const kaTd = addKa
-        ? `<td${FILL_TD}>${prod ? prod.ka : MISS_HTML}</td>`
-        : "";
-      const matTd = addMat
-        ? `<td${FILL_TD}>${prod ? prod.material : MISS_HTML}</td>`
-        : "";
-      return `<tr>${kaTd}${matTd}${rowHtml}</tr>`;
+
+      // 已有序号列：在序号列后插入 KA/物料 列
+      const tds = tdMatches.map((m) => m[0]);
+      if (tds.length > 0 && /colspan\s*=/i.test(tdMatches[0][1])) {
+        tds.splice(serialIdx + 1, 0, ...(extraTd ? [`<td${FILL_TD}></td>`] : []));
+      } else {
+        tds.splice(serialIdx + 1, 0, ...(extraTd ? [extraTd] : []));
+      }
+      return `<tr>${tds.join("")}</tr>`;
     })
     .join("");
 
