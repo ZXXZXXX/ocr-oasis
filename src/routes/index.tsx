@@ -314,6 +314,30 @@ function collectChunks(r: OcrRecord): Chunk[] {
   return out;
 }
 
+// 将 chunks 按上/中/下三段分组：
+// 上区 = 首个 Table 之前；中区 = 首个 Table 到最后一个 Table（含之间任意块）；下区 = 最后一个 Table 之后
+// 无 Table 时全部归入上区。
+function groupChunksByRegion(chunks: Chunk[]): {
+  top: Chunk[];
+  middle: Chunk[];
+  bottom: Chunk[];
+} {
+  const first = chunks.findIndex((c) => c.label === "Table");
+  if (first === -1) return { top: chunks, middle: [], bottom: [] };
+  let last = first;
+  for (let i = chunks.length - 1; i >= first; i--) {
+    if (chunks[i].label === "Table") {
+      last = i;
+      break;
+    }
+  }
+  return {
+    top: chunks.slice(0, first),
+    middle: chunks.slice(first, last + 1),
+    bottom: chunks.slice(last + 1),
+  };
+}
+
 function pendingLowConf(r: OcrRecord): number {
   return collectChunks(r).filter(
     (c) =>
