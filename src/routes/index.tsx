@@ -2527,19 +2527,24 @@ function DocPanel({
   onChange: (pageIdx: number, chunkId: string, value: string) => void;
 }) {
 
-  // Image (left) and result (right) navigation are independent.
+  // Image (left) and result (right) navigation are linked for delivery notes:
+  // switching the delivery-note image switches the recognition-result page, and vice versa.
   const [deliveryImgIdx, setDeliveryImgIdx] = useState(0);
   const [shippingIdx, setShippingIdx] = useState(0);
-  const [pageIdx, setPageIdx] = useState(0);
   const [activeChunkId, setActiveChunkId] = useState<string | null>(null);
   const [viewMap, setViewMap] = useState<Record<string, ImgView>>({});
   const [imageTab, setImageTab] = useState<"delivery_note" | "shipping_slip">(
     deliveryImages.length ? "delivery_note" : "shipping_slip",
   );
 
-  const page = deliveryPages[pageIdx];
   const deliveryImage = deliveryImages[deliveryImgIdx];
   const shippingImage = shippingImages[shippingIdx];
+  // Derive the recognition-result page from the current delivery image so they stay in sync.
+  const pageIdx = Math.max(
+    0,
+    deliveryImage ? deliveryPages.findIndex((p) => p.imageId === deliveryImage.id) : 0,
+  );
+  const page = deliveryPages[pageIdx];
 
   const showingShipping = imageTab === "shipping_slip" && !!shippingImage;
   const leftImage = showingShipping ? shippingImage : deliveryImage;
