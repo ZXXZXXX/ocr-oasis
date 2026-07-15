@@ -2739,11 +2739,11 @@ function DocPanel({
                 <button
                   type="button"
                   onClick={() => {
-                    setPageIdx((i) => {
-                      const next = Math.min(deliveryPages.length - 1, i + 1);
-                      if (next !== i) setActiveChunkId(null);
-                      return next;
-                    });
+                    const nxt = deliveryPages[pageIdx + 1];
+                    if (!nxt) return;
+                    const nextImgIdx = deliveryImages.findIndex((img) => img.id === nxt.imageId);
+                    if (nextImgIdx >= 0) setDeliveryImgIdx(nextImgIdx);
+                    setActiveChunkId(null);
                   }}
                   disabled={pageIdx >= deliveryPages.length - 1}
                   className="inline-flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:bg-accent disabled:opacity-40"
