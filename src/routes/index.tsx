@@ -2554,11 +2554,11 @@ function ChunkRegion({
 }) {
   const [open, setOpen] = useState(true);
   return (
-    <section className="overflow-hidden rounded-md border border-border bg-background/40">
+    <section className="overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between gap-2 border-b border-border bg-muted/40 px-3 py-1.5 text-left text-xs font-medium text-foreground hover:bg-muted/60"
+        className="flex w-full items-center justify-between gap-2 px-1 py-1 text-left text-xs font-medium text-foreground hover:text-foreground/80"
       >
         <span className="flex items-center gap-1.5">
           <ChevronDown
@@ -2567,13 +2567,13 @@ function ChunkRegion({
               !open && "-rotate-90",
             )}
           />
-          {title}
+          <span className="text-muted-foreground">{title}</span>
         </span>
         <span className="text-[11px] font-normal text-muted-foreground">
           {count} 项
         </span>
       </button>
-      {open && <div className="space-y-0.5 px-3 py-2">{children}</div>}
+      {open && <div className="space-y-0.5">{children}</div>}
     </section>
   );
 }
