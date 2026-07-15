@@ -3530,8 +3530,7 @@ function EditableTableHtml({
     table.insertBefore(cg, table.firstChild);
 
     const sum = widths.reduce((a, b) => a + b, 0);
-    // 容器内边距 p-2 = 16px 两侧
-    const available = Math.max(0, wrap.clientWidth - 16);
+    const available = Math.max(0, wrap.clientWidth);
     table.style.tableLayout = "fixed";
     table.style.width = `${Math.max(sum, available)}px`;
   };
