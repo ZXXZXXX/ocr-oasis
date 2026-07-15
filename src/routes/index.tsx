@@ -3737,7 +3737,7 @@ function EditableTableHtml({
       <div
         ref={wrapRef}
         className={cn(
-          "overflow-x-auto rounded border bg-background p-2 text-xs outline-none transition-colors",
+          "overflow-x-auto rounded border bg-background p-2 text-xs outline-none transition-colors min-h-[260px]",
           // 单元格样式：超出宽度省略号 + title 悬浮气泡展示完整内容；核心数据加大内边距与行高
           "[&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-2.5 [&_th]:py-1.5 [&_th]:text-xs [&_th]:font-medium [&_th]:whitespace-nowrap",
           "[&_td]:border [&_td]:border-border [&_td]:px-2.5 [&_td]:py-1.5 [&_td]:text-xs [&_td]:leading-relaxed [&_td]:overflow-hidden [&_td]:text-ellipsis [&_td]:whitespace-nowrap",
