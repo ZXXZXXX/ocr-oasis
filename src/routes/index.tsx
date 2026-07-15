@@ -2003,7 +2003,6 @@ function DetailView({
   record,
   initialEditing = false,
   onChange,
-  onConfirm,
   onReplaceResults,
   onSignatureStatusChange,
   onSubmit,
@@ -2011,7 +2010,6 @@ function DetailView({
   record: OcrRecord;
   initialEditing?: boolean;
   onChange: (docType: DocType, pageIdx: number, chunkId: string, value: string) => void;
-  onConfirm: (docType: DocType, pageIdx: number, chunkId: string) => void;
   onReplaceResults: (results: NonNullable<OcrRecord["results"]>) => void;
   onSignatureStatusChange: (value: SignatureStatus) => void;
   onSubmit: (verdict?: AiVerdict) => void;
