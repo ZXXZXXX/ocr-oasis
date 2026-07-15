@@ -19,7 +19,6 @@ import {
   RotateCw,
   ZoomIn,
   ZoomOut,
-  RefreshCw,
   Pencil,
   Type,
   Heading,
@@ -2955,17 +2954,27 @@ function ImageWithBoxes({
             variant="ghost"
             size="icon"
             className="size-7 rounded-full text-muted-foreground hover:text-foreground"
+            onClick={() => rotateBy(-90)}
+            aria-label="逆时针旋转"
+            title="逆时针旋转"
+          >
+            <RotateCcw className="size-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7 rounded-full text-muted-foreground hover:text-foreground"
             onClick={() => rotateBy(90)}
-            aria-label="旋转"
-            title="旋转"
+            aria-label="顺时针旋转"
+            title="顺时针旋转"
           >
             <RotateCw className="size-4" />
           </Button>
           <Button
             variant="ghost"
-            size="icon"
+            size="sm"
             className={cn(
-              "size-7 rounded-full disabled:opacity-40",
+              "h-7 rounded-full px-2 text-xs disabled:opacity-40",
               showReset ? "text-primary hover:text-primary" : "text-muted-foreground hover:text-foreground",
             )}
             onClick={resetView}
@@ -2973,7 +2982,7 @@ function ImageWithBoxes({
             aria-label="重置视图"
             title="重置视图"
           >
-            <RefreshCw className="size-4" />
+            重置
           </Button>
         </div>
 
