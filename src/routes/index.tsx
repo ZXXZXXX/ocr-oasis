@@ -1303,7 +1303,8 @@ function Workbench() {
 
   const [quickStatus, setQuickStatus] = useState<"all" | "pending_review">("all");
   const [searchQuery, setSearchQuery] = useState("");
-  
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
 
 
   const activeRecords = useMemo(
