@@ -43,6 +43,8 @@ import receiptJdAsset from "@/assets/receipt_jd.jpg.asset.json";
 import receiptLingshiAsset from "@/assets/receipt_lingshi.png.asset.json";
 import receiptKualuDgAsset from "@/assets/receipt_kualu_dg.png.asset.json";
 import receiptKualuTjAsset from "@/assets/receipt_kualu_tj.png.asset.json";
+import tongyiSrmP1Asset from "@/assets/tongyi_srm_p1.jpg.asset.json";
+import tongyiSrmP2Asset from "@/assets/tongyi_srm_p2.jpg.asset.json";
 
 
 
@@ -727,6 +729,70 @@ function mockKualuTjChunks(): Chunk[] {
   return raw.map((c) => ({ ...c, id: uid() }));
 }
 
+// 长沙统一企业 · 零食很忙SRM送货单（第1页 / 共2页，1920x870）
+function mockTongyiSrmP1Chunks(): Chunk[] {
+  const raw: Omit<Chunk, "id">[] = [
+    { bbox: [560, 70, 1240, 130], label: "Section-Header", content: "<p>长沙统一企业有限公司</p>", confidence: 0.97 },
+    { bbox: [640, 135, 1160, 190], label: "Section-Header", content: "<p>零食很忙SRM送货单</p>", confidence: 0.95 },
+    { bbox: [200, 235, 720, 275], label: "Text", content: "<p>收货组织: 宜春鸣忙食品有限公司绍兴仓</p>", confidence: 0.86 },
+    { bbox: [860, 235, 1260, 275], label: "Text", content: "<p>预约日期: 2026-05-31</p>", confidence: 0.92 },
+    { bbox: [200, 285, 720, 325], label: "Text", content: "<p>单据号: DN202605290450</p>", confidence: 0.88 },
+    { bbox: [860, 285, 1260, 325], label: "Text", content: "<p>采购订单: CD202605264523484</p>", confidence: 0.84 },
+    { bbox: [200, 335, 760, 405], label: "Text", content: "<p>客户地址: 浙江省绍兴市上虞区上诸高速公路菜鸟网络浙江上虞园区3号库</p>", confidence: 0.78 },
+    { bbox: [860, 335, 1200, 375], label: "Text", content: "<p>卸货类型: 仓卸</p>", confidence: 0.9 },
+    { bbox: [200, 415, 620, 455], label: "Text", content: "<p>采购员: L02211_任晴元</p>", confidence: 0.82 },
+    { bbox: [860, 415, 1200, 455], label: "Text", content: "<p>带板运输: 否</p>", confidence: 0.93 },
+    { bbox: [200, 465, 620, 505], label: "Text", content: "<p>收货联系电话: 150-6852-5321</p>", confidence: 0.85 },
+    { bbox: [860, 465, 1200, 505], label: "Text", content: "<p>是否年货: 否</p>", confidence: 0.93 },
+    { bbox: [200, 515, 620, 555], label: "Text", content: "<p>3.0中式糕点: 否</p>", confidence: 0.9 },
+    { bbox: [860, 515, 1200, 555], label: "Text", content: "<p>预约时段: 上午</p>", confidence: 0.92 },
+    { bbox: [200, 565, 720, 605], label: "Text", content: "<p>送货公司: 长沙统一企业有限公司</p>", confidence: 0.88 },
+    {
+      bbox: [180, 640, 1800, 780],
+      label: "Table",
+      content:
+        '<table border="1"><thead><tr><th>序号</th><th>物料编码</th><th>产品名称</th><th>规格</th><th>计价单位</th><th>订单数量</th><th>发货数量</th><th>生产批号</th><th>是否赠品</th><th>备注</th><th>层件数</th><th>层数</th><th>堆码方式</th><th>固定物</th><th>拒收数量</th><th>是否单品允收</th></tr></thead><tbody><tr><td>10</td><td>111594</td><td>汤达人酸辣豚骨面130g*5</td><td>130g*5包*6中袋</td><td>箱</td><td>180</td><td>180</td><td>2026-05-23</td><td>否</td><td>top300</td><td>15</td><td>3</td><td>3层/每层15件/码</td><td>绑带</td><td></td><td></td></tr><tr><td colspan="6">合计</td><td>180</td><td colspan="9"></td></tr></tbody></table>',
+      confidence: 0.72,
+    },
+    { bbox: [960, 795, 1500, 835], label: "Text", content: "<p>收货人: 向涛军 5.31 实收180件</p>", confidence: 0.6 },
+    { bbox: [860, 835, 1260, 870], label: "Text", content: "<p>发货日期: 2026年05月29日</p>", confidence: 0.86 },
+  ];
+  return raw.map((c) => ({ ...c, id: uid() }));
+}
+
+// 长沙统一企业 · 零食很忙SRM送货单（第2页 / 共2页，明细续表，1920x870）
+function mockTongyiSrmP2Chunks(): Chunk[] {
+  const raw: Omit<Chunk, "id">[] = [
+    {
+      bbox: [340, 90, 1780, 720],
+      label: "Table",
+      content:
+        '<table border="1"><thead><tr><th>序号</th><th>物料编码</th><th>产品名称</th><th>规格</th><th>计价单位</th><th>订单数量</th><th>发货数量</th><th>生产批号</th><th>是否赠品</th><th>备注</th><th>层件数</th><th>层数</th><th>堆码方式</th><th>固定物</th></tr></thead><tbody>' +
+        '<tr><td>80</td><td>100764</td><td>统一汤达人海鲜拉面杯80g</td><td>80g*12桶</td><td>件</td><td>168</td><td>168</td><td>2026-05-22</td><td>否</td><td></td><td>17</td><td>3</td><td>3层/每层17件/码</td><td>绑带</td></tr>' +
+        '<tr><td>90</td><td>100808</td><td>统一茄皇鸡蛋袋面116g</td><td>116g*5包*6袋</td><td>件</td><td>90</td><td>90</td><td>2026-05-09</td><td>否</td><td></td><td>14</td><td>4</td><td>4层/每层14件/码</td><td>绑带</td></tr>' +
+        '<tr><td>100</td><td>128725</td><td>统一酱拌面卤香牛肉风味</td><td>1*12碗</td><td>件</td><td>72</td><td>72</td><td>2026-05-13</td><td>否</td><td></td><td>19</td><td>4</td><td>4层/每层19件/码</td><td>绑带</td></tr>' +
+        '<tr><td>110</td><td>128446</td><td>统一老坛酸菜袋面121g</td><td>121g*24袋</td><td>件</td><td>108</td><td>108</td><td>2026-05-24</td><td>否</td><td></td><td>6</td><td>11</td><td>11层/每层6件/码</td><td>缠膜</td></tr>' +
+        '<tr><td>120</td><td>123774</td><td>统一香辣牛肉袋面97g</td><td>97g*24袋</td><td>件</td><td>108</td><td>108</td><td>2026-05-25</td><td>否</td><td></td><td>13</td><td>5</td><td>5层/每层13件/码</td><td>绑带</td></tr>' +
+        '<tr><td>130</td><td>123778</td><td>统一茄皇牛肉面128g</td><td>1*12桶</td><td>件</td><td>108</td><td>108</td><td>2026-05-21</td><td>否</td><td>top300</td><td>13</td><td>5</td><td>5层/每层13件/码</td><td>绑带</td></tr>' +
+        '<tr><td>140</td><td>108996</td><td>统一来一桶老坛酸菜牛肉面120g</td><td>120g*12桶</td><td>件</td><td>108</td><td>108</td><td>2026-05-22</td><td>否</td><td></td><td>6</td><td>11</td><td>11层/每层6件/码</td><td>绑带</td></tr>' +
+        '<tr><td>150</td><td>109760</td><td>统一小浣熊烤翅味35g</td><td>35g*40包</td><td>箱</td><td>216</td><td>216</td><td>2026-05-25</td><td>否</td><td></td><td>6</td><td>10</td><td>不打码</td><td>缠膜</td></tr>' +
+        '<tr><td>160</td><td>123770</td><td>统一汤达人辣白菜豚骨拉面迷你杯40g</td><td>40g*18杯</td><td>件</td><td>108</td><td>108</td><td>2026-05-14</td><td>否</td><td></td><td>17</td><td>3</td><td>3层/每层17件/码</td><td>缠膜</td></tr>' +
+        '<tr><td>170</td><td>150541</td><td>汤达人日式豚骨面125g*5</td><td>125g*5包*6中袋</td><td>箱</td><td>90</td><td>90</td><td>2026-05-23</td><td>否</td><td>top300</td><td>10</td><td>11</td><td>11层/每层10件/码</td><td>绑带</td></tr>' +
+        '<tr><td>180</td><td>111487</td><td>统一汤达人酸酸辣豚骨拉面杯90g</td><td>90g*12桶</td><td>件</td><td>168</td><td>138</td><td>2026-05-19</td><td>否</td><td>top300</td><td>10</td><td>6</td><td>6层/每层10件/码</td><td>绑带</td></tr>' +
+        '<tr><td>190</td><td>100807</td><td>统一鲜虾鱼板面经典款101g</td><td>101g*12桶</td><td>件</td><td>108</td><td>108</td><td>2026-05-12</td><td>否</td><td></td><td>10</td><td>11</td><td>11层/每层10件/码</td><td>绑带</td></tr>' +
+        '<tr><td>200</td><td>129998</td><td>统一鲜虾鱼板面经典款101g</td><td>101g*12桶</td><td>件</td><td>—</td><td>—</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>' +
+        '<tr><td colspan="6">合计</td><td>2298</td><td colspan="7"></td></tr>' +
+        '</tbody></table>',
+      confidence: 0.68,
+    },
+    { bbox: [960, 735, 1560, 780], label: "Text", content: "<p>收货人: 向涛军 5.31 实收2298件</p>", confidence: 0.58 },
+    { bbox: [860, 780, 1260, 820], label: "Text", content: "<p>发货日期: 2026年05月29日</p>", confidence: 0.84 },
+  ];
+  return raw.map((c) => ({ ...c, id: uid() }));
+}
+
+
+
 // ---------- 商品编码映射（KA货号 ↔ 物料编码 ↔ 品名）演示数据库 ----------
 type ProductRec = { ka: string; material: string; name: string };
 const PRODUCT_DB: ProductRec[] = [
@@ -1279,7 +1345,64 @@ function seedRecords(): OcrRecord[] {
     return { ...record, aiRejectionReason: makeAiRejectionReason(record) };
   });
 
-  return [realRecord, ...noSlipRecords, ...records];
+  // 多送货单任务：长沙统一企业 · 零食很忙SRM送货单（同一验收任务包含2张送货单照片）
+  const tongyiCreatedAt = now - 6 * 60_000;
+  const tongyiImages: UploadedImage[] = [
+    {
+      id: "img-tongyi-p1",
+      name: "tongyi_srm_p1.jpg",
+      url: tongyiSrmP1Asset.url,
+      docType: "delivery_note",
+      width: 1920,
+      height: 870,
+    },
+    {
+      id: "img-tongyi-p2",
+      name: "tongyi_srm_p2.jpg",
+      url: tongyiSrmP2Asset.url,
+      docType: "delivery_note",
+      width: 1920,
+      height: 870,
+    },
+  ];
+  const tongyiResults: Partial<Record<DocType, DocPage[]>> = {
+    delivery_note: [
+      {
+        imageId: tongyiImages[0]!.id,
+        sourceImage: tongyiImages[0]!.name,
+        pageBox: [0, 0, tongyiImages[0]!.width, tongyiImages[0]!.height],
+        chunks: enrichTableChunks(mockTongyiSrmP1Chunks()),
+      },
+      {
+        imageId: tongyiImages[1]!.id,
+        sourceImage: tongyiImages[1]!.name,
+        pageBox: [0, 0, tongyiImages[1]!.width, tongyiImages[1]!.height],
+        chunks: enrichTableChunks(mockTongyiSrmP2Chunks()),
+      },
+    ],
+  };
+  const tongyiPages = Object.values(tongyiResults).flat() as DocPage[];
+  const tongyiRecord: OcrRecord = {
+    id: makeKaOrderId(tongyiCreatedAt, 3_290_450),
+    createdAt: tongyiCreatedAt,
+    status: "pending_review",
+    progress: 100,
+    confidence: averageConfidence(tongyiPages),
+    deliveryCount: 2,
+    shippingCount: 0,
+    images: tongyiImages,
+    results: tongyiResults,
+    driver: "向涛军",
+    plateNo: "湘A·88231",
+    signatureStatus: "perfect",
+    aiVerdict: "pass",
+  };
+  const tongyiRecordFinal: OcrRecord = {
+    ...tongyiRecord,
+    aiRejectionReason: makeAiRejectionReason(tongyiRecord),
+  };
+
+  return [tongyiRecordFinal, realRecord, ...noSlipRecords, ...records];
 }
 
 
