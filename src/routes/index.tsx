@@ -1750,7 +1750,7 @@ function Workbench() {
                     </TableCell>
                   </TableRow>
                 )}
-                {filteredRecords.map((r) => {
+                {paginatedRecords.map((r) => {
                   const inProgress = r.status === "recognizing" || r.status === "queued";
                   const canSelect = !inProgress && r.status !== "failed";
                   const pending = !inProgress && r.status !== "failed" ? pendingLowConf(r) : 0;
