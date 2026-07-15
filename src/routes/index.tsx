@@ -2965,7 +2965,8 @@ function AutoResizeTextarea({ value, className, ...props }: React.ComponentProps
     <Textarea
       ref={ref}
       value={value}
-      className={cn("resize-none overflow-hidden", className)}
+      rows={1}
+      className={cn("resize-none overflow-hidden !min-h-9 py-1", className)}
       {...props}
     />
   );
@@ -3023,7 +3024,7 @@ function ChunkContentEditor({
         readOnly={readOnly}
         onChange={(e) => handle(e.target.value)}
         className={cn(
-          "min-h-9 border-none bg-transparent px-0 text-base font-semibold text-foreground shadow-none focus-visible:ring-0",
+          "border-none bg-transparent px-0 text-base font-semibold text-foreground shadow-none focus-visible:ring-0",
           mustEdit && "text-[color:var(--warning-foreground)]",
           roCls,
         )}
@@ -3050,7 +3051,7 @@ function ChunkContentEditor({
             readOnly={readOnly}
             onChange={(e) => handleValue(e.target.value)}
             placeholder="（空）"
-            className={cn("min-h-9", ring, roCls)}
+            className={cn(ring, roCls)}
           />
         </div>
       </div>
@@ -3062,7 +3063,7 @@ function ChunkContentEditor({
       value={text}
       readOnly={readOnly}
       onChange={(e) => handle(e.target.value)}
-      className={cn("min-h-9", ring, roCls)}
+      className={cn(ring, roCls)}
     />
   );
 }
