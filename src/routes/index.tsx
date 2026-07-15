@@ -3023,7 +3023,7 @@ function ChunkContentEditor({
         readOnly={readOnly}
         onChange={(e) => handle(e.target.value)}
         className={cn(
-          "min-h-9 border-none bg-transparent px-0 text-base font-semibold text-foreground shadow-none focus-visible:ring-0",
+          "border-none bg-transparent px-0 text-base font-semibold text-foreground shadow-none focus-visible:ring-0",
           mustEdit && "text-[color:var(--warning-foreground)]",
           roCls,
         )}
