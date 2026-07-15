@@ -3004,31 +3004,6 @@ function ChunkEditor({
         readOnly={!editing}
       />
 
-      {isLow && chunk.label !== "Image" && editing && active && (
-        <div className="mt-2 flex items-center justify-between gap-2 text-[11px]">
-          <span className="text-muted-foreground">
-            {needsReview
-              ? "若识别结果正确，可直接确认；如有错误请在上方修改。"
-              : chunk.edited
-                ? "已通过修改。"
-                : "已确认无需修改。"}
-          </span>
-          <Button
-            type="button"
-            size="sm"
-            variant={chunk.confirmed && !chunk.edited ? "secondary" : "outline"}
-            className="h-7 gap-1 px-2 text-[11px]"
-            onClick={(e) => {
-              e.stopPropagation();
-              onConfirm();
-            }}
-            disabled={chunk.edited}
-          >
-            <CheckCircle2 className="size-3" />
-            {chunk.confirmed && !chunk.edited ? "取消确认" : "标记为无需更改"}
-          </Button>
-        </div>
-      )}
 
       {chunk.lastEdit && active && (
         <div className="mt-1.5 text-[11px] text-muted-foreground">
