@@ -1840,9 +1840,6 @@ function Workbench() {
                 onChange={(docType, pageIdx, chunkId, val) =>
                   updateChunk(detailRecord.id, docType, pageIdx, chunkId, val)
                 }
-                onConfirm={(docType, pageIdx, chunkId) =>
-                  confirmChunk(detailRecord.id, docType, pageIdx, chunkId)
-                }
                 onReplaceResults={(results) => replaceResults(detailRecord.id, results)}
                 onSignatureStatusChange={(value) => updateSignatureStatus(detailRecord.id, value)}
                 onSubmit={(verdict) => {
