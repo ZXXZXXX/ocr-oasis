@@ -2724,38 +2724,114 @@ function ImageWithBoxes({
             )}
           </div>
         </div>
-      </div>
-      <div className="flex items-center justify-between gap-2 border-t border-primary/20 bg-primary/5 px-3 py-1.5 text-xs text-primary">
-        {navCount && navCount > 1 ? (
-          <>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-6 gap-1 border-primary/30 px-2 text-xs text-primary hover:bg-primary/10 disabled:opacity-50"
-              onClick={onPrev}
-              disabled={navIndex === 0}
+        {/* Floating controls */}
+        <div
+          className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-0.5 rounded-full border border-border/50 bg-background/90 px-2 py-1.5 shadow-lg backdrop-blur-sm"
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7 rounded-full text-muted-foreground hover:text-foreground"
+            onClick={() => zoomBy(1.2)}
+            aria-label="放大"
+            title="放大"
+          >
+            <ZoomIn className="size-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7 rounded-full text-muted-foreground hover:text-foreground"
+            onClick={() => zoomBy(1 / 1.2)}
+            aria-label="缩小"
+            title="缩小"
+          >
+            <ZoomOut className="size-4" />
+          </Button>
+          <div className="mx-1 h-4 w-px bg-border" />
+          {navCount && navCount > 1 ? (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7 rounded-full text-muted-foreground hover:text-foreground disabled:opacity-40"
+                onClick={onPrev}
+                disabled={navIndex === 0}
+                aria-label="上一页"
+                title="上一页"
+              >
+                <ChevronLeft className="size-4" />
+              </Button>
+              <span className="min-w-10 text-center text-[11px] tabular-nums text-muted-foreground">
+                {navIndex ? navIndex + 1 : 1} / {navCount}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7 rounded-full text-muted-foreground hover:text-foreground disabled:opacity-40"
+                onClick={onNext}
+                disabled={navIndex === navCount - 1}
+                aria-label="下一页"
+                title="下一页"
+              >
+                <ChevronRight className="size-4" />
+              </Button>
+              <div className="mx-1 h-4 w-px bg-border" />
+            </>
+          ) : null}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7 rounded-full text-muted-foreground hover:text-foreground"
+            onClick={() => rotateBy(90)}
+            aria-label="旋转"
+            title="旋转"
+          >
+            <RotateCw className="size-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(
+              "size-7 rounded-full disabled:opacity-40",
+              showReset ? "text-primary hover:text-primary" : "text-muted-foreground hover:text-foreground",
+            )}
+            onClick={resetView}
+            disabled={!showReset}
+            aria-label="重置视图"
+            title="重置视图"
+          >
+            <RefreshCw className="size-4" />
+          </Button>
+        </div>
+
+        {showAutoFocus && setAutoFocus && (
+          <div
+            className="absolute right-3 top-3 z-20 flex items-center gap-1.5 rounded-full border border-border/50 bg-background/90 px-2 py-1 backdrop-blur-sm"
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <Label
+              htmlFor="auto-focus-switch"
+              className="cursor-pointer text-[11px] text-muted-foreground"
             >
-              <ChevronLeft className="size-3.5" /> 上一页
-            </Button>
-            <span className="tabular-nums">
-              第 {((navIndex ?? 0) + 1)} / {navCount} {navLabel}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-6 gap-1 border-primary/30 px-2 text-xs text-primary hover:bg-primary/10 disabled:opacity-50"
-              onClick={onNext}
-              disabled={navIndex === navCount - 1}
-            >
-              下一页 <ChevronRight className="size-3.5" />
-            </Button>
-          </>
-        ) : (
-          <div className="flex min-w-0 items-center gap-2">
-            <span className="truncate font-medium">{image.name}</span>
-            <span className="text-primary/70">
-              · {w} × {h}
-            </span>
+              自动聚焦
+            </Label>
+            <Switch
+              id="auto-focus-switch"
+              checked={autoFocus}
+              onCheckedChange={setAutoFocus}
+            />
+          </div>
+        )}
+
+        {(!navCount || navCount <= 1) && (
+          <div
+            className="absolute bottom-4 left-4 z-20 max-w-[40%] truncate rounded-full border border-border/50 bg-background/90 px-2 py-1 text-xs text-muted-foreground backdrop-blur-sm"
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <span className="font-medium text-foreground">{image.name}</span>
+            <span> · {w} × {h}</span>
           </div>
         )}
       </div>
