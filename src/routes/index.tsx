@@ -2497,9 +2497,10 @@ type ImgView = {
   scale: number;
   tx: number; // px offset from centered
   ty: number;
+  rotation: number; // degrees, multiples of 90
   manual: boolean; // once user adjusts, stop auto-focus on active chunk
 };
-const DEFAULT_IMG_VIEW: ImgView = { scale: 1, tx: 0, ty: 0, manual: false };
+const DEFAULT_IMG_VIEW: ImgView = { scale: 1, tx: 0, ty: 0, rotation: 0, manual: false };
 
 function ImageWithBoxes({
   image,
