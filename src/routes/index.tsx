@@ -1790,7 +1790,7 @@ function Workbench() {
                         {r.confidence != null ? (
                           <ConfidenceBadge score={r.confidence} />
                         ) : (
-                          <span className="text-xs text-muted-foreground">—</span>
+                          <EmptyBadge />
                         )}
                       </TableCell>
                       <TableCell>
@@ -1801,7 +1801,7 @@ function Workbench() {
                         ) : r.status === "queued" ? (
                           <span className="text-xs text-muted-foreground">排队中</span>
                         ) : (
-                          <span className="text-xs text-muted-foreground">—</span>
+                          <EmptyBadge />
                         )}
                       </TableCell>
 
