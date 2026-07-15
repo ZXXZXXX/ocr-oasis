@@ -2552,6 +2552,12 @@ function ImageWithBoxes({
   };
   const zoomBy = (factor: number) =>
     updateView((v) => ({ scale: Math.min(6, Math.max(0.3, v.scale * factor)) }));
+  const rotateBy = (delta: number) =>
+    setViewMap((m) => {
+      const cur = m[image.id] ?? DEFAULT_IMG_VIEW;
+      const rotation = (((cur.rotation + delta) % 360) + 360) % 360;
+      return { ...m, [image.id]: { ...cur, rotation } };
+    });
 
   // A click on a bbox or a chunk always focuses the corresponding region,
   // regardless of the auto-focus toggle or prior manual pan/zoom.
@@ -2566,10 +2572,10 @@ function ImageWithBoxes({
     const scale = Math.min(4, Math.max(1, w / bw));
     const tx = (0.5 - fx) * 100;
     const ty = (0.5 - fy) * 100;
-    transform = `translate(${tx}%, ${ty}%) scale(${scale})`;
+    transform = `translate(${tx}%, ${ty}%) scale(${scale}) rotate(${view.rotation}deg)`;
     transitionCls = "transition-transform duration-500 ease-out";
   } else {
-    transform = `translate(${view.tx}px, ${view.ty}px) scale(${view.scale})`;
+    transform = `translate(${view.tx}px, ${view.ty}px) scale(${view.scale}) rotate(${view.rotation}deg)`;
   }
 
 
