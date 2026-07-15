@@ -813,7 +813,7 @@ function enrichTableHtml(html: string): string {
         (addKa ? `<td${FILL_TD}></td>` : "") + (addMat ? `<td${FILL_TD}></td>` : "");
       // 总计等合并行：序号与补全列均留空
       if (tdMatches.length > 0 && /colspan\s*=/i.test(tdMatches[0][1])) {
-        return `<tr>${serialTd}${extraFill}${rowHtml}</tr>`;
+        return `<tr><td${FILL_TD}></td>${extraFill}${rowHtml}</tr>`;
       }
       const nameCell = nameIdx >= 0 ? tdMatches[nameIdx]?.[2] ?? "" : "";
       const prod = nameCell ? findProductByName(nameCell) : null;
