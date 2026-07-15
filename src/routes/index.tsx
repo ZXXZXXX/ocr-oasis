@@ -2525,31 +2525,23 @@ function DocPanel({
               showAutoFocus={!showingShipping}
               viewMap={viewMap}
               setViewMap={setViewMap}
-              navIndex={showingShipping ? shippingIdx : pageIdx}
-              navCount={showingShipping ? shippingImages.length : deliveryPages.length}
+              navIndex={showingShipping ? shippingIdx : deliveryImgIdx}
+              navCount={showingShipping ? shippingImages.length : deliveryImages.length}
               onPrev={() => {
                 if (showingShipping) {
                   setShippingIdx((i) => Math.max(0, i - 1));
                 } else {
-                  setPageIdx((i) => {
-                    const next = Math.max(0, i - 1);
-                    if (next !== i) setActiveChunkId(null);
-                    return next;
-                  });
+                  setDeliveryImgIdx((i) => Math.max(0, i - 1));
                 }
               }}
               onNext={() => {
                 if (showingShipping) {
                   setShippingIdx((i) => Math.min(shippingImages.length - 1, i + 1));
                 } else {
-                  setPageIdx((i) => {
-                    const next = Math.min(deliveryPages.length - 1, i + 1);
-                    if (next !== i) setActiveChunkId(null);
-                    return next;
-                  });
+                  setDeliveryImgIdx((i) => Math.min(deliveryImages.length - 1, i + 1));
                 }
               }}
-              navLabel={showingShipping ? "张" : "页"}
+              navLabel={"张"}
             />
           ) : (
             <div className="rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
