@@ -2497,9 +2497,10 @@ type ImgView = {
   scale: number;
   tx: number; // px offset from centered
   ty: number;
+  rotation: number; // degrees, multiples of 90
   manual: boolean; // once user adjusts, stop auto-focus on active chunk
 };
-const DEFAULT_IMG_VIEW: ImgView = { scale: 1, tx: 0, ty: 0, manual: false };
+const DEFAULT_IMG_VIEW: ImgView = { scale: 1, tx: 0, ty: 0, rotation: 0, manual: false };
 
 function ImageWithBoxes({
   image,
@@ -2551,6 +2552,12 @@ function ImageWithBoxes({
   };
   const zoomBy = (factor: number) =>
     updateView((v) => ({ scale: Math.min(6, Math.max(0.3, v.scale * factor)) }));
+  const rotateBy = (delta: number) =>
+    setViewMap((m) => {
+      const cur = m[image.id] ?? DEFAULT_IMG_VIEW;
+      const rotation = (((cur.rotation + delta) % 360) + 360) % 360;
+      return { ...m, [image.id]: { ...cur, rotation } };
+    });
 
   // A click on a bbox or a chunk always focuses the corresponding region,
   // regardless of the auto-focus toggle or prior manual pan/zoom.
@@ -2565,10 +2572,10 @@ function ImageWithBoxes({
     const scale = Math.min(4, Math.max(1, w / bw));
     const tx = (0.5 - fx) * 100;
     const ty = (0.5 - fy) * 100;
-    transform = `translate(${tx}%, ${ty}%) scale(${scale})`;
+    transform = `translate(${tx}%, ${ty}%) scale(${scale}) rotate(${view.rotation}deg)`;
     transitionCls = "transition-transform duration-500 ease-out";
   } else {
-    transform = `translate(${view.tx}px, ${view.ty}px) scale(${view.scale})`;
+    transform = `translate(${view.tx}px, ${view.ty}px) scale(${view.scale}) rotate(${view.rotation}deg)`;
   }
 
 
@@ -2614,7 +2621,8 @@ function ImageWithBoxes({
     }
   };
 
-  const isDefaultFit = !view.manual && view.scale === 1 && view.tx === 0 && view.ty === 0;
+  const isDefaultFit =
+    !view.manual && view.scale === 1 && view.tx === 0 && view.ty === 0 && view.rotation === 0;
   const isAutoFocused = !!activeChunk;
   const showReset = !isDefaultFit || isAutoFocused;
 
@@ -2645,6 +2653,27 @@ function ImageWithBoxes({
             title="放大"
           >
             <ZoomIn className="size-3.5" />
+          </Button>
+          <div className="mx-1 h-4 w-px bg-border" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7"
+            onClick={() => rotateBy(-90)}
+            aria-label="逆时针旋转"
+            title="逆时针旋转"
+          >
+            <RotateCcw className="size-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7"
+            onClick={() => rotateBy(90)}
+            aria-label="顺时针旋转"
+            title="顺时针旋转"
+          >
+            <RotateCw className="size-3.5" />
           </Button>
         </div>
         <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
