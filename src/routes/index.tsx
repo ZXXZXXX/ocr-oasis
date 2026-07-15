@@ -3152,8 +3152,8 @@ function ChunkContentEditor({
     const handleValue = (newVal: string) =>
       handle(`${kv.label}${kv.sep}${newVal}`);
     return (
-      <div className="flex items-start gap-3">
-        <div className="w-40 shrink-0">
+      <div className="grid grid-cols-[minmax(10rem,30%)_minmax(0,1fr)] items-start gap-3">
+        <div className="min-w-0">
           <AutoResizeTextarea
             value={kv.label}
             readOnly={readOnly}
@@ -3165,7 +3165,7 @@ function ChunkContentEditor({
             )}
           />
         </div>
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0">
           <AutoResizeTextarea
             value={kv.value}
             readOnly={readOnly}
