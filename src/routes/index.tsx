@@ -3147,12 +3147,23 @@ function ChunkContentEditor({
   const isMulti = text.length > 60 || text.includes("\n");
 
   if (kv && !isMulti) {
+    const handleLabel = (newLabel: string) =>
+      handle(`${newLabel}${kv.sep}${kv.value}`);
     const handleValue = (newVal: string) =>
       handle(`${kv.label}${kv.sep}${newVal}`);
     return (
       <div className="flex items-start gap-3">
-        <div className="w-24 shrink-0 pt-2 text-xs font-medium text-muted-foreground">
-          {kv.label}
+        <div className="w-24 shrink-0">
+          <AutoResizeTextarea
+            value={kv.label}
+            readOnly={readOnly}
+            onChange={(e) => handleLabel(e.target.value)}
+            placeholder="（字段名）"
+            className={cn(
+              "text-xs font-medium text-muted-foreground",
+              roCls,
+            )}
+          />
         </div>
         <div className="min-w-0 flex-1">
           <AutoResizeTextarea
