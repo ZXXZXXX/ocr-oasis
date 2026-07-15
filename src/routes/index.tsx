@@ -1790,7 +1790,7 @@ function Workbench() {
                         {r.confidence != null ? (
                           <ConfidenceBadge score={r.confidence} />
                         ) : (
-                          <EmptyBadge />
+                          <EmptyBadge className="w-12" />
                         )}
                       </TableCell>
                       <TableCell>
@@ -2124,7 +2124,7 @@ function ConfidenceBadge({ score }: { score: number }) {
     <Badge
       variant="status"
       className={cn(
-        "gap-1 border-0 font-normal",
+        "w-12 justify-center gap-1 border-0 font-normal",
         confidenceBadgeClasses(tone),
       )}
     >
