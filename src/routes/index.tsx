@@ -1409,6 +1409,9 @@ function Workbench() {
     selectedConfidenceTones.size !== 3 ||
     aiVerdictFilter !== "all";
 
+  const totalPages = Math.max(1, Math.ceil(filteredRecords.length / PAGE_SIZE));
+  const paginatedRecords = filteredRecords.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
 
 
 
