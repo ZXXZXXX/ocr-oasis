@@ -1790,7 +1790,7 @@ function Workbench() {
                         {r.confidence != null ? (
                           <ConfidenceBadge score={r.confidence} />
                         ) : (
-                          <span className="text-xs text-muted-foreground">—</span>
+                          <EmptyBadge />
                         )}
                       </TableCell>
                       <TableCell>
@@ -1801,7 +1801,7 @@ function Workbench() {
                         ) : r.status === "queued" ? (
                           <span className="text-xs text-muted-foreground">排队中</span>
                         ) : (
-                          <span className="text-xs text-muted-foreground">—</span>
+                          <EmptyBadge />
                         )}
                       </TableCell>
 
@@ -2014,6 +2014,20 @@ function NeutralTag({ children }: { children: React.ReactNode }) {
     <span className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-0.5 text-xs font-normal text-foreground">
       {children}
     </span>
+  );
+}
+
+function EmptyBadge({ className }: { className?: string }) {
+  return (
+    <Badge
+      variant="status"
+      className={cn(
+        "w-20 justify-center border-0 bg-muted font-normal text-muted-foreground",
+        className,
+      )}
+    >
+      —
+    </Badge>
   );
 }
 
