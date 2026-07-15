@@ -2903,14 +2903,12 @@ function ChunkEditor({
   editing,
   onFocus,
   onChange,
-  onConfirm,
 }: {
   chunk: Chunk;
   active: boolean;
   editing: boolean;
   onFocus: () => void;
   onChange: (newContent: string) => void;
-  onConfirm: () => void;
 }) {
   const tone = confidenceTone(chunk.confidence);
   const isLow =
