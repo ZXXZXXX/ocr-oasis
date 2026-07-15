@@ -2487,9 +2487,10 @@ function DocPanel({
                 </div>
                 <div className="mt-1 text-xs text-muted-foreground">{failureReason}</div>
               </div>
-            ) : (
-              <>
-                {page?.chunks.map((c) => (
+            ) : page ? (
+              (() => {
+                const groups = groupChunksByRegion(page.chunks);
+                const renderChunk = (c: Chunk) => (
                   <div
                     key={c.id}
                     ref={(el) => {
@@ -2505,13 +2506,34 @@ function DocPanel({
                       onConfirm={() => onConfirm(pageIdx, c.id)}
                     />
                   </div>
-                ))}
-                {!page && (
-                  <div className="rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
-                    暂无识别结果
+                );
+                return (
+                  <div className="space-y-3">
+                    {groups.top.length > 0 && (
+                      <ChunkRegion title="基本信息" count={groups.top.length}>
+                        {groups.top.map(renderChunk)}
+                      </ChunkRegion>
+                    )}
+                    {groups.middle.length > 0 && (
+                      <ChunkRegion title="货品明细" count={groups.middle.length}>
+                        {groups.middle.map(renderChunk)}
+                      </ChunkRegion>
+                    )}
+                    {groups.bottom.length > 0 && (
+                      <ChunkRegion
+                        title="本单信息 / 签字盖章"
+                        count={groups.bottom.length}
+                      >
+                        {groups.bottom.map(renderChunk)}
+                      </ChunkRegion>
+                    )}
                   </div>
-                )}
-              </>
+                );
+              })()
+            ) : (
+              <div className="rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
+                暂无识别结果
+              </div>
             )}
           </div>
         </div>
