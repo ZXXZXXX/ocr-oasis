@@ -1838,30 +1838,6 @@ function Workbench() {
 }
 
 // ---------- Sub components ----------
-function StatCard({
-  label,
-  value,
-  accent,
-}: {
-  label: string;
-  value: number;
-  accent?: "primary" | "success" | "warning";
-}) {
-  const tone =
-    accent === "primary"
-      ? "text-primary"
-      : accent === "success"
-        ? "text-[color:var(--success)]"
-        : accent === "warning"
-          ? "text-[color:var(--warning-foreground)]"
-          : "text-foreground";
-  return (
-    <div className="rounded-xl border border-border bg-card px-4 py-3">
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className={cn("mt-1 text-2xl font-semibold tabular-nums", tone)}>{value}</div>
-    </div>
-  );
-}
 function NeutralTag({ children }: { children: React.ReactNode }) {
   return (
     <span className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-0.5 text-xs font-normal text-foreground">
