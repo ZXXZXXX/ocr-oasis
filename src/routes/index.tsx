@@ -889,7 +889,7 @@ function pickDriver(seed: number) {
 }
 
 function seedRecords(): OcrRecord[] {
-  const now = Date.now();
+  const now = new Date(2026, 6, 15, 0, 0, 0, 0).getTime();
   type Seed = {
     minutesAgo: number;
     mode?: "high" | "mid" | "low";
@@ -3153,7 +3153,7 @@ function ChunkContentEditor({
       handle(`${kv.label}${kv.sep}${newVal}`);
     return (
       <div className="flex items-start gap-3">
-        <div className="w-24 shrink-0">
+        <div className="w-40 shrink-0">
           <AutoResizeTextarea
             value={kv.label}
             readOnly={readOnly}
