@@ -3033,7 +3033,7 @@ function ChunkContentEditor({
       value={text}
       readOnly={readOnly}
       onChange={(e) => handle(e.target.value)}
-      className={cn(isMulti ? "min-h-16" : "min-h-9", ring, roCls)}
+      className={cn("min-h-9", ring, roCls)}
     />
   );
 }
