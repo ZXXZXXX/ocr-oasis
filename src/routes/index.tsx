@@ -43,6 +43,8 @@ import receiptJdAsset from "@/assets/receipt_jd.jpg.asset.json";
 import receiptLingshiAsset from "@/assets/receipt_lingshi.png.asset.json";
 import receiptKualuDgAsset from "@/assets/receipt_kualu_dg.png.asset.json";
 import receiptKualuTjAsset from "@/assets/receipt_kualu_tj.png.asset.json";
+import tongyiSrmP1Asset from "@/assets/tongyi_srm_p1.jpg.asset.json";
+import tongyiSrmP2Asset from "@/assets/tongyi_srm_p2.jpg.asset.json";
 
 
 
