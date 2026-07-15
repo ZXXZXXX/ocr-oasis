@@ -1439,21 +1439,6 @@ function Workbench() {
         </header>
 
         <main className="mx-auto max-w-[1400px] px-6 py-6">
-          <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3">
-            <StatCard label="验收任务" value={records.length} />
-            <StatCard
-              label="待审核任务"
-              value={records.filter((r) => r.status === "pending_review").length}
-              accent="warning"
-            />
-            <StatCard
-              label="已审核任务"
-              value={records.filter((r) => r.status === "verified").length}
-              accent="success"
-            />
-          </div>
-
-
           <div className="overflow-hidden rounded-xl border border-border bg-card">
             <div className="flex items-center justify-between border-b border-border px-5 py-3">
               <div className="flex items-center gap-3 text-sm">
