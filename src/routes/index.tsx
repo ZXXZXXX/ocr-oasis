@@ -848,7 +848,7 @@ function fabricateResult(images: UploadedImage[]) {
       imageId: img.id,
       sourceImage: img.name,
       pageBox: [0, 0, img.width, img.height],
-      chunks: mockDeliveryChunks(),
+      chunks: enrichTableChunks(mockDeliveryChunks()),
     }));
   }
   if (shippingImgs.length) {
@@ -856,7 +856,7 @@ function fabricateResult(images: UploadedImage[]) {
       imageId: img.id,
       sourceImage: img.name,
       pageBox: [0, 0, img.width, img.height],
-      chunks: mockShippingChunks(),
+      chunks: enrichTableChunks(mockShippingChunks()),
     }));
   }
   const allPages = Object.values(results).flat() as DocPage[];
@@ -1075,7 +1075,7 @@ function seedRecords(): OcrRecord[] {
           imageId: dImg.id,
           sourceImage: dImg.name,
           pageBox: [0, 0, dImg.width, dImg.height],
-          chunks: adjustChunkConfidences(mockDeliveryChunks(), s.mode!, rand),
+          chunks: enrichTableChunks(adjustChunkConfidences(mockDeliveryChunks(), s.mode!, rand)),
         },
       ];
     }
@@ -1131,7 +1131,7 @@ function seedRecords(): OcrRecord[] {
         imageId: realImages[0]!.id,
         sourceImage: realImages[0]!.name,
         pageBox: [0, 0, realImages[0]!.width, realImages[0]!.height],
-        chunks: mockRtMartChunks(),
+        chunks: enrichTableChunks(mockRtMartChunks()),
       },
     ],
     shipping_slip: [
@@ -1139,7 +1139,7 @@ function seedRecords(): OcrRecord[] {
         imageId: realImages[1]!.id,
         sourceImage: realImages[1]!.name,
         pageBox: [0, 0, realImages[1]!.width, realImages[1]!.height],
-        chunks: mockJdReceiptChunks(),
+        chunks: enrichTableChunks(mockJdReceiptChunks()),
       },
     ],
   };
@@ -1232,7 +1232,7 @@ function seedRecords(): OcrRecord[] {
           imageId: img.id,
           sourceImage: img.name,
           pageBox: [0, 0, img.width, img.height],
-          chunks: s.chunks(),
+          chunks: enrichTableChunks(s.chunks()),
         },
       ],
     };
