@@ -2017,6 +2017,20 @@ function NeutralTag({ children }: { children: React.ReactNode }) {
   );
 }
 
+function EmptyBadge({ className }: { className?: string }) {
+  return (
+    <Badge
+      variant="status"
+      className={cn(
+        "w-20 justify-center border-0 bg-muted font-normal text-muted-foreground",
+        className,
+      )}
+    >
+      —
+    </Badge>
+  );
+}
+
 function StatusBadge({ status, pending: _pending }: { status: Status; pending: number }) {
   if (status === "queued")
     return (
