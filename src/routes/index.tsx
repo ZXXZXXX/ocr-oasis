@@ -2570,9 +2570,48 @@ function DocPanel({
       {/* RIGHT: recognition results (always delivery_note) */}
       <div className="flex flex-1 flex-col overflow-hidden" style={{ minWidth: 0 }}>
         <div className="flex h-10 items-center justify-between gap-3 border-b border-border bg-background/60 px-3 py-1.5">
-          <h3 className="text-xs font-medium text-foreground">
-            {failureReason ? "识别失败" : `识别结果 · ${showingShipping ? "出货传票" : "送货单"}`}
-          </h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-xs font-medium text-foreground">
+              {failureReason ? "识别失败" : "识别结果 · 送货单"}
+            </h3>
+            {!failureReason && deliveryPages.length > 1 && (
+              <div className="inline-flex items-center gap-1 rounded border border-border bg-background/80 px-1 py-0.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPageIdx((i) => {
+                      const next = Math.max(0, i - 1);
+                      if (next !== i) setActiveChunkId(null);
+                      return next;
+                    });
+                  }}
+                  disabled={pageIdx === 0}
+                  className="inline-flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:bg-accent disabled:opacity-40"
+                  aria-label="上一份"
+                >
+                  <ChevronLeft className="size-3.5" />
+                </button>
+                <span className="min-w-[3.5rem] text-center text-[11px] tabular-nums text-muted-foreground">
+                  第 {pageIdx + 1} / {deliveryPages.length} 份
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPageIdx((i) => {
+                      const next = Math.min(deliveryPages.length - 1, i + 1);
+                      if (next !== i) setActiveChunkId(null);
+                      return next;
+                    });
+                  }}
+                  disabled={pageIdx >= deliveryPages.length - 1}
+                  className="inline-flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:bg-accent disabled:opacity-40"
+                  aria-label="下一份"
+                >
+                  <ChevronRight className="size-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
           {!failureReason && (
             <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
               <span className="inline-flex items-center gap-1">
