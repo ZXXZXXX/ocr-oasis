@@ -19,6 +19,7 @@ import {
   RotateCw,
   ZoomIn,
   ZoomOut,
+  RefreshCw,
   Pencil,
   Type,
   Heading,
