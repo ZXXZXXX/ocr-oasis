@@ -3522,7 +3522,7 @@ function EditableTableHtml({
 
     // 使用 canvas 按 th 的实际字体测量字符宽度：
     // 最小列宽 = 6 个字（以 "字" 为参考）+ 单元格水平内边距
-    // 最大列宽 = 列标题字数（按标题文本自然宽度）+ 2 个字 + 内边距
+    // 当列标题字数 > 4 时，最大列宽 = 列标题字数 + 2 个字 + 内边距
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     const widths = ths.map((th) => {
