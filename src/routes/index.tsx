@@ -3505,8 +3505,8 @@ function EditableTableHtml({
     });
   };
 
-  // 根据表头文字自然宽度，为每列设置最小宽度（列名可完整展示），
-  // 单元格超出则省略号显示；容器变宽时按比例分配剩余空间。
+  // 按规则：每列最大宽度 =（列标题字数 + 2 字）× 当前表头字体的单字符宽度，
+  // 保证表头完全显示；单元格内容超出时自动换行。
   const layoutTable = () => {
     const el = ref.current;
     const wrap = wrapRef.current;
@@ -3514,7 +3514,6 @@ function EditableTableHtml({
     const table = el.querySelector("table") as HTMLTableElement | null;
     if (!table) return;
 
-    // 先以自然布局测量列头需要的宽度
     table.style.tableLayout = "auto";
     table.style.width = "auto";
     const oldCg = table.querySelector("colgroup[data-auto]");
@@ -3522,7 +3521,25 @@ function EditableTableHtml({
 
     const ths = Array.from(table.querySelectorAll("thead th")) as HTMLElement[];
     if (ths.length === 0) return;
-    const widths = ths.map((th) => Math.ceil(th.getBoundingClientRect().width) + 2);
+
+    const firstTh = ths[0];
+    const computed = getComputedStyle(firstTh);
+    const font = `${computed.fontWeight} ${computed.fontSize} ${computed.fontFamily}`;
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    let charWidth = 14;
+    if (ctx) {
+      ctx.font = font;
+      // 以中文“中”作为单字符宽度基准
+      charWidth = ctx.measureText("中").width;
+    }
+
+    const widths = ths.map((th) => {
+      const len = (th.textContent || "").trim().length;
+      // 列最大宽度 =（列标题字数 + 2）个单字符宽度，加上 padding 的容错
+      const targetChars = len + 2;
+      return Math.ceil(targetChars * charWidth) + 4;
+    });
 
     const cg = document.createElement("colgroup");
     cg.setAttribute("data-auto", "");
@@ -3739,10 +3756,10 @@ function EditableTableHtml({
         ref={wrapRef}
         className={cn(
           "overflow-x-auto text-xs outline-none transition-colors",
-          // 单元格样式：超出宽度省略号 + title 悬浮气泡展示完整内容；核心数据加大内边距与行高
+          // 单元格样式：核心数据加大内边距与行高；内容超出列宽时自动换行
           "[&_table]:border-0",
           "[&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-4 [&_th]:py-2.5 [&_th]:text-sm [&_th]:font-medium [&_th]:whitespace-nowrap",
-          "[&_td]:border [&_td]:border-border [&_td]:px-4 [&_td]:py-2.5 [&_td]:text-sm [&_td]:leading-loose [&_td]:min-h-[2.75rem] [&_td]:overflow-hidden [&_td]:text-ellipsis [&_td]:whitespace-nowrap",
+          "[&_td]:border [&_td]:border-border [&_td]:px-4 [&_td]:py-2.5 [&_td]:text-sm [&_td]:leading-loose [&_td]:min-h-[2.75rem] [&_td]:whitespace-normal [&_td]:break-words",
           !readOnly && "[&_td]:cursor-text [&_th]:cursor-text",
         )}
         onClickCapture={handleCellFocus}
