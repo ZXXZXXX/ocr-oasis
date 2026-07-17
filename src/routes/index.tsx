@@ -3505,54 +3505,13 @@ function EditableTableHtml({
     });
   };
 
-  // 每列固定为 10 个字符宽度（含左右 padding），超出自动换行；
-  // 表格高度由内容自然撑开，不强制拉伸容器宽度。
-  const layoutTable = () => {
-    const el = ref.current;
-    if (!el) return;
-    const table = el.querySelector("table") as HTMLTableElement | null;
-    if (!table) return;
-
-    table.style.tableLayout = "auto";
-    table.style.width = "auto";
-    const oldCg = table.querySelector("colgroup[data-auto]");
-    if (oldCg) oldCg.remove();
-
-    const ths = Array.from(table.querySelectorAll("thead th")) as HTMLElement[];
-    if (ths.length === 0) return;
-    const colCount = ths.length;
-
-    const cg = document.createElement("colgroup");
-    cg.setAttribute("data-auto", "");
-    for (let i = 0; i < colCount; i++) {
-      const c = document.createElement("col");
-      c.style.width = "calc(10ch + 2rem)";
-      cg.appendChild(c);
-    }
-    table.insertBefore(cg, table.firstChild);
-
-    table.style.tableLayout = "fixed";
-    table.style.width = "auto";
-  };
-
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     if (el.innerHTML !== html) el.innerHTML = html;
     syncTitles(el);
-    layoutTable();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [html]);
-
-  // 容器宽度变化时重新计算列宽
-  useEffect(() => {
-    const wrap = wrapRef.current;
-    if (!wrap) return;
-    const ro = new ResizeObserver(() => layoutTable());
-    ro.observe(wrap);
-    return () => ro.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // 记录选中单元格：点击 td / th 时更新
   const handleCellFocus = (e: React.MouseEvent | React.FocusEvent) => {
