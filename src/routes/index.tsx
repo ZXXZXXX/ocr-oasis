@@ -3505,13 +3505,58 @@ function EditableTableHtml({
     });
   };
 
+  // 根据表头文字自然宽度，为每列设置最小宽度（列名可完整展示），
+  // 单元格超出则省略号显示；容器变宽时按比例分配剩余空间。
+  const layoutTable = () => {
+    const el = ref.current;
+    const wrap = wrapRef.current;
+    if (!el || !wrap) return;
+    const table = el.querySelector("table") as HTMLTableElement | null;
+    if (!table) return;
+
+    // 先以自然布局测量列头需要的宽度
+    table.style.tableLayout = "auto";
+    table.style.width = "auto";
+    const oldCg = table.querySelector("colgroup[data-auto]");
+    if (oldCg) oldCg.remove();
+
+    const ths = Array.from(table.querySelectorAll("thead th")) as HTMLElement[];
+    if (ths.length === 0) return;
+    const widths = ths.map((th) => Math.ceil(th.getBoundingClientRect().width) + 2);
+
+    const cg = document.createElement("colgroup");
+    cg.setAttribute("data-auto", "");
+    widths.forEach((w) => {
+      const c = document.createElement("col");
+      c.style.width = `${w}px`;
+      cg.appendChild(c);
+    });
+    table.insertBefore(cg, table.firstChild);
+
+    const sum = widths.reduce((a, b) => a + b, 0);
+    const available = Math.max(0, wrap.clientWidth);
+    table.style.tableLayout = "fixed";
+    table.style.width = `${Math.max(sum, available)}px`;
+  };
+
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     if (el.innerHTML !== html) el.innerHTML = html;
     syncTitles(el);
+    layoutTable();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [html]);
+
+  // 容器宽度变化时重新计算列宽
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    const ro = new ResizeObserver(() => layoutTable());
+    ro.observe(wrap);
+    return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 记录选中单元格：点击 td / th 时更新
   const handleCellFocus = (e: React.MouseEvent | React.FocusEvent) => {
@@ -3537,6 +3582,8 @@ function EditableTableHtml({
     if (!el) return;
     syncTitles(el);
     onChange(el.innerHTML);
+    // 布局可能因行列数变化需要重新计算
+    requestAnimationFrame(layoutTable);
   };
 
   const getTable = () => ref.current?.querySelector("table") as HTMLTableElement | null;
@@ -3692,10 +3739,10 @@ function EditableTableHtml({
         ref={wrapRef}
         className={cn(
           "overflow-x-auto text-xs outline-none transition-colors",
-          // 单元格样式：每行最多 10 字，超出自动换行；字体水平垂直居中；行高 18px
-          "[&_table]:table-fixed [&_table]:border-0",
-          "[&_th]:box-content [&_th]:w-[10em] [&_th]:min-w-[10em] [&_th]:max-w-[10em] [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-4 [&_th]:py-3 [&_th]:text-sm [&_th]:font-medium [&_th]:text-center [&_th]:align-middle [&_th]:leading-[18px] [&_th]:whitespace-normal [&_th]:break-words",
-          "[&_td]:box-content [&_td]:w-[10em] [&_td]:min-w-[10em] [&_td]:max-w-[10em] [&_td]:border [&_td]:border-border [&_td]:px-4 [&_td]:py-3 [&_td]:text-sm [&_td]:text-center [&_td]:align-middle [&_td]:leading-[18px] [&_td]:whitespace-normal [&_td]:break-words",
+          // 单元格样式：超出宽度省略号 + title 悬浮气泡展示完整内容；核心数据加大内边距与行高
+          "[&_table]:border-0",
+          "[&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-4 [&_th]:py-2.5 [&_th]:text-sm [&_th]:font-medium [&_th]:whitespace-nowrap",
+          "[&_td]:border [&_td]:border-border [&_td]:px-4 [&_td]:py-2.5 [&_td]:text-sm [&_td]:leading-loose [&_td]:min-h-[2.75rem] [&_td]:overflow-hidden [&_td]:text-ellipsis [&_td]:whitespace-nowrap",
           !readOnly && "[&_td]:cursor-text [&_th]:cursor-text",
         )}
         onClickCapture={handleCellFocus}
