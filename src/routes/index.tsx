@@ -3537,8 +3537,6 @@ function EditableTableHtml({
     if (!el) return;
     syncTitles(el);
     onChange(el.innerHTML);
-    // 布局可能因行列数变化需要重新计算
-    requestAnimationFrame(layoutTable);
   };
 
   const getTable = () => ref.current?.querySelector("table") as HTMLTableElement | null;
