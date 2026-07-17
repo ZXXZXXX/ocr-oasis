@@ -3694,9 +3694,8 @@ function EditableTableHtml({
           "overflow-x-auto text-xs outline-none transition-colors",
           // 单元格样式：每行最多 10 字，超出自动换行；字体水平垂直居中；行高 18px
           "[&_table]:table-fixed [&_table]:border-0",
-          "[&_tr]:min-h-[2.75rem]",
-          "[&_th]:box-content [&_th]:w-[10em] [&_th]:min-w-[10em] [&_th]:max-w-[10em] [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-4 [&_th]:py-2.5 [&_th]:text-sm [&_th]:font-medium [&_th]:text-center [&_th]:align-middle [&_th]:leading-[18px] [&_th]:whitespace-normal [&_th]:break-words",
-          "[&_td]:box-content [&_td]:w-[10em] [&_td]:min-w-[10em] [&_td]:max-w-[10em] [&_td]:border [&_td]:border-border [&_td]:px-4 [&_td]:py-2.5 [&_td]:text-sm [&_td]:text-center [&_td]:align-middle [&_td]:leading-[18px] [&_td]:whitespace-normal [&_td]:break-words",
+          "[&_th]:box-content [&_th]:w-[10em] [&_th]:min-w-[10em] [&_th]:max-w-[10em] [&_th]:min-h-[2.75rem] [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-4 [&_th]:py-2.5 [&_th]:text-sm [&_th]:font-medium [&_th]:text-center [&_th]:align-middle [&_th]:leading-[18px] [&_th]:whitespace-normal [&_th]:break-words",
+          "[&_td]:box-content [&_td]:w-[10em] [&_td]:min-w-[10em] [&_td]:max-w-[10em] [&_td]:min-h-[2.75rem] [&_td]:border [&_td]:border-border [&_td]:px-4 [&_td]:py-2.5 [&_td]:text-sm [&_td]:text-center [&_td]:align-middle [&_td]:leading-[18px] [&_td]:whitespace-normal [&_td]:break-words",
           !readOnly && "[&_td]:cursor-text [&_th]:cursor-text",
         )}
         onClickCapture={handleCellFocus}
