@@ -3532,17 +3532,17 @@ function EditableTableHtml({
       const borderX =
         parseFloat(cs.borderLeftWidth || "0") +
         parseFloat(cs.borderRightWidth || "0");
+      const title = (th.textContent || "").trim();
+      const titleLen = Array.from(title).length;
       if (!ctx) {
         const fs = parseFloat(cs.fontSize || "14") || 14;
-        const title = (th.textContent || "").trim();
-        return Math.ceil(Math.max(6, title.length + 2) * fs + padX + borderX);
+        const maxChars = titleLen > 4 ? titleLen + 2 : 6;
+        return Math.ceil(Math.max(6, maxChars) * fs + padX + borderX);
       }
       ctx.font = `${cs.fontStyle} ${cs.fontVariant} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
       const charW = ctx.measureText("字").width;
-      const title = (th.textContent || "").trim();
-      const titleW = ctx.measureText(title).width;
       const minPx = 6 * charW + padX + borderX;
-      const maxPx = titleW + 2 * charW + padX + 2 + borderX;
+      const maxPx = (titleLen > 4 ? titleLen + 2 : 6) * charW + padX + borderX;
       return Math.ceil(Math.max(minPx, maxPx));
     });
 
