@@ -3762,8 +3762,8 @@ function EditableTableHtml({
           "overflow-x-auto text-xs outline-none transition-colors",
           // 单元格样式：超出宽度省略号 + title 悬浮气泡展示完整内容；核心数据加大内边距与行高
           "[&_table]:border-0",
-          "[&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-4 [&_th]:py-2.5 [&_th]:text-sm [&_th]:font-medium [&_th]:whitespace-normal [&_th]:break-words [&_th]:leading-[17px] [&_th]:align-middle",
-          "[&_td]:border [&_td]:border-border [&_td]:px-4 [&_td]:py-2.5 [&_td]:text-sm [&_td]:whitespace-normal [&_td]:break-words [&_td]:leading-[17px] [&_td]:align-middle",
+          "[&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-1 [&_th]:py-2.5 [&_th]:text-sm [&_th]:font-medium [&_th]:whitespace-normal [&_th]:break-words [&_th]:leading-[17px] [&_th]:align-middle",
+          "[&_td]:border [&_td]:border-border [&_td]:px-1 [&_td]:py-2.5 [&_td]:text-sm [&_td]:whitespace-normal [&_td]:break-words [&_td]:leading-[17px] [&_td]:align-middle",
           !readOnly && "[&_td]:cursor-text [&_th]:cursor-text",
         )}
         onClickCapture={handleCellFocus}
