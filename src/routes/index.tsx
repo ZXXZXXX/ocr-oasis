@@ -852,8 +852,9 @@ function enrichTableHtml(html: string): string {
   const hasMat = headerCells.some((h) => RE_MAT_HDR.test(h));
   const nameIdx = headerCells.findIndex((h) => RE_NAME_HDR.test(h));
   const serialIdx = headerCells.findIndex((h) => /^序号$/.test(h));
-  const addKa = !hasKa;
-  const addMat = !hasMat;
+  // 仅按原始识别结果展示，不再自动补全 KA 货号 / 物料编码列
+  const addKa = false;
+  const addMat = false;
   const addSerial = serialIdx < 0;
 
   // 无需任何补全
@@ -2803,12 +2804,12 @@ function DocPanel({
                 return (
                   <div className="space-y-3">
                     {groups.top.length > 0 && (
-                      <ChunkRegion title="基本信息" count={groups.top.length}>
+                      <ChunkRegion title="基本信息" count={groups.top.length} defaultOpen={false}>
                         {groups.top.map(renderChunk)}
                       </ChunkRegion>
                     )}
                     {groups.middle.length > 0 && (
-                      <ChunkRegion title="货品明细" count={groups.middle.length}>
+                      <ChunkRegion title="货品明细" count={groups.middle.length} defaultOpen={true}>
                         {groups.middle.map(renderChunk)}
                       </ChunkRegion>
                     )}
@@ -2816,6 +2817,7 @@ function DocPanel({
                       <ChunkRegion
                         title="本单信息 / 签字盖章"
                         count={groups.bottom.length}
+                        defaultOpen={false}
                       >
                         {groups.bottom.map(renderChunk)}
                       </ChunkRegion>
@@ -2840,12 +2842,14 @@ function ChunkRegion({
   title,
   count,
   children,
+  defaultOpen = true,
 }: {
   title: string;
   count: number;
   children: React.ReactNode;
+  defaultOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(defaultOpen);
   return (
     <section className="overflow-hidden">
       <button
@@ -3737,8 +3741,8 @@ function EditableTableHtml({
           "overflow-x-auto text-xs outline-none transition-colors",
           // 单元格样式：超出宽度省略号 + title 悬浮气泡展示完整内容；核心数据加大内边距与行高
           "[&_table]:border-0",
-          "[&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-2.5 [&_th]:py-1.5 [&_th]:text-xs [&_th]:font-medium [&_th]:whitespace-nowrap",
-          "[&_td]:border [&_td]:border-border [&_td]:px-2.5 [&_td]:py-1.5 [&_td]:text-xs [&_td]:leading-relaxed [&_td]:overflow-hidden [&_td]:text-ellipsis [&_td]:whitespace-nowrap",
+          "[&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-4 [&_th]:py-2.5 [&_th]:text-sm [&_th]:font-medium [&_th]:whitespace-nowrap",
+          "[&_td]:border [&_td]:border-border [&_td]:px-4 [&_td]:py-2.5 [&_td]:text-sm [&_td]:leading-loose [&_td]:min-h-[2.75rem] [&_td]:overflow-hidden [&_td]:text-ellipsis [&_td]:whitespace-nowrap",
           !readOnly && "[&_td]:cursor-text [&_th]:cursor-text",
         )}
         onClickCapture={handleCellFocus}
