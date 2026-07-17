@@ -3740,8 +3740,8 @@ function EditableTableHtml({
           "overflow-x-auto text-xs outline-none transition-colors",
           // 单元格样式：超出宽度省略号 + title 悬浮气泡展示完整内容；核心数据加大内边距与行高
           "[&_table]:border-0",
-          "[&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-2.5 [&_th]:py-1.5 [&_th]:text-xs [&_th]:font-medium [&_th]:whitespace-nowrap",
-          "[&_td]:border [&_td]:border-border [&_td]:px-2.5 [&_td]:py-1.5 [&_td]:text-xs [&_td]:leading-relaxed [&_td]:overflow-hidden [&_td]:text-ellipsis [&_td]:whitespace-nowrap",
+          "[&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-4 [&_th]:py-2.5 [&_th]:text-sm [&_th]:font-medium [&_th]:whitespace-nowrap",
+          "[&_td]:border [&_td]:border-border [&_td]:px-4 [&_td]:py-2.5 [&_td]:text-sm [&_td]:leading-loose [&_td]:min-h-[2.75rem] [&_td]:overflow-hidden [&_td]:text-ellipsis [&_td]:whitespace-nowrap",
           !readOnly && "[&_td]:cursor-text [&_th]:cursor-text",
         )}
         onClickCapture={handleCellFocus}
