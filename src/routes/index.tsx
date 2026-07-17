@@ -3505,16 +3505,14 @@ function EditableTableHtml({
     });
   };
 
-  // 根据表头文字自然宽度，为每列设置最小宽度（列名可完整展示），
-  // 单元格超出则省略号显示；容器变宽时按比例分配剩余空间。
+  // 每列固定为 10 个字符宽度（含左右 padding），超出自动换行；
+  // 表格高度由内容自然撑开，不强制拉伸容器宽度。
   const layoutTable = () => {
     const el = ref.current;
-    const wrap = wrapRef.current;
-    if (!el || !wrap) return;
+    if (!el) return;
     const table = el.querySelector("table") as HTMLTableElement | null;
     if (!table) return;
 
-    // 先以自然布局测量列头需要的宽度
     table.style.tableLayout = "auto";
     table.style.width = "auto";
     const oldCg = table.querySelector("colgroup[data-auto]");
@@ -3522,21 +3520,19 @@ function EditableTableHtml({
 
     const ths = Array.from(table.querySelectorAll("thead th")) as HTMLElement[];
     if (ths.length === 0) return;
-    const widths = ths.map((th) => Math.ceil(th.getBoundingClientRect().width) + 2);
+    const colCount = ths.length;
 
     const cg = document.createElement("colgroup");
     cg.setAttribute("data-auto", "");
-    widths.forEach((w) => {
+    for (let i = 0; i < colCount; i++) {
       const c = document.createElement("col");
-      c.style.width = `${w}px`;
+      c.style.width = "calc(10ch + 2rem)";
       cg.appendChild(c);
-    });
+    }
     table.insertBefore(cg, table.firstChild);
 
-    const sum = widths.reduce((a, b) => a + b, 0);
-    const available = Math.max(0, wrap.clientWidth);
     table.style.tableLayout = "fixed";
-    table.style.width = `${Math.max(sum, available)}px`;
+    table.style.width = "auto";
   };
 
   useEffect(() => {
