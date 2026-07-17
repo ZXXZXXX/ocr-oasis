@@ -3514,15 +3514,37 @@ function EditableTableHtml({
     const table = el.querySelector("table") as HTMLTableElement | null;
     if (!table) return;
 
-    // 先以自然布局测量列头需要的宽度
-    table.style.tableLayout = "auto";
-    table.style.width = "auto";
     const oldCg = table.querySelector("colgroup[data-auto]");
     if (oldCg) oldCg.remove();
 
     const ths = Array.from(table.querySelectorAll("thead th")) as HTMLElement[];
     if (ths.length === 0) return;
-    const widths = ths.map((th) => Math.ceil(th.getBoundingClientRect().width) + 2);
+
+    // 使用 canvas 按 th 的实际字体测量字符宽度：
+    // 最小列宽 = 6 个字（以 "字" 为参考）+ 单元格水平内边距
+    // 最大列宽 = 列标题字数（按标题文本自然宽度）+ 2 个字 + 内边距
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const widths = ths.map((th) => {
+      const cs = getComputedStyle(th);
+      const padX =
+        parseFloat(cs.paddingLeft || "0") + parseFloat(cs.paddingRight || "0");
+      const borderX =
+        parseFloat(cs.borderLeftWidth || "0") +
+        parseFloat(cs.borderRightWidth || "0");
+      if (!ctx) {
+        const fs = parseFloat(cs.fontSize || "14") || 14;
+        const title = (th.textContent || "").trim();
+        return Math.ceil(Math.max(6, title.length + 2) * fs + padX + borderX);
+      }
+      ctx.font = `${cs.fontStyle} ${cs.fontVariant} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+      const charW = ctx.measureText("字").width;
+      const title = (th.textContent || "").trim();
+      const titleW = ctx.measureText(title).width;
+      const minPx = 6 * charW + padX + borderX;
+      const maxPx = titleW + 2 * charW + padX + 2 + borderX;
+      return Math.ceil(Math.max(minPx, maxPx));
+    });
 
     const cg = document.createElement("colgroup");
     cg.setAttribute("data-auto", "");
@@ -3533,11 +3555,10 @@ function EditableTableHtml({
     });
     table.insertBefore(cg, table.firstChild);
 
-    const sum = widths.reduce((a, b) => a + b, 0);
-    const available = Math.max(0, wrap.clientWidth);
     table.style.tableLayout = "fixed";
-    table.style.width = `${Math.max(sum, available)}px`;
+    table.style.width = `${widths.reduce((a, b) => a + b, 0)}px`;
   };
+
 
   useEffect(() => {
     const el = ref.current;
