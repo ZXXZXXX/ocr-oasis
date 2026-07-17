@@ -852,8 +852,9 @@ function enrichTableHtml(html: string): string {
   const hasMat = headerCells.some((h) => RE_MAT_HDR.test(h));
   const nameIdx = headerCells.findIndex((h) => RE_NAME_HDR.test(h));
   const serialIdx = headerCells.findIndex((h) => /^序号$/.test(h));
-  const addKa = !hasKa;
-  const addMat = !hasMat;
+  // 仅按原始识别结果展示，不再自动补全 KA 货号 / 物料编码列
+  const addKa = false;
+  const addMat = false;
   const addSerial = serialIdx < 0;
 
   // 无需任何补全
