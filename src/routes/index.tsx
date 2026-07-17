@@ -2841,12 +2841,14 @@ function ChunkRegion({
   title,
   count,
   children,
+  defaultOpen = true,
 }: {
   title: string;
   count: number;
   children: React.ReactNode;
+  defaultOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(defaultOpen);
   return (
     <section className="overflow-hidden">
       <button
