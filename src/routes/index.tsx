@@ -2803,12 +2803,12 @@ function DocPanel({
                 return (
                   <div className="space-y-3">
                     {groups.top.length > 0 && (
-                      <ChunkRegion title="基本信息" count={groups.top.length}>
+                      <ChunkRegion title="基本信息" count={groups.top.length} defaultOpen={false}>
                         {groups.top.map(renderChunk)}
                       </ChunkRegion>
                     )}
                     {groups.middle.length > 0 && (
-                      <ChunkRegion title="货品明细" count={groups.middle.length}>
+                      <ChunkRegion title="货品明细" count={groups.middle.length} defaultOpen={true}>
                         {groups.middle.map(renderChunk)}
                       </ChunkRegion>
                     )}
@@ -2816,6 +2816,7 @@ function DocPanel({
                       <ChunkRegion
                         title="本单信息 / 签字盖章"
                         count={groups.bottom.length}
+                        defaultOpen={false}
                       >
                         {groups.bottom.map(renderChunk)}
                       </ChunkRegion>
