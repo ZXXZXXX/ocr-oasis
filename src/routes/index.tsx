@@ -3514,37 +3514,15 @@ function EditableTableHtml({
     const table = el.querySelector("table") as HTMLTableElement | null;
     if (!table) return;
 
+    // 先以自然布局测量列头需要的宽度
+    table.style.tableLayout = "auto";
+    table.style.width = "auto";
     const oldCg = table.querySelector("colgroup[data-auto]");
     if (oldCg) oldCg.remove();
 
     const ths = Array.from(table.querySelectorAll("thead th")) as HTMLElement[];
     if (ths.length === 0) return;
-
-    // 使用 canvas 按 th 的实际字体测量字符宽度：
-    // 最小列宽 = 6 个字（以 "字" 为参考）+ 单元格水平内边距
-    // 最大列宽 = 列标题字数（按标题文本自然宽度）+ 2 个字 + 内边距
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    const widths = ths.map((th) => {
-      const cs = getComputedStyle(th);
-      const padX =
-        parseFloat(cs.paddingLeft || "0") + parseFloat(cs.paddingRight || "0");
-      const borderX =
-        parseFloat(cs.borderLeftWidth || "0") +
-        parseFloat(cs.borderRightWidth || "0");
-      if (!ctx) {
-        const fs = parseFloat(cs.fontSize || "14") || 14;
-        const title = (th.textContent || "").trim();
-        return Math.ceil(Math.max(6, title.length + 2) * fs + padX + borderX);
-      }
-      ctx.font = `${cs.fontStyle} ${cs.fontVariant} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
-      const charW = ctx.measureText("字").width;
-      const title = (th.textContent || "").trim();
-      const titleW = ctx.measureText(title).width;
-      const minPx = 6 * charW + padX + borderX;
-      const maxPx = titleW + 2 * charW + padX + 2 + borderX;
-      return Math.ceil(Math.max(minPx, maxPx));
-    });
+    const widths = ths.map((th) => Math.ceil(th.getBoundingClientRect().width) + 2);
 
     const cg = document.createElement("colgroup");
     cg.setAttribute("data-auto", "");
@@ -3555,10 +3533,11 @@ function EditableTableHtml({
     });
     table.insertBefore(cg, table.firstChild);
 
+    const sum = widths.reduce((a, b) => a + b, 0);
+    const available = Math.max(0, wrap.clientWidth);
     table.style.tableLayout = "fixed";
-    table.style.width = `${widths.reduce((a, b) => a + b, 0)}px`;
+    table.style.width = `${Math.max(sum, available)}px`;
   };
-
 
   useEffect(() => {
     const el = ref.current;
@@ -3762,8 +3741,8 @@ function EditableTableHtml({
           "overflow-x-auto text-xs outline-none transition-colors",
           // 单元格样式：超出宽度省略号 + title 悬浮气泡展示完整内容；核心数据加大内边距与行高
           "[&_table]:border-0",
-          "[&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-4 [&_th]:py-2.5 [&_th]:text-sm [&_th]:font-medium [&_th]:whitespace-normal [&_th]:break-words [&_th]:leading-[17px] [&_th]:align-middle",
-          "[&_td]:border [&_td]:border-border [&_td]:px-4 [&_td]:py-2.5 [&_td]:text-sm [&_td]:whitespace-normal [&_td]:break-words [&_td]:leading-[17px] [&_td]:align-middle",
+          "[&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-4 [&_th]:py-2.5 [&_th]:text-sm [&_th]:font-medium [&_th]:whitespace-nowrap",
+          "[&_td]:border [&_td]:border-border [&_td]:px-4 [&_td]:py-2.5 [&_td]:text-sm [&_td]:leading-loose [&_td]:min-h-[2.75rem] [&_td]:overflow-hidden [&_td]:text-ellipsis [&_td]:whitespace-nowrap",
           !readOnly && "[&_td]:cursor-text [&_th]:cursor-text",
         )}
         onClickCapture={handleCellFocus}
