@@ -3810,9 +3810,18 @@ function FilteredTableView({
                     </span>
                     {missing ? (
                       <div className="flex items-center gap-1.5">
-                        <span className="inline-flex items-center gap-1 rounded bg-[color:var(--warning)]/15 px-1.5 py-0.5 text-[10px] font-normal text-[color:var(--warning-foreground)]">
-                          数据缺失
-                        </span>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="inline-flex items-center justify-center rounded bg-[color:var(--warning)]/15 p-1 text-[color:var(--warning-foreground)]">
+                              <AlertTriangle className="size-3.5" />
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" sideOffset={4}>
+                            <p className="max-w-[16rem] text-xs">
+                              AI未识别到对应列数据，可手动选择数列
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
                         <Select
                           value=""
                           onValueChange={(v) => {
