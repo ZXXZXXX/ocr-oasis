@@ -3913,10 +3913,14 @@ function FilteredTableView({
   html,
   overrides,
   onOverrideChange,
+  readOnly,
+  onChange,
 }: {
   html: string;
   overrides: Record<string, number>;
   onOverrideChange: (key: string, sourceIdx: number | undefined) => void;
+  readOnly?: boolean;
+  onChange?: (v: string) => void;
 }) {
   const { aiRejectionReason } = useContext(DetailRecordContext);
   const mismatchSourceLabel = aiRejectionReason
