@@ -800,7 +800,7 @@ const PRODUCT_TABLE_COLUMNS = ["KA品名", "货号", "订单数", "发货数", "
 function classifyTableHeader(header: string): string | null {
   const rules = [
     { key: "KA品名", patterns: [/品名/, /商品名称/, /产品名称/, /品名称/] },
-    { key: "货号", patterns: [/货号/, /SKU/, /商品编码/, /产品代号/, /物料编码/, /条码/] },
+    { key: "货号", patterns: [/货号/, /SKU/i, /商品编码/, /产品代号/, /物料编码/, /条码/] },
     // 先匹配具体数量列，避免被“数量”泛化规则吞掉
     { key: "发货数", patterns: [/发货数量?/, /投单量/] },
     { key: "拒收数", patterns: [/拒收数量?/, /拒收量/] },
