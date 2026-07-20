@@ -37,7 +37,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Link,
-  LinkOff,
+  Link2Off,
 } from "lucide-react";
 
 import receiptRtmartAsset from "@/assets/receipt_rtmart.jpg.asset.json";
