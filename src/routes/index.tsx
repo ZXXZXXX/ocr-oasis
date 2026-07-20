@@ -3842,7 +3842,9 @@ function EditableTableHtml({
           onInput={(e) => {
             const el = e.currentTarget as HTMLDivElement;
             syncTitles(el);
-            onChange(el.innerHTML);
+            const clean = stripMismatchAnnotations(el.innerHTML);
+            lastAppliedHtmlRef.current = clean;
+            onChange(clean);
           }}
         />
       </div>
