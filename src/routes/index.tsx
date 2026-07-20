@@ -3662,9 +3662,15 @@ function EditableTableHtml({
     const el = ref.current;
     if (!el) return;
     syncTitles(el);
-    onChange(el.innerHTML);
+    const clean = stripMismatchAnnotations(el.innerHTML);
+    lastAppliedHtmlRef.current = clean;
+    onChange(clean);
     // 布局可能因行列数变化需要重新计算
-    requestAnimationFrame(layoutTable);
+    requestAnimationFrame(() => {
+      const cur = ref.current;
+      if (cur) annotateMismatchesInDOM(cur, mismatchSourceLabel);
+      layoutTable();
+    });
   };
 
   const getTable = () => ref.current?.querySelector("table") as HTMLTableElement | null;
