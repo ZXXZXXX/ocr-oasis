@@ -3794,6 +3794,10 @@ function FilteredTableView({
   overrides: Record<string, number>;
   onOverrideChange: (key: string, sourceIdx: number | undefined) => void;
 }) {
+  const { aiRejectionReason } = useContext(DetailRecordContext);
+  const mismatchSourceLabel = aiRejectionReason
+    ? REJECTION_SOURCE_LABEL[aiRejectionReason]
+    : "签收数据";
   const parsed = useMemo(() => parseTableStructure(html), [html]);
   const autoMap = useMemo(
     () => (parsed ? computeAutoTableMapping(parsed.headerCells) : new Map<string, number>()),
