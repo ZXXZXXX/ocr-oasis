@@ -3564,8 +3564,13 @@ function EditableTableHtml({
   mustEdit: boolean;
   onChange: (v: string) => void;
 }) {
+  const { aiRejectionReason } = useContext(DetailRecordContext);
+  const mismatchSourceLabel = aiRejectionReason
+    ? REJECTION_SOURCE_LABEL[aiRejectionReason]
+    : "签收数据";
   const ref = useRef<HTMLDivElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const lastAppliedHtmlRef = useRef<string>("");
   // 选中单元格：bodyRow 为 tbody 内行号（0 起）；-1 表示位于 thead
   const [sel, setSel] = useState<{ bodyRow: number; col: number } | null>(null);
 
