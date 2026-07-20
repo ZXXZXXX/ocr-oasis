@@ -3808,11 +3808,9 @@ function FilteredTableView({
         <thead>
           <tr>
             {columns.map((col) => {
-              const missing = col.sourceIdx === undefined;
-              const primaryLabel =
-                (col.key === "KA品名" || col.key === "KA货号") && col.originalHeader
-                  ? col.originalHeader
-                  : col.key;
+              const isRequired = PRODUCT_REQUIRED_KEYS.has(col.key);
+              const missing = col.sourceIdx === undefined && !isRequired;
+              const primaryLabel = col.key;
               const showOriginalSuffix =
                 !!col.originalHeader &&
                 col.isOverridden &&
@@ -3864,7 +3862,7 @@ function FilteredTableView({
                           ))}
                         </SelectContent>
                       </Select>
-                    ) : col.isOverridden ? (
+                    ) : !isRequired && col.isOverridden ? (
                       <button
                         type="button"
                         className="inline-flex items-center justify-center rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100"
