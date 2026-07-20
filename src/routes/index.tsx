@@ -123,7 +123,6 @@ const AI_REJECTION_REASONS = [
   "与“签收数据”不匹配",
   "与“KA验收数据”",
   "与“出货数据”不匹配",
-  "货品数量数据缺失",
 ] as const;
 type AiRejectionReason = (typeof AI_REJECTION_REASONS)[number];
 const AI_FAILURE_CHANCE = 0.1; // 模拟识别失败概率
