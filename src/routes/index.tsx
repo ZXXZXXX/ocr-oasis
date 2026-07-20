@@ -3854,10 +3854,8 @@ function FilteredTableView({
                                 }}
                                 disabled={col.isOverridden}
                               >
-                                <SelectTrigger className="h-6 w-[4.5rem] px-1.5 text-[11px] disabled:cursor-default disabled:opacity-100">
-                                  <SelectValue asChild placeholder="选择列">
-                                    <span className="block w-[4em] truncate text-left" />
-                                  </SelectValue>
+                                <SelectTrigger className="h-6 w-[4.5rem] px-1.5 text-[11px] disabled:cursor-default disabled:opacity-100 [&>span]:block [&>span]:w-[4em] [&>span]:truncate [&>span]:text-left">
+                                  <SelectValue placeholder="选择列" />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {headerCells.map((h, i) => (
