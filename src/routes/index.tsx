@@ -3894,6 +3894,8 @@ function TableChunkView({
           html={chunk.content}
           overrides={overrides}
           onOverrideChange={handleOverride}
+          readOnly={readOnly}
+          onChange={onChange}
         />
       ) : (
         <EditableTableHtml
