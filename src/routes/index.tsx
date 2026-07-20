@@ -356,24 +356,12 @@ function pendingLowConf(r: OcrRecord): number {
   ).length;
 }
 
-// 生成 AI 不通过原因说明
-function makeAiRejectionReason(record: OcrRecord): string | undefined {
+// 生成 AI 不通过原因说明（枚举值）
+function makeAiRejectionReason(record: OcrRecord): AiRejectionReason | undefined {
   if (record.aiVerdict !== "fail") return undefined;
-  const pending = pendingLowConf(record);
-  const parts: string[] = [];
-  if (record.confidence != null && record.confidence < 80) {
-    parts.push("整体识别置信度偏低");
-  }
-  if (pending > 0) {
-    parts.push(`存在 ${pending} 处低置信度识别字段未确认`);
-  }
-  if (record.signatureStatus === "partial") {
-    parts.push("签收状态为部分签收");
-  }
-  if (parts.length === 0) {
-    return "AI 预审未通过，请人工复核";
-  }
-  return parts.join("；") + "，请人工复核";
+  // 按记录创建时间稳定选取一条枚举原因，保证同任务原因不变
+  const idx = record.createdAt % AI_REJECTION_REASONS.length;
+  return AI_REJECTION_REASONS[idx];
 }
 
 // Extract plain text from a simple HTML string (handles <p>, <br>, entities)
