@@ -3841,35 +3841,50 @@ function FilteredTableView({
                         </span>
                       )}
                     </span>
-                    {missing ? (
-                      <Select
-                        value=""
-                        onValueChange={(v) => {
-                          const idx = parseInt(v, 10);
-                          if (Number.isFinite(idx)) onOverrideChange(col.key, idx);
-                        }}
-                      >
-                        <SelectTrigger className="h-6 w-[8.5rem] px-1.5 text-[11px]">
-                          <SelectValue placeholder="选择识别列" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {headerCells.map((h, i) => (
-                            <SelectItem key={i} value={String(i)} className="text-xs">
-                              {h || `第 ${i + 1} 列`}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : !isRequired && col.isOverridden ? (
-                      <button
-                        type="button"
-                        className="inline-flex items-center justify-center rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100"
-                        onClick={() => onOverrideChange(col.key, undefined)}
-                        title="取消手动选择"
-                      >
-                        <X className="size-3.5" />
-                      </button>
-                    ) : null}
+                    {(missing || col.isOverridden) && (
+                      <div className="flex items-center gap-1">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="inline-block">
+                              <Select
+                                value={col.isOverridden ? String(col.sourceIdx) : ""}
+                                onValueChange={(v) => {
+                                  const idx = parseInt(v, 10);
+                                  if (Number.isFinite(idx)) onOverrideChange(col.key, idx);
+                                }}
+                                disabled={col.isOverridden}
+                              >
+                                <SelectTrigger className="h-6 w-16 px-1.5 text-[11px] disabled:cursor-default disabled:opacity-100">
+                                  <SelectValue className="block w-full truncate" placeholder="选择列" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {headerCells.map((h, i) => (
+                                    <SelectItem key={i} value={String(i)} className="text-xs">
+                                      {h || `第 ${i + 1} 列`}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" sideOffset={4}>
+                            <p className="max-w-[16rem] text-xs">
+                              {col.isOverridden ? (col.originalHeader || "已选择列") : "选择列"}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                        {col.isOverridden && (
+                          <button
+                            type="button"
+                            className="inline-flex items-center justify-center rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100"
+                            onClick={() => onOverrideChange(col.key, undefined)}
+                            title="取消手动选择"
+                          >
+                            <X className="size-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </th>
               );
