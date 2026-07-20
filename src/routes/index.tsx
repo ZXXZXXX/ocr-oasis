@@ -216,7 +216,7 @@ interface OcrRecord {
   plateNo: string;
   signatureStatus: SignatureStatus;
   aiVerdict?: AiVerdict; // 识别完成后由AI给出
-  aiRejectionReason?: string; // AI 不通过原因
+  aiRejectionReason?: AiRejectionReason; // AI 不通过原因
   failedReason?: string; // AI 识别失败原因，如 "图片无法识别" / "图片质量过低"
   verifiedAt?: number; // 人工提交验收结论时间
   verifiedBy?: string;
