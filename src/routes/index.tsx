@@ -36,6 +36,8 @@ import {
   ArrowDown,
   ArrowLeft,
   ArrowRight,
+  Link,
+  Link2Off,
 } from "lucide-react";
 
 import receiptRtmartAsset from "@/assets/receipt_rtmart.jpg.asset.json";
@@ -3104,22 +3106,20 @@ function ImageWithBoxes({
         </div>
 
         {showAutoFocus && setAutoFocus && (
-          <div
-            className="absolute right-3 top-3 z-20 flex items-center gap-1.5 rounded-full border border-border/50 bg-background/90 px-2 py-1 backdrop-blur-sm"
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(
+              "absolute right-3 top-3 z-20 size-8 rounded-full border border-border/50 bg-background/90 shadow-sm backdrop-blur-sm hover:bg-background",
+              autoFocus ? "text-primary hover:text-primary" : "text-muted-foreground hover:text-foreground",
+            )}
+            onClick={() => setAutoFocus(!autoFocus)}
             onPointerDown={(e) => e.stopPropagation()}
+            aria-label={autoFocus ? "图片与文本已连接" : "图片与文本已断开"}
+            title={autoFocus ? "图片与识别结果联动中" : "图片与识别结果已断开"}
           >
-            <Label
-              htmlFor="auto-focus-switch"
-              className="cursor-pointer text-[11px] text-muted-foreground"
-            >
-              自动聚焦
-            </Label>
-            <Switch
-              id="auto-focus-switch"
-              checked={autoFocus}
-              onCheckedChange={setAutoFocus}
-            />
-          </div>
+            {autoFocus ? <Link className="size-4" /> : <Link2Off className="size-4" />}
+          </Button>
         )}
 
         {(!navCount || navCount <= 1) && (
