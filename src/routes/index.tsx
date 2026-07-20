@@ -3327,14 +3327,12 @@ function ChunkContentEditor({
 
   if (chunk.label === "Table") {
     return (
-      <div className="space-y-2">
-        <EditableTableHtml
-          html={chunk.content}
-          readOnly={!!readOnly}
-          mustEdit={mustEdit}
-          onChange={onChange}
-        />
-      </div>
+      <TableChunkView
+        chunk={chunk}
+        onChange={onChange}
+        mustEdit={mustEdit}
+        readOnly={!!readOnly}
+      />
     );
   }
 
