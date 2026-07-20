@@ -3945,7 +3945,10 @@ function FilteredTableView({
                           className="whitespace-nowrap border border-border px-4 py-2 text-sm leading-loose"
                         >
                           <span style={{ color: "#dc2626" }}>
-                            {val}（{safeThird}）
+                            {val}
+                            <span className="text-xs">
+                              （{mismatchSourceLabel}：{safeThird}）
+                            </span>
                           </span>
                         </td>
                       );
