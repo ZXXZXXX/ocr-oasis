@@ -3841,16 +3841,23 @@ function FilteredTableView({
                         </span>
                       )}
                     </span>
-                    {missing ? (
+                    {!isRequired && (
                       <Select
-                        value=""
+                        value={col.sourceIdx !== undefined ? String(col.sourceIdx) : ""}
                         onValueChange={(v) => {
                           const idx = parseInt(v, 10);
                           if (Number.isFinite(idx)) onOverrideChange(col.key, idx);
                         }}
                       >
-                        <SelectTrigger className="h-6 w-[8.5rem] px-1.5 text-[11px]">
-                          <SelectValue placeholder="选择识别列" />
+                        <SelectTrigger
+                          className="h-6 w-[4.5rem] px-1 text-[11px] truncate"
+                          title={
+                            col.sourceIdx !== undefined
+                              ? headerCells[col.sourceIdx] || `第 ${col.sourceIdx + 1} 列`
+                              : "选择列"
+                          }
+                        >
+                          <SelectValue placeholder="选择列" />
                         </SelectTrigger>
                         <SelectContent>
                           {headerCells.map((h, i) => (
@@ -3860,7 +3867,8 @@ function FilteredTableView({
                           ))}
                         </SelectContent>
                       </Select>
-                    ) : !isRequired && col.isOverridden ? (
+                    )}
+                    {!isRequired && col.isOverridden && (
                       <button
                         type="button"
                         className="inline-flex items-center justify-center rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100"
@@ -3869,7 +3877,7 @@ function FilteredTableView({
                       >
                         <X className="size-3.5" />
                       </button>
-                    ) : null}
+                    )}
                   </div>
                 </th>
               );
