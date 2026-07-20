@@ -793,50 +793,6 @@ function mockTongyiSrmP2Chunks(): Chunk[] {
 
 
 
-// ---------- 商品编码映射（KA货号 ↔ 物料编码 ↔ 品名）演示数据库 ----------
-type ProductRec = { ka: string; material: string; name: string };
-const PRODUCT_DB: ProductRec[] = [
-  { ka: "608001", material: "4001001", name: "冰红茶1L" },
-  { ka: "608002", material: "4001002", name: "冰红茶500ml" },
-  { ka: "608003", material: "4001003", name: "冰红茶250ml" },
-  { ka: "608004", material: "4001004", name: "绿茶1L" },
-  { ka: "608005", material: "4001005", name: "绿茶500ml" },
-  { ka: "608006", material: "4001006", name: "绿茶2L" },
-  { ka: "608007", material: "4001007", name: "阿萨姆奶茶500ml" },
-  { ka: "608008", material: "4001008", name: "柠檬红茶250ml" },
-  { ka: "608009", material: "4001009", name: "鲜橙多2L" },
-  { ka: "608010", material: "4001010", name: "鲜橙多橙汁饮料310ml" },
-  { ka: "608011", material: "4001011", name: "海之言柠檬味1L" },
-  { ka: "608012", material: "4016432", name: "来一桶老坛酸菜牛肉面" },
-  { ka: "608013", material: "4016133", name: "来一桶红烧牛肉面" },
-];
-
-const RE_KA_HDR = /(KA.*(货号|编码))|(^\s*货号\s*$)/i;
-const RE_MAT_HDR = /物料(编码|代号|代码)|产品代号|物料号/;
-const RE_NAME_HDR = /品名|商品名称|品名称/;
-
-function findProductByName(raw: string): ProductRec | null {
-  const name = raw.replace(/<[^>]+>/g, "").replace(/\s+/g, "");
-  if (!name) return null;
-  let best: ProductRec | null = null;
-  let bestScore = 0;
-  for (const p of PRODUCT_DB) {
-    const pn = p.name.replace(/\s+/g, "");
-    let score = 0;
-    if (name.includes(pn)) score = pn.length;
-    else if (pn.includes(name)) score = name.length;
-    else {
-      // token overlap fallback
-      const tokens = pn.match(/[\u4e00-\u9fa5]+|\d+[a-zA-Z]*/g) ?? [];
-      score = tokens.reduce((s, t) => (name.includes(t) ? s + t.length : s), 0);
-    }
-    if (score > bestScore) {
-      best = p;
-      bestScore = score;
-    }
-  }
-  return bestScore >= 2 ? best : null;
-}
 
 // 货品明细（Table）标准化为这 6 列
 const PRODUCT_TABLE_COLUMNS = ["KA品名", "货号", "订单数", "发货数", "拒收数", "签收数"] as const;
