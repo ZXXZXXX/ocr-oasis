@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   Upload,
   Plus,
@@ -124,10 +124,26 @@ const LOW_CONF_THRESHOLD = 0.8;
 const AI_FAILURE_REASONS = ["图片无法识别", "图片质量过低"] as const;
 const AI_REJECTION_REASONS = [
   "与“签收数据”不匹配",
-  "与“KA验收数据”",
+  "与“KA验收数据”不匹配",
   "与“出货数据”不匹配",
 ] as const;
 type AiRejectionReason = (typeof AI_REJECTION_REASONS)[number];
+// 特定任务的固定不通过原因（用于演示）
+const AI_REJECTION_OVERRIDES: Record<string, AiRejectionReason> = {
+  CD202607143260522: "与“KA验收数据”不匹配",
+  CD202607141000274: "与“出货数据”不匹配",
+};
+// 不通过原因 → 第三方数据来源标签（用于不匹配单元格括号内展示）
+const REJECTION_SOURCE_LABEL: Record<AiRejectionReason, string> = {
+  "与“签收数据”不匹配": "签收数据",
+  "与“KA验收数据”不匹配": "KA验收数据",
+  "与“出货数据”不匹配": "出货数据",
+};
+// 供子组件读取当前详情记录信息
+const DetailRecordContext = createContext<{
+  recordId?: string;
+  aiRejectionReason?: AiRejectionReason;
+}>({});
 const AI_FAILURE_CHANCE = 0.1; // 模拟识别失败概率
 
 
@@ -363,6 +379,8 @@ function pendingLowConf(r: OcrRecord): number {
 // 生成 AI 不通过原因说明（枚举值）
 function makeAiRejectionReason(record: OcrRecord): AiRejectionReason | undefined {
   if (record.aiVerdict !== "fail") return undefined;
+  const override = AI_REJECTION_OVERRIDES[record.id];
+  if (override) return override;
   // 按记录创建时间稳定选取一条枚举原因，保证同任务原因不变
   const idx = record.createdAt % AI_REJECTION_REASONS.length;
   return AI_REJECTION_REASONS[idx];
@@ -2290,6 +2308,7 @@ function DetailView({
   }
 
   return (
+    <DetailRecordContext.Provider value={{ recordId: record.id, aiRejectionReason: record.aiRejectionReason }}>
     <>
       <SheetHeader className="border-b border-border px-6 py-4">
         <div className="flex items-start justify-between gap-4">
@@ -2455,6 +2474,7 @@ function DetailView({
         </AlertDialogContent>
       </AlertDialog>
     </>
+    </DetailRecordContext.Provider>
   );
 }
 
@@ -3774,6 +3794,10 @@ function FilteredTableView({
   overrides: Record<string, number>;
   onOverrideChange: (key: string, sourceIdx: number | undefined) => void;
 }) {
+  const { aiRejectionReason } = useContext(DetailRecordContext);
+  const mismatchSourceLabel = aiRejectionReason
+    ? REJECTION_SOURCE_LABEL[aiRejectionReason]
+    : "签收数据";
   const parsed = useMemo(() => parseTableStructure(html), [html]);
   const autoMap = useMemo(
     () => (parsed ? computeAutoTableMapping(parsed.headerCells) : new Map<string, number>()),
@@ -3921,7 +3945,10 @@ function FilteredTableView({
                           className="whitespace-nowrap border border-border px-4 py-2 text-sm leading-loose"
                         >
                           <span style={{ color: "#dc2626" }}>
-                            {val}（{safeThird}）
+                            {val}
+                            <span className="text-xs">
+                              （{mismatchSourceLabel}：{safeThird}）
+                            </span>
                           </span>
                         </td>
                       );
