@@ -801,10 +801,11 @@ function classifyTableHeader(header: string): string | null {
   const rules = [
     { key: "KA品名", patterns: [/品名/, /商品名称/, /产品名称/, /品名称/] },
     { key: "货号", patterns: [/货号/, /SKU/, /商品编码/, /产品代号/, /物料编码/, /条码/] },
-    { key: "订单数", patterns: [/订单数量?/, /订购量/, /预约总数量/, /预到量/, /数量/, /应收/] },
+    // 先匹配具体数量列，避免被“数量”泛化规则吞掉
     { key: "发货数", patterns: [/发货数量?/, /投单量/] },
     { key: "拒收数", patterns: [/拒收数量?/, /拒收量/] },
     { key: "签收数", patterns: [/签收/, /验收量/, /实收总数量/, /实收件数/, /实收箱数/, /实收/] },
+    { key: "订单数", patterns: [/订单数量?/, /订购量/, /预约总数量/, /预到量/, /应收/, /数量/] },
   ];
   for (const rule of rules) {
     if (rule.patterns.some((p) => p.test(header))) return rule.key;
