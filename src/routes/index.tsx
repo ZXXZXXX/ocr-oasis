@@ -888,6 +888,111 @@ function stableStrHash(s: string): number {
   return Math.abs(h);
 }
 
+// 基于稳定哈希的差异模拟：与 FilteredTableView 完全一致。
+function computeMismatch(rowIdx: number, key: string, val: string):
+  | { safeThird: number }
+  | null {
+  if (!val) return null;
+  const num = Number(val);
+  if (!Number.isFinite(num) || num <= 0) return null;
+  const h = stableStrHash(`${rowIdx}-${key}`);
+  if (h % 100 >= 18) return null;
+  const delta = (h % 5) + 1;
+  const third = h % 2 === 0 ? num - delta : num + delta;
+  const safeThird = third < 0 ? num + delta : third;
+  return { safeThird };
+}
+
+// 剥离注入的差异展示节点，得到干净的原始 HTML
+function stripMismatchAnnotations(html: string): string {
+  if (typeof document === "undefined") return html;
+  const div = document.createElement("div");
+  div.innerHTML = html;
+  div.querySelectorAll("[data-annotation]").forEach((n) => n.remove());
+  div.querySelectorAll("[data-mismatch]").forEach((n) => {
+    const p = n.parentNode;
+    if (!p) return;
+    while (n.firstChild) p.insertBefore(n.firstChild, n);
+    p.removeChild(n);
+  });
+  return div.innerHTML;
+}
+
+// 在原始 OCR 表格 DOM 上对数量列进行差异高亮
+function annotateMismatchesInDOM(root: HTMLElement, label: string) {
+  const table = root.querySelector("table");
+  if (!table) return;
+  const thead = table.querySelector("thead");
+  if (!thead) return;
+  const headerCells = Array.from(thead.querySelectorAll("th")).map(
+    (th) => (th.textContent || "").trim(),
+  );
+  const autoMap = computeAutoTableMapping(headerCells);
+  const qtyCols: Array<{ key: string; idx: number }> = [];
+  PRODUCT_QUANTITY_KEYS.forEach((key) => {
+    const idx = autoMap.get(key);
+    if (idx !== undefined) qtyCols.push({ key, idx });
+  });
+  if (qtyCols.length === 0) return;
+  const bodyRows = Array.from(
+    table.querySelectorAll("tbody > tr"),
+  ) as HTMLTableRowElement[];
+  const dataRows = bodyRows.filter((r) => {
+    const inner = r.innerHTML;
+    return !/colspan\s*=/i.test(inner) && !/总计|合计/.test(inner);
+  });
+  dataRows.forEach((tr, rowIdx) => {
+    qtyCols.forEach(({ key, idx }) => {
+      const cell = tr.children[idx] as HTMLElement | undefined;
+      if (!cell) return;
+      if (cell.querySelector("[data-mismatch]")) return;
+      const val = (cell.textContent || "").trim();
+      const m = computeMismatch(rowIdx, key, val);
+      if (!m) return;
+      cell.textContent = "";
+      const outer = document.createElement("span");
+      outer.setAttribute("data-mismatch", "");
+      outer.style.color = "#dc2626";
+      outer.appendChild(document.createTextNode(val));
+      const ann = document.createElement("span");
+      ann.setAttribute("data-annotation", "");
+      ann.setAttribute("contenteditable", "false");
+      ann.style.fontSize = "0.85em";
+      ann.style.marginLeft = "2px";
+      ann.textContent = `（${label}：${m.safeThird}）`;
+      outer.appendChild(ann);
+      cell.appendChild(outer);
+    });
+  });
+}
+
+// 将过滤视图中的单元格文本改动回写到原始 HTML
+function updateHtmlTableCell(
+  html: string,
+  rowIdx: number,
+  colIdx: number,
+  newText: string,
+): string {
+  if (typeof document === "undefined") return html;
+  const div = document.createElement("div");
+  div.innerHTML = html;
+  const table = div.querySelector("table");
+  if (!table) return html;
+  const bodyRows = Array.from(
+    table.querySelectorAll("tbody > tr"),
+  ) as HTMLTableRowElement[];
+  const dataRows = bodyRows.filter((r) => {
+    const inner = r.innerHTML;
+    return !/colspan\s*=/i.test(inner) && !/总计|合计/.test(inner);
+  });
+  const row = dataRows[rowIdx];
+  if (!row) return html;
+  const cell = row.children[colIdx] as HTMLElement | undefined;
+  if (!cell) return html;
+  cell.textContent = newText;
+  return div.innerHTML;
+}
+
 // 兼容旧调用：现在保留原始 OCR HTML，不再在数据阶段裁剪表格。
 function enrichTableChunks(chunks: Chunk[]): Chunk[] {
   return chunks;
@@ -3459,8 +3564,13 @@ function EditableTableHtml({
   mustEdit: boolean;
   onChange: (v: string) => void;
 }) {
+  const { aiRejectionReason } = useContext(DetailRecordContext);
+  const mismatchSourceLabel = aiRejectionReason
+    ? REJECTION_SOURCE_LABEL[aiRejectionReason]
+    : "签收数据";
   const ref = useRef<HTMLDivElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const lastAppliedHtmlRef = useRef<string>("");
   // 选中单元格：bodyRow 为 tbody 内行号（0 起）；-1 表示位于 thead
   const [sel, setSel] = useState<{ bodyRow: number; col: number } | null>(null);
 
@@ -3509,11 +3619,15 @@ function EditableTableHtml({
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    if (el.innerHTML !== html) el.innerHTML = html;
+    if (html !== lastAppliedHtmlRef.current) {
+      el.innerHTML = html;
+      lastAppliedHtmlRef.current = html;
+    }
+    annotateMismatchesInDOM(el, mismatchSourceLabel);
     syncTitles(el);
     layoutTable();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [html]);
+  }, [html, mismatchSourceLabel]);
 
   // 容器宽度变化时重新计算列宽
   useEffect(() => {
@@ -3548,9 +3662,15 @@ function EditableTableHtml({
     const el = ref.current;
     if (!el) return;
     syncTitles(el);
-    onChange(el.innerHTML);
+    const clean = stripMismatchAnnotations(el.innerHTML);
+    lastAppliedHtmlRef.current = clean;
+    onChange(clean);
     // 布局可能因行列数变化需要重新计算
-    requestAnimationFrame(layoutTable);
+    requestAnimationFrame(() => {
+      const cur = ref.current;
+      if (cur) annotateMismatchesInDOM(cur, mismatchSourceLabel);
+      layoutTable();
+    });
   };
 
   const getTable = () => ref.current?.querySelector("table") as HTMLTableElement | null;
@@ -3722,7 +3842,9 @@ function EditableTableHtml({
           onInput={(e) => {
             const el = e.currentTarget as HTMLDivElement;
             syncTitles(el);
-            onChange(el.innerHTML);
+            const clean = stripMismatchAnnotations(el.innerHTML);
+            lastAppliedHtmlRef.current = clean;
+            onChange(clean);
           }}
         />
       </div>
@@ -3772,6 +3894,8 @@ function TableChunkView({
           html={chunk.content}
           overrides={overrides}
           onOverrideChange={handleOverride}
+          readOnly={readOnly}
+          onChange={onChange}
         />
       ) : (
         <EditableTableHtml
@@ -3789,10 +3913,14 @@ function FilteredTableView({
   html,
   overrides,
   onOverrideChange,
+  readOnly,
+  onChange,
 }: {
   html: string;
   overrides: Record<string, number>;
   onOverrideChange: (key: string, sourceIdx: number | undefined) => void;
+  readOnly?: boolean;
+  onChange?: (v: string) => void;
 }) {
   const { aiRejectionReason } = useContext(DetailRecordContext);
   const mismatchSourceLabel = aiRejectionReason
@@ -3930,37 +4058,46 @@ function FilteredTableView({
                     </td>
                   );
                 }
-                const val = row[col.sourceIdx] ?? "";
-                if (PRODUCT_QUANTITY_KEYS.has(col.key) && val) {
-                  const num = Number(val);
-                  if (Number.isFinite(num) && num > 0) {
-                    const h = stableStrHash(`${rowIdx}-${col.key}`);
-                    if (h % 100 < 18) {
-                      const delta = (h % 5) + 1;
-                      const third = h % 2 === 0 ? num - delta : num + delta;
-                      const safeThird = third < 0 ? num + delta : third;
-                      return (
-                        <td
-                          key={col.key}
-                          className="whitespace-nowrap border border-border px-4 py-2 text-sm leading-loose"
-                        >
-                          <span style={{ color: "#dc2626" }}>
-                            {val}
-                            <span className="text-xs">
-                              （{mismatchSourceLabel}：{safeThird}）
-                            </span>
-                          </span>
-                        </td>
-                      );
-                    }
-                  }
-                }
+                const sourceIdx = col.sourceIdx;
+                const val = row[sourceIdx] ?? "";
+                const mismatch =
+                  PRODUCT_QUANTITY_KEYS.has(col.key)
+                    ? computeMismatch(rowIdx, col.key, val)
+                    : null;
+                const editable = !readOnly && !!onChange;
+                const handleBlur = (e: React.FocusEvent<HTMLSpanElement>) => {
+                  if (!onChange) return;
+                  const next = (e.currentTarget.textContent ?? "").trim();
+                  if (next === val) return;
+                  onChange(updateHtmlTableCell(html, rowIdx, sourceIdx, next));
+                };
                 return (
                   <td
                     key={col.key}
                     className="whitespace-nowrap border border-border px-4 py-2 text-sm leading-loose"
                   >
-                    {val}
+                    <span
+                      contentEditable={editable}
+                      suppressContentEditableWarning
+                      spellCheck={false}
+                      onBlur={handleBlur}
+                      className={cn(
+                        "inline-block min-w-[1ch] outline-none",
+                        editable && "rounded px-0.5 focus:bg-muted/60",
+                      )}
+                      style={mismatch ? { color: "#dc2626" } : undefined}
+                    >
+                      {val}
+                    </span>
+                    {mismatch && (
+                      <span
+                        contentEditable={false}
+                        className="ml-0.5 text-xs"
+                        style={{ color: "#dc2626" }}
+                      >
+                        （{mismatchSourceLabel}：{mismatch.safeThird}）
+                      </span>
+                    )}
                   </td>
                 );
               })}
