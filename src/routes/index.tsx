@@ -122,6 +122,8 @@ const AI_FAILURE_REASONS = ["图片无法识别", "图片质量过低"] as const
 const AI_REJECTION_REASONS = [
   "与“签收数据”不匹配",
   "与“基础数据”不匹配",
+  "与“出货数据”不匹配",
+  "货品数量数据缺失",
 ] as const;
 type AiRejectionReason = (typeof AI_REJECTION_REASONS)[number];
 const AI_FAILURE_CHANCE = 0.1; // 模拟识别失败概率
