@@ -838,6 +838,18 @@ function enrichTableHtml(html: string): string {
   if (usedTargets.size < 2) return html;
 
   const targetKeys = [...PRODUCT_TABLE_COLUMNS];
+  // 品名/货号两列使用识别到的原始表头文案，其余数量列使用标准列名
+  const displayHeaders = targetKeys.map((key) => {
+    if (key === "KA品名" || key === "KA货号") {
+      const sourceIdx = Array.from(sourceToTarget.entries()).find(([, t]) => t === key)?.[0];
+      if (sourceIdx !== undefined) {
+        const original = headerCells[sourceIdx];
+        if (original) return original;
+      }
+    }
+    return key;
+  });
+
   const rowMatches = Array.from(tbodyMatch[1].matchAll(/<tr>([\s\S]*?)<\/tr>/gi));
   const newRows = rowMatches
     .map((rm) => {
@@ -857,10 +869,11 @@ function enrichTableHtml(html: string): string {
     .filter(Boolean)
     .join("");
 
-  const newThead = `<tr>${targetKeys.map((k) => `<th>${k}</th>`).join("")}</tr>`;
+  const newThead = `<tr>${displayHeaders.map((k) => `<th>${k}</th>`).join("")}</tr>`;
   return html
     .replace(/<thead>([\s\S]*?)<\/thead>/i, `<thead>${newThead}</thead>`)
     .replace(/<tbody>([\s\S]*?)<\/tbody>/i, `<tbody>${newRows}</tbody>`);
+
 }
 
 function enrichTableChunks(chunks: Chunk[]): Chunk[] {
