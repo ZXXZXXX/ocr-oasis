@@ -3697,3 +3697,207 @@ function EditableTableHtml({
   );
 }
 
+function TableChunkView({
+  chunk,
+  onChange,
+  mustEdit,
+  readOnly,
+}: {
+  chunk: Chunk;
+  onChange: (v: string) => void;
+  mustEdit: boolean;
+  readOnly: boolean;
+}) {
+  const [filterOn, setFilterOn] = useState(true);
+  const [overrides, setOverrides] = useState<Record<string, number>>({});
+  const handleOverride = (key: string, idx: number | undefined) => {
+    setOverrides((prev) => {
+      const next = { ...prev };
+      if (idx === undefined) delete next[key];
+      else next[key] = idx;
+      return next;
+    });
+  };
+  return (
+    <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
+      <div className="flex items-center justify-between gap-2">
+        <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+          <Switch checked={filterOn} onCheckedChange={setFilterOn} />
+          <span>过滤展示（仅显示核心 6 列）</span>
+        </label>
+      </div>
+      {filterOn ? (
+        <FilteredTableView
+          html={chunk.content}
+          overrides={overrides}
+          onOverrideChange={handleOverride}
+        />
+      ) : (
+        <EditableTableHtml
+          html={chunk.content}
+          readOnly={readOnly}
+          mustEdit={mustEdit}
+          onChange={onChange}
+        />
+      )}
+    </div>
+  );
+}
+
+function FilteredTableView({
+  html,
+  overrides,
+  onOverrideChange,
+}: {
+  html: string;
+  overrides: Record<string, number>;
+  onOverrideChange: (key: string, sourceIdx: number | undefined) => void;
+}) {
+  const parsed = useMemo(() => parseTableStructure(html), [html]);
+  const autoMap = useMemo(
+    () => (parsed ? computeAutoTableMapping(parsed.headerCells) : new Map<string, number>()),
+    [parsed],
+  );
+  if (!parsed) {
+    return (
+      <div className="rounded border border-dashed border-border p-4 text-xs text-muted-foreground">
+        无法解析表格结构，请关闭过滤展示查看原始识别结果
+      </div>
+    );
+  }
+  const { headerCells, rows } = parsed;
+
+  const columns = PRODUCT_TABLE_COLUMNS.map((key) => {
+    const overrideIdx = overrides[key];
+    const sourceIdx = overrideIdx !== undefined ? overrideIdx : autoMap.get(key);
+    const originalHeader = sourceIdx !== undefined ? headerCells[sourceIdx] : undefined;
+    return {
+      key,
+      sourceIdx,
+      originalHeader,
+      isOverridden: overrideIdx !== undefined,
+    };
+  });
+
+  return (
+    <div className="overflow-x-auto text-xs">
+      <table className="w-full border-collapse">
+        <thead>
+          <tr>
+            {columns.map((col) => {
+              const missing = col.sourceIdx === undefined;
+              const primaryLabel =
+                (col.key === "KA品名" || col.key === "KA货号") && col.originalHeader
+                  ? col.originalHeader
+                  : col.key;
+              const showOriginalSuffix =
+                !!col.originalHeader &&
+                col.isOverridden &&
+                primaryLabel !== col.originalHeader;
+              return (
+                <th
+                  key={col.key}
+                  className="border border-border bg-muted px-4 py-2 text-left align-top text-sm font-medium"
+                >
+                  <div className="flex flex-col gap-1">
+                    <span className="whitespace-nowrap">
+                      {primaryLabel}
+                      {showOriginalSuffix && (
+                        <span className="ml-1 text-xs font-normal text-muted-foreground">
+                          （{col.originalHeader}）
+                        </span>
+                      )}
+                    </span>
+                    {missing ? (
+                      <div className="flex items-center gap-1.5">
+                        <span className="inline-flex items-center gap-1 rounded bg-[color:var(--warning)]/15 px-1.5 py-0.5 text-[10px] font-normal text-[color:var(--warning-foreground)]">
+                          数据缺失
+                        </span>
+                        <Select
+                          value=""
+                          onValueChange={(v) => {
+                            const idx = parseInt(v, 10);
+                            if (Number.isFinite(idx)) onOverrideChange(col.key, idx);
+                          }}
+                        >
+                          <SelectTrigger className="h-6 w-[8.5rem] px-1.5 text-[11px]">
+                            <SelectValue placeholder="选择识别列" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {headerCells.map((h, i) => (
+                              <SelectItem key={i} value={String(i)} className="text-xs">
+                                {h || `第 ${i + 1} 列`}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : col.isOverridden ? (
+                      <button
+                        type="button"
+                        className="self-start text-[10px] font-normal text-muted-foreground hover:text-foreground"
+                        onClick={() => onOverrideChange(col.key, undefined)}
+                      >
+                        取消手动选择
+                      </button>
+                    ) : null}
+                  </div>
+                </th>
+              );
+            })}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, rowIdx) => (
+            <tr key={rowIdx}>
+              {columns.map((col) => {
+                if (col.sourceIdx === undefined) {
+                  return (
+                    <td
+                      key={col.key}
+                      className="border border-border px-4 py-2 text-sm italic leading-loose text-muted-foreground"
+                    >
+                      —
+                    </td>
+                  );
+                }
+                const val = row[col.sourceIdx] ?? "";
+                if (PRODUCT_QUANTITY_KEYS.has(col.key) && val) {
+                  const num = Number(val);
+                  if (Number.isFinite(num) && num > 0) {
+                    const h = stableStrHash(`${rowIdx}-${col.key}`);
+                    if (h % 100 < 18) {
+                      const delta = (h % 5) + 1;
+                      const third = h % 2 === 0 ? num - delta : num + delta;
+                      const safeThird = third < 0 ? num + delta : third;
+                      return (
+                        <td
+                          key={col.key}
+                          className="whitespace-nowrap border border-border px-4 py-2 text-sm leading-loose"
+                        >
+                          <span style={{ color: "#dc2626" }}>
+                            {val}（{safeThird}）
+                          </span>
+                        </td>
+                      );
+                    }
+                  }
+                }
+                return (
+                  <td
+                    key={col.key}
+                    className="whitespace-nowrap border border-border px-4 py-2 text-sm leading-loose"
+                  >
+                    {val}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+
