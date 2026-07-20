@@ -838,85 +838,72 @@ function findProductByName(raw: string): ProductRec | null {
   return bestScore >= 2 ? best : null;
 }
 
+// 货品明细（Table）标准化为这 6 列
+const PRODUCT_TABLE_COLUMNS = ["KA品名", "货号", "订单数", "发货数", "拒收数", "签收数"] as const;
+
+function classifyTableHeader(header: string): string | null {
+  const rules = [
+    { key: "KA品名", patterns: [/品名/, /商品名称/, /产品名称/, /品名称/] },
+    { key: "货号", patterns: [/货号/, /SKU/, /商品编码/, /产品代号/, /物料编码/, /条码/] },
+    { key: "订单数", patterns: [/订单数量?/, /订购量/, /预约总数量/, /预到量/, /数量/, /应收/] },
+    { key: "发货数", patterns: [/发货数量?/, /投单量/] },
+    { key: "拒收数", patterns: [/拒收数量?/, /拒收量/] },
+    { key: "签收数", patterns: [/签收/, /验收量/, /实收总数量/, /实收件数/, /实收箱数/, /实收/] },
+  ];
+  for (const rule of rules) {
+    if (rule.patterns.some((p) => p.test(header))) return rule.key;
+  }
+  return null;
+}
+
 function enrichTableHtml(html: string): string {
   if (!/<table[\s\S]*?<thead/i.test(html)) return html;
   const theadMatch = html.match(/<thead>([\s\S]*?)<\/thead>/i);
   const tbodyMatch = html.match(/<tbody>([\s\S]*?)<\/tbody>/i);
   if (!theadMatch || !tbodyMatch) return html;
 
-  const theadInner = theadMatch[1];
-  const headerCells = Array.from(theadInner.matchAll(/<th[^>]*>([\s\S]*?)<\/th>/gi)).map((m) =>
+  const headerCells = Array.from(theadMatch[1].matchAll(/<th[^>]*>([\s\S]*?)<\/th>/gi)).map((m) =>
     m[1].replace(/<[^>]+>/g, "").trim(),
   );
-  const hasKa = headerCells.some((h) => RE_KA_HDR.test(h));
-  const hasMat = headerCells.some((h) => RE_MAT_HDR.test(h));
-  const nameIdx = headerCells.findIndex((h) => RE_NAME_HDR.test(h));
-  const serialIdx = headerCells.findIndex((h) => /^序号$/.test(h));
-  // 仅按原始识别结果展示，不再自动补全 KA 货号 / 物料编码列
-  const addKa = false;
-  const addMat = false;
-  const addSerial = serialIdx < 0;
 
-  // 无需任何补全
-  if (!addSerial && !addKa && !addMat) return html;
+  // 将原始列索引映射到目标列，每个目标列只取第一个匹配的原始列
+  const sourceToTarget = new Map<number, string>();
+  const usedTargets = new Set<string>();
+  headerCells.forEach((h, idx) => {
+    const target = classifyTableHeader(h);
+    if (target && !usedTargets.has(target)) {
+      sourceToTarget.set(idx, target);
+      usedTargets.add(target);
+    }
+  });
 
-  const FILL_TH = ' style="background:#f3f4f6;color:#374151"';
-  const FILL_TD = ' style="background:#f3f4f6;color:#374151"';
-  const MISS_HTML = '<span style="color:#9ca3af;font-style:italic">无匹配数据</span>';
+  // 未识别到商品表特征时保留原样
+  if (usedTargets.size < 2) return html;
 
-  const kaTh = addKa ? `<th${FILL_TH}>KA货号</th>` : "";
-  const matTh = addMat ? `<th${FILL_TH}>物料编码</th>` : "";
-  const extraTh = kaTh + matTh;
-
-  let newThead: string;
-  if (addSerial) {
-    // 序号 + KA + 物料 放在最前面
-    newThead = theadInner.replace(/<tr([^>]*)>/i, `<tr$1><th${FILL_TH}>序号</th>${extraTh}`);
-  } else {
-    // 在已有序号列后插入 KA/物料 列
-    const ths = Array.from(theadInner.matchAll(/<th[^>]*>[\s\S]*?<\/th>/gi)).map((m) => m[0]);
-    ths.splice(serialIdx + 1, 0, ...(extraTh ? [extraTh] : []));
-    newThead = theadInner.replace(
-      /<tr([^>]*)>[\s\S]*<\/tr>/i,
-      `<tr$1>${ths.join("")}</tr>`,
-    );
-  }
-
+  const targetKeys = [...PRODUCT_TABLE_COLUMNS];
   const rowMatches = Array.from(tbodyMatch[1].matchAll(/<tr>([\s\S]*?)<\/tr>/gi));
   const newRows = rowMatches
-    .map((rm, rowIndex) => {
+    .map((rm) => {
       const rowHtml = rm[1];
-      const tdMatches = Array.from(rowHtml.matchAll(/<td([^>]*)>([\s\S]*?)<\/td>/gi));
-      const nameCell = nameIdx >= 0 ? tdMatches[nameIdx]?.[2] ?? "" : "";
-      const prod = nameCell ? findProductByName(nameCell) : null;
-      const kaTd = addKa ? `<td${FILL_TD}>${prod ? prod.ka : MISS_HTML}</td>` : "";
-      const matTd = addMat ? `<td${FILL_TD}>${prod ? prod.material : MISS_HTML}</td>` : "";
-      const extraTd = kaTd + matTd;
+      // 跳过合计/总计等合并行，避免映射错位
+      if (/<td[^>]*colspan\s*=/i.test(rowHtml) || /总计|合计/.test(rowHtml)) return "";
 
-      if (addSerial) {
-        const serialTd = `<td${FILL_TD}>${rowIndex + 1}</td>`;
-        const emptyFill = (addKa ? `<td${FILL_TD}></td>` : "") + (addMat ? `<td${FILL_TD}></td>` : "");
-        // 总计等合并行：补全列均留空
-        if (tdMatches.length > 0 && /colspan\s*=/i.test(tdMatches[0][1])) {
-          return `<tr>${serialTd}${emptyFill}${rowHtml}</tr>`;
-        }
-        return `<tr>${serialTd}${extraTd}${rowHtml}</tr>`;
-      }
-
-      // 已有序号列：在序号列后插入 KA/物料 列
-      const tds = tdMatches.map((m) => m[0]);
-      if (tds.length > 0 && /colspan\s*=/i.test(tdMatches[0][1])) {
-        tds.splice(serialIdx + 1, 0, ...(extraTd ? [`<td${FILL_TD}></td>`] : []));
-      } else {
-        tds.splice(serialIdx + 1, 0, ...(extraTd ? [extraTd] : []));
-      }
-      return `<tr>${tds.join("")}</tr>`;
+      const tdMatches = Array.from(rowHtml.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi));
+      const cellValues = tdMatches.map((m) => m[1].replace(/<[^>]+>/g, "").trim());
+      const cells = targetKeys.map((key) => {
+        const sourceIdx = Array.from(sourceToTarget.entries()).find(([, t]) => t === key)?.[0];
+        const val = sourceIdx !== undefined ? cellValues[sourceIdx] ?? "" : "";
+        return `<td>${val}</td>`;
+      });
+      return `<tr>${cells.join("")}</tr>`;
     })
+    .filter(Boolean)
     .join("");
 
+  const newThead = `<tr>${targetKeys.map((k) => `<th>${k}</th>`).join("")}</tr>`;
   return html
-    .replace(/<thead>[\s\S]*?<\/thead>/i, `<thead>${newThead}</thead>`)
-    .replace(/<tbody>[\s\S]*?<\/tbody>/i, `<tbody>${newRows}</tbody>`);
+    .replace(/<thead>([\s\S]*?)<\/thead>/i, `<thead>${newThead}</thead>`)
+    .replace(/<tbody>([\s\S]*?)<\/tbody>/i, `<tbody>${newRows}</tbody>`);
 }
 
 function enrichTableChunks(chunks: Chunk[]): Chunk[] {
