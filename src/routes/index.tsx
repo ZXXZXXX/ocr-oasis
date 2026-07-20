@@ -2474,6 +2474,7 @@ function DetailView({
         </AlertDialogContent>
       </AlertDialog>
     </>
+    </DetailRecordContext.Provider>
   );
 }
 
