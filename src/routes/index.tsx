@@ -3108,9 +3108,9 @@ function ImageWithBoxes({
         {showAutoFocus && setAutoFocus && (
           <Button
             variant="ghost"
-            size="icon"
+            size="sm"
             className={cn(
-              "absolute right-3 top-3 z-20 size-8 rounded-full border border-border/50 bg-background/90 shadow-sm backdrop-blur-sm hover:bg-background",
+              "absolute right-3 top-3 z-20 gap-1.5 rounded-full border border-border/50 bg-background/90 px-2.5 py-1 shadow-sm backdrop-blur-sm hover:bg-background",
               autoFocus ? "text-primary hover:text-primary" : "text-muted-foreground hover:text-foreground",
             )}
             onClick={() => setAutoFocus(!autoFocus)}
@@ -3119,6 +3119,7 @@ function ImageWithBoxes({
             title={autoFocus ? "图片与识别结果联动中" : "图片与识别结果已断开"}
           >
             {autoFocus ? <Link className="size-4" /> : <Link2Off className="size-4" />}
+            <span className="text-xs">{autoFocus ? "自动聚焦" : "断开聚焦"}</span>
           </Button>
         )}
 
