@@ -119,6 +119,11 @@ export const Route = createFileRoute("/")({
 const CURRENT_USER = "审核员 · 李婷";
 const LOW_CONF_THRESHOLD = 0.8;
 const AI_FAILURE_REASONS = ["图片无法识别", "图片质量过低"] as const;
+const AI_REJECTION_REASONS = [
+  "与“签收数据”不匹配",
+  "与“基础数据”不匹配",
+] as const;
+type AiRejectionReason = (typeof AI_REJECTION_REASONS)[number];
 const AI_FAILURE_CHANCE = 0.1; // 模拟识别失败概率
 
 
@@ -211,7 +216,7 @@ interface OcrRecord {
   plateNo: string;
   signatureStatus: SignatureStatus;
   aiVerdict?: AiVerdict; // 识别完成后由AI给出
-  aiRejectionReason?: string; // AI 不通过原因
+  aiRejectionReason?: AiRejectionReason; // AI 不通过原因
   failedReason?: string; // AI 识别失败原因，如 "图片无法识别" / "图片质量过低"
   verifiedAt?: number; // 人工提交验收结论时间
   verifiedBy?: string;
@@ -351,24 +356,12 @@ function pendingLowConf(r: OcrRecord): number {
   ).length;
 }
 
-// 生成 AI 不通过原因说明
-function makeAiRejectionReason(record: OcrRecord): string | undefined {
+// 生成 AI 不通过原因说明（枚举值）
+function makeAiRejectionReason(record: OcrRecord): AiRejectionReason | undefined {
   if (record.aiVerdict !== "fail") return undefined;
-  const pending = pendingLowConf(record);
-  const parts: string[] = [];
-  if (record.confidence != null && record.confidence < 80) {
-    parts.push("整体识别置信度偏低");
-  }
-  if (pending > 0) {
-    parts.push(`存在 ${pending} 处低置信度识别字段未确认`);
-  }
-  if (record.signatureStatus === "partial") {
-    parts.push("签收状态为部分签收");
-  }
-  if (parts.length === 0) {
-    return "AI 预审未通过，请人工复核";
-  }
-  return parts.join("；") + "，请人工复核";
+  // 按记录创建时间稳定选取一条枚举原因，保证同任务原因不变
+  const idx = record.createdAt % AI_REJECTION_REASONS.length;
+  return AI_REJECTION_REASONS[idx];
 }
 
 // Extract plain text from a simple HTML string (handles <p>, <br>, entities)
