@@ -814,60 +814,14 @@ function classifyTableHeader(header: string): string | null {
 }
 
 function enrichTableHtml(html: string): string {
-  if (!/<table[\s\S]*?<thead/i.test(html)) return html;
-  const theadMatch = html.match(/<thead>([\s\S]*?)<\/thead>/i);
-  const tbodyMatch = html.match(/<tbody>([\s\S]*?)<\/tbody>/i);
-  if (!theadMatch || !tbodyMatch) return html;
-
-  const headerCells = Array.from(theadMatch[1].matchAll(/<th[^>]*>([\s\S]*?)<\/th>/gi)).map((m) =>
-    m[1].replace(/<[^>]+>/g, "").trim(),
-  );
-
-  // 将原始列索引映射到目标列，每个目标列只取第一个匹配的原始列
-  const sourceToTarget = new Map<number, string>();
-  const usedTargets = new Set<string>();
-  headerCells.forEach((h, idx) => {
-    const target = classifyTableHeader(h);
-    if (target && !usedTargets.has(target)) {
-      sourceToTarget.set(idx, target);
-      usedTargets.add(target);
-    }
-  });
-
-  // 未识别到商品表特征时保留原样
-  if (usedTargets.size < 2) return html;
-
-  const targetKeys = [...PRODUCT_TABLE_COLUMNS];
-  const rowMatches = Array.from(tbodyMatch[1].matchAll(/<tr>([\s\S]*?)<\/tr>/gi));
-  const newRows = rowMatches
-    .map((rm) => {
-      const rowHtml = rm[1];
-      // 跳过合计/总计等合并行，避免映射错位
-      if (/<td[^>]*colspan\s*=/i.test(rowHtml) || /总计|合计/.test(rowHtml)) return "";
-
-      const tdMatches = Array.from(rowHtml.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi));
-      const cellValues = tdMatches.map((m) => m[1].replace(/<[^>]+>/g, "").trim());
-      const cells = targetKeys.map((key) => {
-        const sourceIdx = Array.from(sourceToTarget.entries()).find(([, t]) => t === key)?.[0];
-        const val = sourceIdx !== undefined ? cellValues[sourceIdx] ?? "" : "";
-        return `<td>${val}</td>`;
-      });
-      return `<tr>${cells.join("")}</tr>`;
-    })
-    .filter(Boolean)
-    .join("");
-
-  const newThead = `<tr>${targetKeys.map((k) => `<th>${k}</th>`).join("")}</tr>`;
-  return html
-    .replace(/<thead>([\s\S]*?)<\/thead>/i, `<thead>${newThead}</thead>`)
-    .replace(/<tbody>([\s\S]*?)<\/tbody>/i, `<tbody>${newRows}</tbody>`);
+  // 展示实际识别到的表头与列，不再强制标准化为固定的 6 列
+  return html;
 }
 
 function enrichTableChunks(chunks: Chunk[]): Chunk[] {
-  return chunks.map((c) =>
-    c.label === "Table" ? { ...c, content: enrichTableHtml(c.content) } : c,
-  );
+  return chunks;
 }
+
 
 
 
