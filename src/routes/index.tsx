@@ -3733,20 +3733,18 @@ function TableChunkView({
   };
   return (
     <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Info className="size-3.5 cursor-help text-muted-foreground" />
-            </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={4}>
-              <p className="max-w-[16rem] text-xs">仅显示核心 6 列</p>
-            </TooltipContent>
-          </Tooltip>
-          <Label htmlFor="filter-toggle" className="cursor-pointer">
-            过滤展示
-          </Label>
-        </div>
+      <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Info className="size-3.5 cursor-help text-muted-foreground" />
+          </TooltipTrigger>
+          <TooltipContent side="top" sideOffset={4}>
+            <p className="max-w-[16rem] text-xs">仅显示核心 6 列</p>
+          </TooltipContent>
+        </Tooltip>
+        <Label htmlFor="filter-toggle" className="cursor-pointer">
+          过滤展示
+        </Label>
         <Switch id="filter-toggle" checked={filterOn} onCheckedChange={setFilterOn} />
       </div>
       {filterOn ? (
