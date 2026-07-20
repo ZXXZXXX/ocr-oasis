@@ -3619,11 +3619,15 @@ function EditableTableHtml({
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    if (el.innerHTML !== html) el.innerHTML = html;
+    if (html !== lastAppliedHtmlRef.current) {
+      el.innerHTML = html;
+      lastAppliedHtmlRef.current = html;
+    }
+    annotateMismatchesInDOM(el, mismatchSourceLabel);
     syncTitles(el);
     layoutTable();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [html]);
+  }, [html, mismatchSourceLabel]);
 
   // 容器宽度变化时重新计算列宽
   useEffect(() => {
