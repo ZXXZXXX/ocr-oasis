@@ -4058,37 +4058,46 @@ function FilteredTableView({
                     </td>
                   );
                 }
-                const val = row[col.sourceIdx] ?? "";
-                if (PRODUCT_QUANTITY_KEYS.has(col.key) && val) {
-                  const num = Number(val);
-                  if (Number.isFinite(num) && num > 0) {
-                    const h = stableStrHash(`${rowIdx}-${col.key}`);
-                    if (h % 100 < 18) {
-                      const delta = (h % 5) + 1;
-                      const third = h % 2 === 0 ? num - delta : num + delta;
-                      const safeThird = third < 0 ? num + delta : third;
-                      return (
-                        <td
-                          key={col.key}
-                          className="whitespace-nowrap border border-border px-4 py-2 text-sm leading-loose"
-                        >
-                          <span style={{ color: "#dc2626" }}>
-                            {val}
-                            <span className="text-xs">
-                              （{mismatchSourceLabel}：{safeThird}）
-                            </span>
-                          </span>
-                        </td>
-                      );
-                    }
-                  }
-                }
+                const sourceIdx = col.sourceIdx;
+                const val = row[sourceIdx] ?? "";
+                const mismatch =
+                  PRODUCT_QUANTITY_KEYS.has(col.key)
+                    ? computeMismatch(rowIdx, col.key, val)
+                    : null;
+                const editable = !readOnly && !!onChange;
+                const handleBlur = (e: React.FocusEvent<HTMLSpanElement>) => {
+                  if (!onChange) return;
+                  const next = (e.currentTarget.textContent ?? "").trim();
+                  if (next === val) return;
+                  onChange(updateHtmlTableCell(html, rowIdx, sourceIdx, next));
+                };
                 return (
                   <td
                     key={col.key}
                     className="whitespace-nowrap border border-border px-4 py-2 text-sm leading-loose"
                   >
-                    {val}
+                    <span
+                      contentEditable={editable}
+                      suppressContentEditableWarning
+                      spellCheck={false}
+                      onBlur={handleBlur}
+                      className={cn(
+                        "inline-block min-w-[1ch] outline-none",
+                        editable && "rounded px-0.5 focus:bg-muted/60",
+                      )}
+                      style={mismatch ? { color: "#dc2626" } : undefined}
+                    >
+                      {val}
+                    </span>
+                    {mismatch && (
+                      <span
+                        contentEditable={false}
+                        className="ml-0.5 text-xs"
+                        style={{ color: "#dc2626" }}
+                      >
+                        （{mismatchSourceLabel}：{mismatch.safeThird}）
+                      </span>
+                    )}
                   </td>
                 );
               })}
