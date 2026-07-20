@@ -843,9 +843,17 @@ function enrichTableHtml(html: string): string {
     return key;
   });
 
+  const QUANTITY_KEYS = new Set(["订单数量", "发货数量", "拒收数量", "签收数量"]);
+  // 简单稳定哈希：根据行索引 + 列名决定是否 mismatch 及第三方数据
+  const hash = (s: string) => {
+    let h = 0;
+    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+    return Math.abs(h);
+  };
+
   const rowMatches = Array.from(tbodyMatch[1].matchAll(/<tr>([\s\S]*?)<\/tr>/gi));
   const newRows = rowMatches
-    .map((rm) => {
+    .map((rm, rowIdx) => {
       const rowHtml = rm[1];
       // 跳过合计/总计等合并行，避免映射错位
       if (/<td[^>]*colspan\s*=/i.test(rowHtml) || /总计|合计/.test(rowHtml)) return "";
@@ -855,6 +863,19 @@ function enrichTableHtml(html: string): string {
       const cells = targetKeys.map((key) => {
         const sourceIdx = Array.from(sourceToTarget.entries()).find(([, t]) => t === key)?.[0];
         const val = sourceIdx !== undefined ? cellValues[sourceIdx] ?? "" : "";
+        if (QUANTITY_KEYS.has(key) && val) {
+          const num = Number(val);
+          if (Number.isFinite(num) && num > 0) {
+            const h = hash(`${rowIdx}-${key}`);
+            // 约 18% 的概率出现不匹配
+            if (h % 100 < 18) {
+              const delta = (h % 5) + 1;
+              const third = h % 2 === 0 ? num - delta : num + delta;
+              const safeThird = third < 0 ? num + delta : third;
+              return `<td><span style="color:#dc2626">${val}（${safeThird}）</span></td>`;
+            }
+          }
+        }
         return `<td>${val}</td>`;
       });
       return `<tr>${cells.join("")}</tr>`;
@@ -866,6 +887,7 @@ function enrichTableHtml(html: string): string {
   return html
     .replace(/<thead>([\s\S]*?)<\/thead>/i, `<thead>${newThead}</thead>`)
     .replace(/<tbody>([\s\S]*?)<\/tbody>/i, `<tbody>${newRows}</tbody>`);
+
 
 }
 
