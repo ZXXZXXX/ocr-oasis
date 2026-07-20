@@ -4013,8 +4013,8 @@ function FilteredTableView({
                             ) : (
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <span className="inline-flex h-6 w-[4.5rem] cursor-default items-center px-1.5 text-[11px] text-muted-foreground">
-                                    <span className="block w-[4em] truncate text-left">
+                                  <span className="inline-flex h-6 w-[4.5rem] shrink-0 cursor-default items-center px-1.5 text-[11px] text-muted-foreground">
+                                    <span className="block w-full truncate text-left">
                                       {col.originalHeader || "已选择列"}
                                     </span>
                                   </span>
