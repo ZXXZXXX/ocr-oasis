@@ -3798,9 +3798,23 @@ function FilteredTableView({
               return (
                 <th
                   key={col.key}
-                  className="border border-border bg-muted px-4 py-2 text-left align-top text-sm font-medium"
+                  className="border border-border bg-muted px-4 py-2 text-left align-middle text-sm font-medium"
                 >
-                  <div className="flex flex-col gap-1">
+                  <div className="group flex items-center gap-1.5">
+                    {missing && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="inline-flex items-center justify-center text-muted-foreground">
+                            <AlertTriangle className="size-3.5" />
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" sideOffset={4}>
+                          <p className="max-w-[16rem] text-xs">
+                            AI未识别到对应列数据，可手动选择数列
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
                     <span className="whitespace-nowrap">
                       {primaryLabel}
                       {showOriginalSuffix && (
@@ -3810,45 +3824,32 @@ function FilteredTableView({
                       )}
                     </span>
                     {missing ? (
-                      <div className="flex items-center gap-1.5">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className="inline-flex items-center justify-center rounded bg-[color:var(--warning)]/15 p-1 text-[color:var(--warning-foreground)]">
-                              <AlertTriangle className="size-3.5" />
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent side="top" sideOffset={4}>
-                            <p className="max-w-[16rem] text-xs">
-                              AI未识别到对应列数据，可手动选择数列
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                        <Select
-                          value=""
-                          onValueChange={(v) => {
-                            const idx = parseInt(v, 10);
-                            if (Number.isFinite(idx)) onOverrideChange(col.key, idx);
-                          }}
-                        >
-                          <SelectTrigger className="h-6 w-[8.5rem] px-1.5 text-[11px]">
-                            <SelectValue placeholder="选择识别列" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {headerCells.map((h, i) => (
-                              <SelectItem key={i} value={String(i)} className="text-xs">
-                                {h || `第 ${i + 1} 列`}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                      <Select
+                        value=""
+                        onValueChange={(v) => {
+                          const idx = parseInt(v, 10);
+                          if (Number.isFinite(idx)) onOverrideChange(col.key, idx);
+                        }}
+                      >
+                        <SelectTrigger className="h-6 w-[8.5rem] px-1.5 text-[11px]">
+                          <SelectValue placeholder="选择识别列" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {headerCells.map((h, i) => (
+                            <SelectItem key={i} value={String(i)} className="text-xs">
+                              {h || `第 ${i + 1} 列`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     ) : col.isOverridden ? (
                       <button
                         type="button"
-                        className="self-start text-[10px] font-normal text-muted-foreground hover:text-foreground"
+                        className="inline-flex items-center justify-center rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100"
                         onClick={() => onOverrideChange(col.key, undefined)}
+                        title="取消手动选择"
                       >
-                        取消手动选择
+                        <X className="size-3.5" />
                       </button>
                     ) : null}
                   </div>
