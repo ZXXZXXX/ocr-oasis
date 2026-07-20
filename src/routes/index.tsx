@@ -795,17 +795,17 @@ function mockTongyiSrmP2Chunks(): Chunk[] {
 
 
 // 货品明细（Table）标准化为这 6 列
-const PRODUCT_TABLE_COLUMNS = ["KA品名", "KA货号", "订单数", "发货数", "拒收数", "签收数"] as const;
+const PRODUCT_TABLE_COLUMNS = ["KA品名", "KA货号", "订单数量", "发货数量", "拒收数量", "签收数量"] as const;
 
 function classifyTableHeader(header: string): string | null {
   const rules = [
     { key: "KA品名", patterns: [/品名/, /商品名称/, /产品名称/, /品名称/] },
     { key: "KA货号", patterns: [/货号/, /SKU/i, /商品编码/, /产品代号/, /物料编码/, /条码/] },
     // 先匹配具体数量列，避免被“数量”泛化规则吞掉
-    { key: "发货数", patterns: [/发货数量?/, /投单量/] },
-    { key: "拒收数", patterns: [/拒收数量?/, /拒收量/] },
-    { key: "签收数", patterns: [/签收/, /验收量/, /实收总数量/, /实收件数/, /实收箱数/, /实收/] },
-    { key: "订单数", patterns: [/订单数量?/, /订购量/, /预约总数量/, /预到量/, /应收/, /数量/] },
+    { key: "发货数量", patterns: [/发货数量?/, /投单量/] },
+    { key: "拒收数量", patterns: [/拒收数量?/, /拒收量/] },
+    { key: "签收数量", patterns: [/签收/, /验收量/, /实收总数量/, /实收件数/, /实收箱数/, /实收/] },
+    { key: "订单数量", patterns: [/订单数量?/, /订购量/, /预约总数量/, /预到量/, /应收/, /数量/] },
   ];
   for (const rule of rules) {
     if (rule.patterns.some((p) => p.test(header))) return rule.key;
