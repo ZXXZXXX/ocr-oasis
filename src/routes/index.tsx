@@ -792,12 +792,23 @@ function mockTongyiSrmP2Chunks(): Chunk[] {
 
 
 // 货品明细（Table）标准化为这 6 列
-const PRODUCT_TABLE_COLUMNS = ["KA品名", "KA货号", "订单数量", "发货数量", "拒收数量", "签收数量"] as const;
+const PRODUCT_TABLE_COLUMNS = [
+  "物料名称",
+  "物料编码",
+  "订单数量",
+  "发货数量",
+  "拒收数量",
+  "签收数量",
+] as const;
+
+// 后台必能匹配出数据的列，过滤展示时固定命名且不显示缺失/手动选择
+const PRODUCT_REQUIRED_KEYS = new Set<string>(["物料名称", "物料编码"]);
 
 function classifyTableHeader(header: string): string | null {
   const rules = [
-    { key: "KA品名", patterns: [/品名/, /商品名称/, /产品名称/, /品名称/] },
-    { key: "KA货号", patterns: [/货号/, /SKU/i, /商品编码/, /产品代号/, /物料编码/, /条码/] },
+    { key: "物料名称", patterns: [/品名/, /商品名称/, /产品名称/, /品名称/, /物料名称/] },
+    { key: "物料编码", patterns: [/货号/, /SKU/i, /商品编码/, /产品代号/, /物料编码/, /条码/] },
+    // 先匹配具体数量列，避免被“数量”泛化规则吞掉
     // 先匹配具体数量列，避免被“数量”泛化规则吞掉
     { key: "发货数量", patterns: [/发货数量?/, /投单量/] },
     { key: "拒收数量", patterns: [/拒收数量?/, /拒收量/] },
