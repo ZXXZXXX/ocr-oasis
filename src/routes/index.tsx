@@ -807,95 +807,58 @@ function classifyTableHeader(header: string): string | null {
   return null;
 }
 
-function enrichTableHtml(html: string): string {
-  if (!/<table[\s\S]*?<thead/i.test(html)) return html;
+// 解析表格 HTML 为二维结构（跳过合计/合并行），供过滤展示使用
+function parseTableStructure(
+  html: string,
+): { headerCells: string[]; rows: string[][] } | null {
   const theadMatch = html.match(/<thead>([\s\S]*?)<\/thead>/i);
   const tbodyMatch = html.match(/<tbody>([\s\S]*?)<\/tbody>/i);
-  if (!theadMatch || !tbodyMatch) return html;
-
-  const headerCells = Array.from(theadMatch[1].matchAll(/<th[^>]*>([\s\S]*?)<\/th>/gi)).map((m) =>
-    m[1].replace(/<[^>]+>/g, "").trim(),
+  if (!theadMatch || !tbodyMatch) return null;
+  const headerCells = Array.from(theadMatch[1].matchAll(/<th[^>]*>([\s\S]*?)<\/th>/gi)).map(
+    (m) => m[1].replace(/<[^>]+>/g, "").trim(),
   );
-
-  // 将原始列索引映射到目标列，每个目标列只取第一个匹配的原始列
-  const sourceToTarget = new Map<number, string>();
-  const usedTargets = new Set<string>();
-  headerCells.forEach((h, idx) => {
-    const target = classifyTableHeader(h);
-    if (target && !usedTargets.has(target)) {
-      sourceToTarget.set(idx, target);
-      usedTargets.add(target);
-    }
-  });
-
-  // 未识别到商品表特征时保留原样
-  if (usedTargets.size < 2) return html;
-
-  const targetKeys = [...PRODUCT_TABLE_COLUMNS];
-  // 品名/货号两列使用识别到的原始表头文案，其余数量列使用标准列名
-  const displayHeaders = targetKeys.map((key) => {
-    if (key === "KA品名" || key === "KA货号") {
-      const sourceIdx = Array.from(sourceToTarget.entries()).find(([, t]) => t === key)?.[0];
-      if (sourceIdx !== undefined) {
-        const original = headerCells[sourceIdx];
-        if (original) return original;
-      }
-    }
-    return key;
-  });
-
-  const QUANTITY_KEYS = new Set(["订单数量", "发货数量", "拒收数量", "签收数量"]);
-  // 简单稳定哈希：根据行索引 + 列名决定是否 mismatch 及第三方数据
-  const hash = (s: string) => {
-    let h = 0;
-    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
-    return Math.abs(h);
-  };
-
   const rowMatches = Array.from(tbodyMatch[1].matchAll(/<tr>([\s\S]*?)<\/tr>/gi));
-  const newRows = rowMatches
-    .map((rm, rowIdx) => {
-      const rowHtml = rm[1];
-      // 跳过合计/总计等合并行，避免映射错位
-      if (/<td[^>]*colspan\s*=/i.test(rowHtml) || /总计|合计/.test(rowHtml)) return "";
-
-      const tdMatches = Array.from(rowHtml.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi));
-      const cellValues = tdMatches.map((m) => m[1].replace(/<[^>]+>/g, "").trim());
-      const cells = targetKeys.map((key) => {
-        const sourceIdx = Array.from(sourceToTarget.entries()).find(([, t]) => t === key)?.[0];
-        const val = sourceIdx !== undefined ? cellValues[sourceIdx] ?? "" : "";
-        if (QUANTITY_KEYS.has(key) && val) {
-          const num = Number(val);
-          if (Number.isFinite(num) && num > 0) {
-            const h = hash(`${rowIdx}-${key}`);
-            // 约 18% 的概率出现不匹配
-            if (h % 100 < 18) {
-              const delta = (h % 5) + 1;
-              const third = h % 2 === 0 ? num - delta : num + delta;
-              const safeThird = third < 0 ? num + delta : third;
-              return `<td><span style="color:#dc2626">${val}（${safeThird}）</span></td>`;
-            }
-          }
-        }
-        return `<td>${val}</td>`;
-      });
-      return `<tr>${cells.join("")}</tr>`;
-    })
-    .filter(Boolean)
-    .join("");
-
-  const newThead = `<tr>${displayHeaders.map((k) => `<th>${k}</th>`).join("")}</tr>`;
-  return html
-    .replace(/<thead>([\s\S]*?)<\/thead>/i, `<thead>${newThead}</thead>`)
-    .replace(/<tbody>([\s\S]*?)<\/tbody>/i, `<tbody>${newRows}</tbody>`);
-
-
+  const rows: string[][] = [];
+  rowMatches.forEach((rm) => {
+    const rowHtml = rm[1];
+    if (/<td[^>]*colspan\s*=/i.test(rowHtml) || /总计|合计/.test(rowHtml)) return;
+    const tds = Array.from(rowHtml.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)).map((m) =>
+      m[1].replace(/<[^>]+>/g, "").trim(),
+    );
+    rows.push(tds);
+  });
+  return { headerCells, rows };
 }
 
+const PRODUCT_QUANTITY_KEYS = new Set<string>([
+  "订单数量",
+  "发货数量",
+  "拒收数量",
+  "签收数量",
+]);
+
+function computeAutoTableMapping(headerCells: string[]): Map<string, number> {
+  const map = new Map<string, number>();
+  const used = new Set<string>();
+  headerCells.forEach((h, idx) => {
+    const target = classifyTableHeader(h);
+    if (target && !used.has(target)) {
+      used.add(target);
+      map.set(target, idx);
+    }
+  });
+  return map;
+}
+
+function stableStrHash(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+// 兼容旧调用：现在保留原始 OCR HTML，不再在数据阶段裁剪表格。
 function enrichTableChunks(chunks: Chunk[]): Chunk[] {
-  return chunks.map((c) =>
-    c.label === "Table" ? { ...c, content: enrichTableHtml(c.content) } : c,
-  );
+  return chunks;
 }
 
 
