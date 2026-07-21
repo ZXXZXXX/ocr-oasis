@@ -862,12 +862,8 @@ function parseTableStructure(
   return { headerCells, rows };
 }
 
-const PRODUCT_QUANTITY_KEYS = new Set<string>([
-  "订单数量",
-  "发货数量",
-  "拒收数量",
-  "签收数量",
-]);
+const PRODUCT_QUANTITY_ORDER = ["订单数量", "发货数量", "拒收数量", "签收数量"] as const;
+const PRODUCT_QUANTITY_KEYS = new Set<string>(PRODUCT_QUANTITY_ORDER);
 
 function computeAutoTableMapping(headerCells: string[]): Map<string, number> {
   const map = new Map<string, number>();
