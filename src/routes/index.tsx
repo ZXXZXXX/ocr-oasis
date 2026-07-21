@@ -2866,7 +2866,7 @@ function DocPanel({
   );
   const page = deliveryPages[pageIdx];
 
-  const showingShipping = imageTab === "shipping_slip" && !!shippingImage;
+  const showingShipping = imageTab === "shipping_slip";
   const leftImage = showingShipping ? shippingImage : deliveryImage;
   const leftDeliveryPage = deliveryImage
     ? deliveryPages.find((p) => p.imageId === deliveryImage.id)
@@ -2879,15 +2879,17 @@ function DocPanel({
           pageBox: [0, 0, shippingImage.width, shippingImage.height],
           chunks: [],
         }
-      : leftDeliveryPage ??
-        (deliveryImage
-          ? {
-              imageId: deliveryImage.id,
-              sourceImage: deliveryImage.name,
-              pageBox: [0, 0, deliveryImage.width, deliveryImage.height],
-              chunks: [],
-            }
-          : undefined);
+      : showingShipping
+        ? undefined
+        : leftDeliveryPage ??
+          (deliveryImage
+            ? {
+                imageId: deliveryImage.id,
+                sourceImage: deliveryImage.name,
+                pageBox: [0, 0, deliveryImage.width, deliveryImage.height],
+                chunks: [],
+              }
+            : undefined);
 
 
   const scrollRef = useRef<HTMLDivElement>(null);
