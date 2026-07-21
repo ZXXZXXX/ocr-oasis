@@ -153,6 +153,7 @@ const rejectionMismatchCount = (record: { createdAt: number }) =>
 const DetailRecordContext = createContext<{
   recordId?: string;
   aiRejectionReason?: AiRejectionReason;
+  aiExceptionReason?: string;
   recordStatus?: Status;
   aiVerdict?: AiVerdict;
 }>({});
@@ -261,6 +262,7 @@ interface OcrRecord {
   signatureStatus: SignatureStatus;
   aiVerdict?: AiVerdict; // 识别完成后由AI给出
   aiRejectionReason?: AiRejectionReason; // AI 不通过原因
+  aiExceptionReason?: string; // AI 审核异常原因（如 "物料数据列无法匹配" / "物流签收数据缺失"）
   failedReason?: string; // AI 识别失败原因，如 "图片无法识别" / "图片质量过低"
   verifiedAt?: number; // 人工提交验收结论时间
   verifiedBy?: string;
@@ -692,6 +694,40 @@ function mockLingshiChunks(): Chunk[] {
       label: "Table",
       content:
         '<table border="1"><thead><tr><th>商品编码</th><th>商品名称</th><th>单位</th><th>预约总数量</th><th>实收总数量</th><th>拒收数量</th><th>是否赠品</th><th>生产日期</th></tr></thead><tbody><tr><td>10100956</td><td>统一海之言柠檬味1L 1L</td><td>箱</td><td>700</td><td>700</td><td>0</td><td>否</td><td>2026-5-4</td></tr><tr><td colspan="3">总计</td><td>700</td><td>700</td><td>0</td><td></td><td></td></tr></tbody></table>',
+      confidence: 0.74,
+    },
+    { bbox: [80, 430, 380, 465], label: "Text", content: "<p>司机姓名: 麦吾兰·塞麦提</p>", confidence: 0.62 },
+    { bbox: [80, 465, 380, 500], label: "Text", content: "<p>司机电话: 13029634454</p>" },
+    { bbox: [80, 500, 380, 540], label: "Text", content: "<p>车牌号: 新A9JU80</p>", confidence: 0.7 },
+    { bbox: [720, 430, 940, 465], label: "Text", content: "<p>收货人姓名:</p>" },
+    { bbox: [720, 465, 940, 500], label: "Text", content: "<p>日期:</p>" },
+    {
+      bbox: [800, 380, 1000, 560],
+      label: "Image",
+      content: "<img alt=\"Red circular stamp '收货专用章 新疆仓'\"/>",
+    },
+  ];
+  return raw.map((c) => ({ ...c, id: uid() }));
+}
+
+// 模拟缺少签收数据的送货单：其余列均正常，仅签收数量列缺失
+function mockMissingSignChunks(): Chunk[] {
+  const raw: Omit<Chunk, "id">[] = [
+    { bbox: [420, 40, 720, 85], label: "Section-Header", content: "<p>零食有鸣收货回执单</p>", confidence: 0.98 },
+    { bbox: [80, 100, 380, 128], label: "Text", content: "<p>收货单号: X10130432026051800034</p>", confidence: 0.86 },
+    { bbox: [400, 100, 620, 128], label: "Text", content: "<p>供应商: 1001010057</p>" },
+    { bbox: [660, 100, 900, 128], label: "Text", content: "<p>仓储中心: 新疆物流中心</p>" },
+    { bbox: [80, 130, 380, 158], label: "Text", content: "<p>ERP单号: 0016510102605113750</p>", confidence: 0.82 },
+    { bbox: [400, 130, 700, 158], label: "Text", content: "<p>SRM送货单号: 0840710112605180012</p>", confidence: 0.78 },
+    { bbox: [660, 130, 900, 158], label: "Text", content: "<p>签到时间: 2026-05-20 14:40:59</p>" },
+    { bbox: [80, 160, 300, 188], label: "Text", content: "<p>产地仓:</p>" },
+    { bbox: [80, 190, 300, 218], label: "Text", content: "<p>备注:</p>" },
+    { bbox: [660, 190, 940, 218], label: "Text", content: "<p>打印时间: 2026-05-20 14:50:35</p>" },
+    {
+      bbox: [80, 230, 960, 320],
+      label: "Table",
+      content:
+        '<table border="1"><thead><tr><th>商品编码</th><th>商品名称</th><th>单位</th><th>预约总数量</th><th>发货数量</th><th>拒收数量</th><th>是否赠品</th><th>生产日期</th></tr></thead><tbody><tr><td>10100956</td><td>统一海之言柠檬味1L 1L</td><td>箱</td><td>700</td><td>700</td><td>0</td><td>否</td><td>2026-5-4</td></tr><tr><td colspan="3">总计</td><td>700</td><td>700</td><td>0</td><td></td><td></td></tr></tbody></table>',
       confidence: 0.74,
     },
     { bbox: [80, 430, 380, 465], label: "Text", content: "<p>司机姓名: 麦吾兰·塞麦提</p>", confidence: 0.62 },
@@ -1582,7 +1618,67 @@ function seedRecords(): OcrRecord[] {
     aiRejectionReason: makeAiRejectionReason(tongyiRecord),
   };
 
-  return [tongyiRecordFinal, realRecord, ...noSlipRecords, ...records];
+  // 新记录 1：无签收数据，但上传了合格图片 → AI 预审异常（物流签收数据缺失）
+  const missingSignCreatedAt = now - 1 * 60_000;
+  const missingSignImages: UploadedImage[] = [
+    {
+      id: "img-missing-sign-delivery",
+      name: "qualified_delivery_note.jpg",
+      url: receiptLingshiAsset.url,
+      docType: "delivery_note",
+      width: 1098,
+      height: 609,
+    },
+  ];
+  const missingSignResults: Partial<Record<DocType, DocPage[]>> = {
+    delivery_note: [
+      {
+        imageId: missingSignImages[0]!.id,
+        sourceImage: missingSignImages[0]!.name,
+        pageBox: [0, 0, missingSignImages[0]!.width, missingSignImages[0]!.height],
+        chunks: enrichTableChunks(mockMissingSignChunks()),
+      },
+    ],
+  };
+  const missingSignPages = Object.values(missingSignResults).flat() as DocPage[];
+  const missingSignRecord: OcrRecord = {
+    id: makeKaOrderId(missingSignCreatedAt, 4_100_001),
+    createdAt: missingSignCreatedAt,
+    status: "pending_review",
+    progress: 100,
+    confidence: averageConfidence(missingSignPages),
+    deliveryCount: 1,
+    shippingCount: 0,
+    images: missingSignImages,
+    results: missingSignResults,
+    driver: "周海明",
+    plateNo: "沪C·39102",
+    signatureStatus: "partial",
+    aiVerdict: "exception",
+    aiExceptionReason: "物流签收数据缺失",
+    shippingSlipNo: makeShippingSlipNo(missingSignCreatedAt, 4_100_001),
+  };
+
+  // 新记录 2：无签收数据，且无图片上传 → AI 识别失败
+  const noImageCreatedAt = now - 2 * 60_000;
+  const noImageRecord: OcrRecord = {
+    id: makeKaOrderId(noImageCreatedAt, 4_100_002),
+    createdAt: noImageCreatedAt,
+    status: "failed",
+    progress: 100,
+    confidence: undefined,
+    deliveryCount: 0,
+    shippingCount: 0,
+    images: [],
+    results: {},
+    driver: "吴志强",
+    plateNo: "苏D·55819",
+    signatureStatus: "partial",
+    failedReason: "未上传图片",
+    shippingSlipNo: makeShippingSlipNo(noImageCreatedAt, 4_100_002),
+  };
+
+  return [missingSignRecord, noImageRecord, tongyiRecordFinal, realRecord, ...noSlipRecords, ...records];
 }
 
 
@@ -2526,7 +2622,7 @@ function DetailView({
   }
 
   return (
-    <DetailRecordContext.Provider value={{ recordId: record.id, aiRejectionReason: record.aiRejectionReason, recordStatus: record.status, aiVerdict: record.aiVerdict }}>
+    <DetailRecordContext.Provider value={{ recordId: record.id, aiRejectionReason: record.aiRejectionReason, aiExceptionReason: record.aiExceptionReason, recordStatus: record.status, aiVerdict: record.aiVerdict }}>
     <>
       <SheetHeader className="border-b border-border px-6 py-4">
         <div className="flex items-start justify-between gap-4">
@@ -2601,7 +2697,9 @@ function DetailView({
           <AlertTriangle className="mt-0.5 size-4 shrink-0" />
           <div className="flex-1 leading-relaxed">
             <span className="font-semibold">AI 预审异常原因：</span>
-            物料数据列无法匹配，「订单数量」「拒收数量」等关键数量列未能自动识别，请在下方货品明细中手动选择对应列以完成校验。
+            {record.aiExceptionReason === "物流签收数据缺失"
+              ? "物流签收数据缺失，已上传图片中未识别到物流签收信息，请确认签收数据是否完整或联系承运方补充。"
+              : "物料数据列无法匹配，「订单数量」「拒收数量」等关键数量列未能自动识别，请在下方货品明细中手动选择对应列以完成校验。"}
           </div>
         </div>
       )}
@@ -4147,8 +4245,9 @@ function FilteredTableView({
   lockedCells?: Set<string>;
   markEdited?: (rowIdx: number, colIdx: number) => void;
 }) {
-  const { recordId, aiRejectionReason, aiVerdict } = useContext(DetailRecordContext);
+  const { recordId, aiRejectionReason, aiExceptionReason, aiVerdict } = useContext(DetailRecordContext);
   const isException = aiVerdict === "exception";
+  const isColumnMismatchException = isException && (!aiExceptionReason || aiExceptionReason === "物料数据列无法匹配");
   const mismatchOpts = { hasRejection: !!aiRejectionReason, recordId, aiRejectionReason };
   const mismatchSourceLabel = aiRejectionReason
     ? REJECTION_SOURCE_LABEL[aiRejectionReason]
@@ -4170,12 +4269,12 @@ function FilteredTableView({
   const columns = PRODUCT_TABLE_COLUMNS.map((key) => {
     const overrideIdx = overrides[key];
     // 「审核异常」记录：固定的几列物料数量列视为未匹配（除非用户手动指定）
-    const autoIdx = isException && EXCEPTION_UNMATCHED_COLS.has(key)
+    const autoIdx = isColumnMismatchException && EXCEPTION_UNMATCHED_COLS.has(key)
       ? undefined
       : autoMap.get(key);
     const sourceIdx = overrideIdx !== undefined ? overrideIdx : autoIdx;
     const originalHeader = sourceIdx !== undefined ? headerCells[sourceIdx] : undefined;
-    const isExceptionCol = isException && EXCEPTION_UNMATCHED_COLS.has(key);
+    const isExceptionCol = isColumnMismatchException && EXCEPTION_UNMATCHED_COLS.has(key);
     return {
       key,
       sourceIdx,
