@@ -2603,7 +2603,9 @@ function DetailView({
           <AlertTriangle className="mt-0.5 size-4 shrink-0" />
           <div className="flex-1 leading-relaxed">
             <span className="font-semibold">AI 预审异常原因：</span>
-            物料数据列无法匹配，「订单数量」「拒收数量」等关键数量列未能自动识别，请在下方货品明细中手动选择对应列以完成校验。
+            {record.aiExceptionReason === "物流签收数据缺失"
+              ? "物流签收数据缺失，已上传图片中未识别到物流签收信息，请确认签收数据是否完整或联系承运方补充。"
+              : "物料数据列无法匹配，「订单数量」「拒收数量」等关键数量列未能自动识别，请在下方货品明细中手动选择对应列以完成校验。"}
           </div>
         </div>
       )}
