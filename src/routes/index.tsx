@@ -154,6 +154,7 @@ const DetailRecordContext = createContext<{
   recordId?: string;
   aiRejectionReason?: AiRejectionReason;
   recordStatus?: Status;
+  aiVerdict?: AiVerdict;
 }>({});
 // 持久化每条记录 · 每个块的「已编辑单元格」，跨抽屉重开保留
 const editedCellsStore = new Map<string, Set<string>>();
