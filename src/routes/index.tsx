@@ -2158,7 +2158,7 @@ function Workbench() {
                   <TableHead className="w-[200px]">KA 订单号</TableHead>
                   <TableHead className="w-[150px]">同步时间</TableHead>
                   <TableHead>签收状态</TableHead>
-                  <TableHead>置信度</TableHead>
+                  <TableHead>AI置信度</TableHead>
                   <TableHead>AI预审结论</TableHead>
                   <TableHead>最终审核结论</TableHead>
                   <TableHead className="text-right">操作</TableHead>
