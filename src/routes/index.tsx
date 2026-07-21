@@ -2647,7 +2647,7 @@ function DetailView({
               <NeutralTag>
                 {STATUS_LABEL[record.status] ?? record.status}
               </NeutralTag>
-              <NeutralTag>{SIGNATURE_LABEL[record.signatureStatus]}</NeutralTag>
+              {record.signatureStatus && <NeutralTag>{SIGNATURE_LABEL[record.signatureStatus]}</NeutralTag>}
               {editing && (
                 <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
                   <Pencil className="size-3" /> 编辑中
