@@ -131,7 +131,7 @@ type AiRejectionReason = (typeof AI_REJECTION_REASONS)[number];
 // 特定任务的固定不通过原因（用于演示）
 const AI_REJECTION_OVERRIDES: Record<string, AiRejectionReason> = {
   CD202607143260522: "《KA验收单》与《物流签收单》数据不匹配",
-  CD202607141000274: "《KA验收单》与《出货传票》数据不匹配",
+  CD202607141000274: "OCR识别结果与《KA验收单》数据不匹配",
 };
 // 无论何种原因，表格内只会标注与《KA验收单》不匹配的数据（签收数量列）
 const REJECTION_SOURCE_LABEL: Record<AiRejectionReason, string> = {
