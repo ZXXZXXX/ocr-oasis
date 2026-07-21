@@ -3958,92 +3958,44 @@ function FilteredTableView({
         <thead>
           <tr>
             {columns.map((col) => {
-              const isRequired = PRODUCT_REQUIRED_KEYS.has(col.key);
-              const missing = col.sourceIdx === undefined && !isRequired;
-                  const primaryLabel = col.key;
-                  return (
-                    <th
-                      key={col.key}
-                      className="border border-border bg-muted px-4 py-2 text-left align-middle text-sm font-medium"
+              const currentIdx = col.sourceIdx;
+              const selectValue = currentIdx !== undefined ? String(currentIdx) : "";
+              return (
+                <th
+                  key={col.key}
+                  className="border border-border bg-muted px-4 py-2 text-left align-top font-medium"
+                >
+                  <div className="flex flex-col gap-0.5">
+                    <span className="whitespace-nowrap text-sm">{col.key}</span>
+                    <Select
+                      value={selectValue}
+                      onValueChange={(v) => {
+                        const idx = parseInt(v, 10);
+                        if (Number.isFinite(idx)) onOverrideChange(col.key, idx);
+                      }}
                     >
-                      <div className="group flex items-center gap-1.5">
-                        {missing && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="inline-flex items-center justify-center text-muted-foreground">
-                                <AlertTriangle className="size-3.5" />
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent side="top" sideOffset={4}>
-                              <p className="max-w-[16rem] text-xs">
-                                AI未识别到对应列数据，可手动选择数列
-                              </p>
-                            </TooltipContent>
-                          </Tooltip>
-                        )}
-                        <span className="whitespace-nowrap">{primaryLabel}</span>
-                        {(missing || col.isOverridden) && (
-                          <div className="flex items-center gap-1">
-                            {missing ? (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Select
-                                    value=""
-                                    onValueChange={(v) => {
-                                      const idx = parseInt(v, 10);
-                                      if (Number.isFinite(idx)) onOverrideChange(col.key, idx);
-                                    }}
-                                  >
-                                    <SelectTrigger className="h-6 w-[4.5rem] px-1.5 text-[11px] [&>span]:block [&>span]:w-[4em] [&>span]:truncate [&>span]:text-left">
-                                      <SelectValue placeholder="选择列" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {headerCells.map((h, i) => (
-                                        <SelectItem key={i} value={String(i)} className="text-xs">
-                                          {h || `第 ${i + 1} 列`}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" sideOffset={4}>
-                                  <p className="max-w-[16rem] text-xs">选择列</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            ) : (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className="inline-flex h-6 w-[4.5rem] shrink-0 cursor-default items-center px-1.5 text-[11px] text-muted-foreground">
-                                    <span className="block w-full truncate text-left">
-                                      {col.originalHeader || "已选择列"}
-                                    </span>
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" sideOffset={4}>
-                                  <p className="max-w-[16rem] text-xs">
-                                    {col.originalHeader || "已选择列"}
-                                  </p>
-                                </TooltipContent>
-                              </Tooltip>
-                            )}
-                            {col.isOverridden && (
-                              <button
-                                type="button"
-                                className="inline-flex items-center justify-center rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100"
-                                onClick={() => onOverrideChange(col.key, undefined)}
-                                title="取消手动选择"
-                              >
-                                <X className="size-3.5" />
-                              </button>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </th>
-                  );
-                })}
-              </tr>
-            </thead>
+                      <SelectTrigger
+                        className="h-5 w-auto max-w-[8rem] gap-1 border-0 bg-transparent px-0 py-0 text-[11px] font-normal text-muted-foreground shadow-none hover:text-foreground focus:ring-0 focus:ring-offset-0 [&>span]:block [&>span]:truncate [&>svg]:size-3 [&>svg]:opacity-50"
+                        title={col.originalHeader || undefined}
+                      >
+                        <SelectValue placeholder="选择列">
+                          {col.originalHeader || "选择列"}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {headerCells.map((h, i) => (
+                          <SelectItem key={i} value={String(i)} className="text-xs">
+                            {h || `第 ${i + 1} 列`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </th>
+              );
+            })}
+          </tr>
+        </thead>
         <tbody>
           {rows.map((row, rowIdx) => (
             <tr key={rowIdx}>
