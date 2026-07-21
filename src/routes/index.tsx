@@ -4132,7 +4132,8 @@ function FilteredTableView({
   lockedCells?: Set<string>;
   markEdited?: (rowIdx: number, colIdx: number) => void;
 }) {
-  const { recordId, aiRejectionReason } = useContext(DetailRecordContext);
+  const { recordId, aiRejectionReason, aiVerdict } = useContext(DetailRecordContext);
+  const isException = aiVerdict === "exception";
   const mismatchOpts = { hasRejection: !!aiRejectionReason, recordId, aiRejectionReason };
   const mismatchSourceLabel = aiRejectionReason
     ? REJECTION_SOURCE_LABEL[aiRejectionReason]
@@ -4153,15 +4154,30 @@ function FilteredTableView({
 
   const columns = PRODUCT_TABLE_COLUMNS.map((key) => {
     const overrideIdx = overrides[key];
-    const sourceIdx = overrideIdx !== undefined ? overrideIdx : autoMap.get(key);
+    // 「审核异常」记录：固定的几列物料数量列视为未匹配（除非用户手动指定）
+    const autoIdx = isException && EXCEPTION_UNMATCHED_COLS.has(key)
+      ? undefined
+      : autoMap.get(key);
+    const sourceIdx = overrideIdx !== undefined ? overrideIdx : autoIdx;
     const originalHeader = sourceIdx !== undefined ? headerCells[sourceIdx] : undefined;
+    const isExceptionCol = isException && EXCEPTION_UNMATCHED_COLS.has(key);
     return {
       key,
       sourceIdx,
       originalHeader,
       isOverridden: overrideIdx !== undefined,
+      isExceptionCol,
     };
   });
+
+  // 计算异常列的 KA 期望值 & 当前是否与 OCR 单元格匹配
+  const kaValueFor = (rowIdx: number, key: string) => kaExpectedForCell(recordId, rowIdx, key);
+  const isExceptionCellMismatch = (rowIdx: number, key: string, val: string) => {
+    const expected = kaValueFor(rowIdx, key);
+    const num = parseQuantityText(val);
+    return num === null || num !== expected;
+  };
+
 
   return (
     <div className="overflow-x-auto text-xs">
