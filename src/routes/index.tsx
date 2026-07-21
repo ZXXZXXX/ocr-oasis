@@ -1820,7 +1820,12 @@ function Workbench() {
     const fromT = dateFrom ? new Date(dateFrom).getTime() : -Infinity;
     const toT = dateTo ? new Date(dateTo).getTime() + 86400000 : Infinity;
     return records.filter((r) => {
-      if (quickStatus !== "all" && r.status !== quickStatus) return false;
+      // 仅查看未审核：第一层「人工未审核」= status !== "verified"；
+      // AI未审核（尚未产出结论）作为第二层，仅在满足第一层时一并带出。
+      if (quickStatus === "pending_review") {
+        const humanUnreviewed = r.status !== "verified";
+        if (!humanUnreviewed) return false;
+      }
       if (r.createdAt < fromT || r.createdAt > toT) return false;
       if (r.status !== "recognizing" && r.status !== "failed" && r.status !== "queued" && r.confidence != null) {
         const tone = confidenceTone(r.confidence / 100);
