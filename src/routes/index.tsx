@@ -147,7 +147,7 @@ const REJECTION_MISMATCH_COLS: Record<AiRejectionReason, readonly string[]> = {
 };
 // 每条记录不通过原因中「共发现 n 项商品存在差异」的 n，按记录种子稳定生成
 const rejectionMismatchCount = (record: { createdAt: number }) =>
-  ((Math.floor(record.createdAt / 7) % 3) + 1);
+  ((Math.floor(record.createdAt / 7) % 3) + 4);
 
 // 供子组件读取当前详情记录信息
 const DetailRecordContext = createContext<{
@@ -2567,7 +2567,7 @@ function DetailView({
             <AlertTriangle className="mt-0.5 size-4 shrink-0" />
             <div className="flex-1 leading-relaxed">
               <span className="font-semibold">AI 预审不通过原因：</span>
-              {record.aiRejectionReason}，共发现{rejectionMismatchCount(record)}项商品存在差异
+              {record.aiRejectionReason}，共发现 {rejectionMismatchCount(record)} 项商品存在差异
             </div>
 
           </div>
