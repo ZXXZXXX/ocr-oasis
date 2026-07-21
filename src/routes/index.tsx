@@ -918,8 +918,12 @@ function stripMismatchAnnotations(html: string): string {
   return div.innerHTML;
 }
 
-// 在原始 OCR 表格 DOM 上对数量列进行差异高亮
-function annotateMismatchesInDOM(root: HTMLElement, label: string) {
+// 在原始 OCR 表格 DOM 上对数量列进行差异高亮 / 编辑标注
+function annotateMismatchesInDOM(
+  root: HTMLElement,
+  label: string,
+  editedCells?: Set<string>,
+) {
   const table = root.querySelector("table");
   if (!table) return;
   const thead = table.querySelector("thead");
@@ -933,7 +937,6 @@ function annotateMismatchesInDOM(root: HTMLElement, label: string) {
     const idx = autoMap.get(key);
     if (idx !== undefined) qtyCols.push({ key, idx });
   });
-  if (qtyCols.length === 0) return;
   const bodyRows = Array.from(
     table.querySelectorAll("tbody > tr"),
   ) as HTMLTableRowElement[];
@@ -941,10 +944,30 @@ function annotateMismatchesInDOM(root: HTMLElement, label: string) {
     const inner = r.innerHTML;
     return !/colspan\s*=/i.test(inner) && !/总计|合计/.test(inner);
   });
+  const appendEditedTag = (cell: HTMLElement) => {
+    const ann = document.createElement("span");
+    ann.setAttribute("data-annotation", "");
+    ann.setAttribute("contenteditable", "false");
+    ann.style.marginLeft = "2px";
+    ann.style.color = "inherit";
+    ann.textContent = `（已编辑）`;
+    cell.appendChild(ann);
+  };
   dataRows.forEach((tr, rowIdx) => {
+    // 编辑标注：所有列都可能被编辑
+    if (editedCells) {
+      Array.from(tr.children).forEach((cellNode, colIdx) => {
+        const cell = cellNode as HTMLElement;
+        if (!editedCells.has(`${rowIdx}-${colIdx}`)) return;
+        if (cell.querySelector("[data-annotation]")) return;
+        appendEditedTag(cell);
+      });
+    }
+    // 差异高亮（编辑过的单元格跳过）
     qtyCols.forEach(({ key, idx }) => {
       const cell = tr.children[idx] as HTMLElement | undefined;
       if (!cell) return;
+      if (editedCells?.has(`${rowIdx}-${idx}`)) return;
       if (cell.querySelector("[data-mismatch]")) return;
       const val = (cell.textContent || "").trim();
       const m = computeMismatch(rowIdx, key, val);
