@@ -926,8 +926,10 @@ function computeMismatch(
   const seed = opts?.recordId ? `${opts.recordId}-${rowIdx}-${key}` : `${rowIdx}-${key}`;
   const h = stableStrHash(seed);
   const hasRejection = !!opts?.hasRejection;
-  // 命中阈值：默认 ~18%，有拒绝原因时提升到 ~55%
-  let hit = hasRejection ? h % 100 < 55 : h % 100 < 18;
+  // 无 AI 不通过原因时视为审核通过，不制造任何差异
+  if (!hasRejection) return null;
+  // 有拒绝原因时命中阈值 ~55%
+  let hit = h % 100 < 55;
   // 保证该行至少一列出现差异：从允许列中选一列强制命中
   if (!hit && hasRejection) {
     const candidates = allowed ?? PRODUCT_QUANTITY_ORDER;
