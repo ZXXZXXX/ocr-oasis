@@ -3869,6 +3869,10 @@ function EditableTableHtml({
           onInput={(e) => {
             const el = e.currentTarget as HTMLDivElement;
             syncTitles(el);
+            // 记录当前编辑的单元格
+            if (markEdited && sel && sel.bodyRow >= 0) {
+              markEdited(sel.bodyRow, sel.col);
+            }
             const clean = stripMismatchAnnotations(el.innerHTML);
             lastAppliedHtmlRef.current = clean;
             onChange(clean);
