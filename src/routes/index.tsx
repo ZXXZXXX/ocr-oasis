@@ -3637,6 +3637,7 @@ function EditableTableHtml({
   const wrapRef = useRef<HTMLDivElement>(null);
   const lastAppliedHtmlRef = useRef<string>("");
   const dirtyRef = useRef(false);
+  const selRef = useRef<{ bodyRow: number; col: number } | null>(null);
   // 选中单元格：bodyRow 为 tbody 内行号（0 起）；-1 表示位于 thead
   const [sel, setSel] = useState<{ bodyRow: number; col: number } | null>(null);
 
@@ -3720,18 +3721,26 @@ function EditableTableHtml({
       clearTableAnnotations(cell);
     }
     if (inThead) {
-      setSel({ bodyRow: -1, col });
+      const next = { bodyRow: -1, col };
+      selRef.current = next;
+      setSel(next);
     } else {
       const tbody = row.parentElement as HTMLTableSectionElement | null;
       if (!tbody) return;
       const bodyRow = Array.from(tbody.children).indexOf(row);
-      setSel({ bodyRow, col });
+      const next = { bodyRow, col };
+      selRef.current = next;
+      setSel(next);
     }
   };
 
   const commit = () => {
     const el = ref.current;
     if (!el) return;
+    const curSel = selRef.current;
+    if (dirtyRef.current && markEdited && curSel && curSel.bodyRow >= 0) {
+      markEdited(curSel.bodyRow, curSel.col);
+    }
     syncTitles(el);
     const clean = stripMismatchAnnotations(el.innerHTML);
     lastAppliedHtmlRef.current = clean;
@@ -3781,6 +3790,7 @@ function EditableTableHtml({
     const row = tbody.children[sel.bodyRow];
     if (!row) return;
     row.remove();
+    selRef.current = null;
     setSel(null);
     commit();
   };
@@ -3816,6 +3826,7 @@ function EditableTableHtml({
     };
     table.querySelectorAll("thead > tr").forEach(removeAt);
     table.querySelectorAll("tbody > tr").forEach(removeAt);
+    selRef.current = null;
     setSel(null);
     commit();
   };
@@ -3916,8 +3927,9 @@ function EditableTableHtml({
             syncTitles(el);
             dirtyRef.current = true;
             // 记录当前编辑的单元格
-            if (markEdited && sel && sel.bodyRow >= 0) {
-              markEdited(sel.bodyRow, sel.col);
+            const curSel = selRef.current ?? sel;
+            if (markEdited && curSel && curSel.bodyRow >= 0) {
+              markEdited(curSel.bodyRow, curSel.col);
             }
           }}
           onBlurCapture={() => {
