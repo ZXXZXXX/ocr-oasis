@@ -3982,7 +3982,8 @@ function FilteredTableView({
   editedCells?: Set<string>;
   markEdited?: (rowIdx: number, colIdx: number) => void;
 }) {
-  const { aiRejectionReason } = useContext(DetailRecordContext);
+  const { recordId, aiRejectionReason } = useContext(DetailRecordContext);
+  const mismatchOpts = { hasRejection: !!aiRejectionReason, recordId };
   const mismatchSourceLabel = aiRejectionReason
     ? REJECTION_SOURCE_LABEL[aiRejectionReason]
     : "签收数据";
