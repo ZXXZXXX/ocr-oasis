@@ -2197,8 +2197,8 @@ function Workbench() {
                       <TableCell className="text-sm text-muted-foreground" suppressHydrationWarning>
                         {fmtTime(r.createdAt)}
                       </TableCell>
-                      <TableCell>
-                        <SignatureBadge value={r.signatureStatus} />
+                      <TableCell className="text-sm text-foreground">
+                        {r.signatureStatus ? SIGNATURE_LABEL[r.signatureStatus] : "—"}
                       </TableCell>
                       <TableCell>
                         {r.confidence != null ? (
@@ -2642,12 +2642,12 @@ function DetailView({
       <SheetHeader className="border-b border-border px-6 py-4">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <SheetTitle className="flex flex-wrap items-center gap-2">
-              任务详情
-              <NeutralTag>
-                {STATUS_LABEL[record.status] ?? record.status}
-              </NeutralTag>
-              {record.signatureStatus && <NeutralTag>{SIGNATURE_LABEL[record.signatureStatus]}</NeutralTag>}
+              <SheetTitle className="flex flex-wrap items-center gap-2">
+                任务详情
+                <NeutralTag>
+                  {STATUS_LABEL[record.status] ?? record.status}
+                </NeutralTag>
+                {record.signatureStatus && <span className="text-sm text-foreground">{SIGNATURE_LABEL[record.signatureStatus]}</span>}
               {editing && (
                 <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
                   <Pencil className="size-3" /> 编辑中
