@@ -4190,8 +4190,17 @@ function FilteredTableView({
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, rowIdx) => (
-            <tr key={rowIdx}>
+          {rows.map((row, rowIdx) => {
+            const rowMismatch = columns.some((col) => {
+              if (col.sourceIdx === undefined) return false;
+              if (!PRODUCT_QUANTITY_KEYS.has(col.key)) return false;
+              const edited = editedCells?.has(`${rowIdx}-${col.sourceIdx}`) ?? false;
+              if (edited) return false;
+              const val = row[col.sourceIdx] ?? "";
+              return !!computeMismatch(rowIdx, col.key, val, mismatchOpts);
+            });
+            return (
+            <tr key={rowIdx} style={rowMismatch ? { backgroundColor: ROW_MISMATCH_BG } : undefined}>
               {columns.map((col) => {
                 if (col.sourceIdx === undefined) {
                   return (
@@ -4256,7 +4265,8 @@ function FilteredTableView({
                 );
               })}
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>
