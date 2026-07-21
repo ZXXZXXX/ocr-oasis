@@ -2497,7 +2497,8 @@ function AuditConclusionBadge({ status, aiVerdict }: { status: Status; aiVerdict
   );
 }
 
-function SignatureBadge({ value }: { value: SignatureStatus }) {
+function SignatureBadge({ value }: { value: SignatureStatus | undefined }) {
+  if (!value) return <EmptyBadge className="w-16" />;
   if (value === "perfect")
     return (
       <Badge variant="status" className="gap-1 border-0 bg-[color:var(--success)]/15 font-normal text-[color:var(--success)]">
