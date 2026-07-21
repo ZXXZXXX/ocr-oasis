@@ -1373,10 +1373,13 @@ function seedRecords(): OcrRecord[] {
       width: 1920,
       height: 720,
     }));
-    // 只对送货单执行 OCR；识别失败的任务无结果
+    // 只对送货单执行 OCR；识别失败/图片无法识别的任务无结果
     const isFailed = s.status === "failed";
+    const isRecognitionException =
+      s.aiExceptionReason === "图片无法识别" || s.aiExceptionReason === "图片质量过低";
+    const hasResults = !isFailed && !isRecognitionException;
     const results: Partial<Record<DocType, DocPage[]>> = {};
-    if (!isFailed) {
+    if (hasResults) {
       const dImg = images.find((i) => i.docType === "delivery_note")!;
       const rand = createRand(idx + 1);
       results.delivery_note = [
@@ -1396,7 +1399,7 @@ function seedRecords(): OcrRecord[] {
       createdAt,
       status: s.status,
       progress: 100,
-      confidence: isFailed ? undefined : averageConfidence(allPages),
+      confidence: hasResults ? averageConfidence(allPages) : undefined,
       deliveryCount: 1,
       shippingCount: 1,
       images,
@@ -1405,12 +1408,13 @@ function seedRecords(): OcrRecord[] {
       plateNo: who.plate,
       signatureStatus: s.signatureStatus,
       aiVerdict: isFailed ? undefined : s.aiVerdict,
+      aiExceptionReason: s.aiExceptionReason,
       failedReason: isFailed ? s.failedReason : undefined,
       verifiedAt: s.status === "verified" ? now - (s.minutesAgo - 10) * 60_000 : undefined,
       verifiedBy: s.status === "verified" ? CURRENT_USER : undefined,
       shippingSlipNo: makeShippingSlipNo(createdAt, 1_000 + idx * 137),
     };
-    return { ...record, aiRejectionReason: isFailed ? undefined : makeAiRejectionReason(record) };
+    return { ...record, aiRejectionReason: hasResults ? makeAiRejectionReason(record) : undefined };
 
   });
 
