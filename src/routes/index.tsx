@@ -1609,7 +1609,7 @@ function Workbench() {
   const [draftConfidenceTones, setDraftConfidenceTones] = useState<Set<"high" | "mid" | "low">>(
     new Set(["high", "mid", "low"]),
   );
-  const [draftAiVerdictFilter, setDraftAiVerdictFilter] = useState<"all" | "pass" | "fail">("all");
+  const [draftAiVerdictFilter, setDraftAiVerdictFilter] = useState<"all" | "pass" | "fail" | "exception">("all");
 
   useEffect(() => {
     if (filterOpen) {
