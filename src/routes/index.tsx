@@ -3984,18 +3984,25 @@ function TableChunkView({
   mustEdit: boolean;
   readOnly: boolean;
 }) {
+  const { recordId, recordStatus } = useContext(DetailRecordContext);
+  const storeKey = editedCellsKey(recordId, chunk.id);
   const [filterOn, setFilterOn] = useState(true);
   const [overrides, setOverrides] = useState<Record<string, number>>({});
-  const [editedCells, setEditedCells] = useState<Set<string>>(new Set());
+  const [editedCells, setEditedCells] = useState<Set<string>>(
+    () => new Set(editedCellsStore.get(storeKey) ?? []),
+  );
   const markEdited = (rowIdx: number, colIdx: number) => {
     setEditedCells((prev) => {
       const key = `${rowIdx}-${colIdx}`;
       if (prev.has(key)) return prev;
       const next = new Set(prev);
       next.add(key);
+      editedCellsStore.set(storeKey, new Set(next));
       return next;
     });
   };
+  const locked = recordStatus === "verified";
+  const lockedCells = locked ? editedCells : undefined;
   const handleOverride = (key: string, idx: number | undefined) => {
     setOverrides((prev) => {
       const next = { ...prev };
