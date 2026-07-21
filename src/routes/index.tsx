@@ -139,6 +139,12 @@ const REJECTION_SOURCE_LABEL: Record<AiRejectionReason, string> = {
   "与《物流签收单》数据不匹配": "物流签收单",
   "与《KA验收单》数据不匹配": "KA验收单",
 };
+// 不通过原因 → 允许出现勘误标注的数量列
+const REJECTION_MISMATCH_COLS: Record<AiRejectionReason, readonly string[]> = {
+  "与《出货传票》数据不匹配": ["订单数量", "发货数量"],
+  "与《物流签收单》数据不匹配": ["订单数量", "签收数量"],
+  "与《KA验收单》数据不匹配": ["签收数量"],
+};
 // 供子组件读取当前详情记录信息
 const DetailRecordContext = createContext<{
   recordId?: string;
