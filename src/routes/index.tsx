@@ -1734,7 +1734,7 @@ function Workbench() {
     }
   }, [filterOpen, dateFrom, dateTo, selectedConfidenceTones, aiVerdictFilter]);
 
-  const [quickStatus, setQuickStatus] = useState<"all" | "pending_review">("all");
+  const [quickStatus, setQuickStatus] = useState<"all" | "unreviewed">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
@@ -1820,7 +1820,7 @@ function Workbench() {
     const fromT = dateFrom ? new Date(dateFrom).getTime() : -Infinity;
     const toT = dateTo ? new Date(dateTo).getTime() + 86400000 : Infinity;
     return records.filter((r) => {
-      if (quickStatus !== "all" && r.status !== quickStatus) return false;
+      if (quickStatus === "unreviewed" && r.status === "verified") return false;
       if (r.createdAt < fromT || r.createdAt > toT) return false;
       if (r.status !== "recognizing" && r.status !== "failed" && r.status !== "queued" && r.confidence != null) {
         const tone = confidenceTone(r.confidence / 100);
@@ -2017,9 +2017,9 @@ function Workbench() {
                 <div className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-1.5">
                   <span className="text-sm font-medium">仅查看未审核</span>
                   <Switch
-                    checked={quickStatus === "pending_review"}
+                    checked={quickStatus === "unreviewed"}
                     onCheckedChange={(checked) =>
-                      setQuickStatus(checked ? "pending_review" : "all")
+                      setQuickStatus(checked ? "unreviewed" : "all")
                     }
                     aria-label="仅查看未审核"
                   />
