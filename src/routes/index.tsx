@@ -2197,8 +2197,8 @@ function Workbench() {
                       <TableCell className="text-sm text-muted-foreground" suppressHydrationWarning>
                         {fmtTime(r.createdAt)}
                       </TableCell>
-                      <TableCell>
-                        <SignatureBadge value={r.signatureStatus} />
+                      <TableCell className="text-sm text-foreground">
+                        {r.signatureStatus ? SIGNATURE_LABEL[r.signatureStatus] : "—"}
                       </TableCell>
                       <TableCell>
                         {r.confidence != null ? (
