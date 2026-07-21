@@ -149,7 +149,12 @@ const REJECTION_MISMATCH_COLS: Record<AiRejectionReason, readonly string[]> = {
 const DetailRecordContext = createContext<{
   recordId?: string;
   aiRejectionReason?: AiRejectionReason;
+  recordStatus?: Status;
 }>({});
+// 持久化每条记录 · 每个块的「已编辑单元格」，跨抽屉重开保留
+const editedCellsStore = new Map<string, Set<string>>();
+const editedCellsKey = (recordId: string | undefined, chunkId: string) =>
+  `${recordId ?? "_"}::${chunkId}`;
 const AI_FAILURE_CHANCE = 0.1; // 模拟识别失败概率
 
 
@@ -990,6 +995,8 @@ function annotateMismatchesInDOM(
     ann.setAttribute("contenteditable", "false");
     ann.style.marginLeft = "2px";
     ann.style.color = "inherit";
+    ann.style.fontSize = "0.85em";
+    ann.style.fontStyle = "italic";
     ann.textContent = `（已编辑）`;
     cell.appendChild(ann);
   };
@@ -2476,7 +2483,7 @@ function DetailView({
   }
 
   return (
-    <DetailRecordContext.Provider value={{ recordId: record.id, aiRejectionReason: record.aiRejectionReason }}>
+    <DetailRecordContext.Provider value={{ recordId: record.id, aiRejectionReason: record.aiRejectionReason, recordStatus: record.status }}>
     <>
       <SheetHeader className="border-b border-border px-6 py-4">
         <div className="flex items-start justify-between gap-4">
@@ -3622,6 +3629,7 @@ function EditableTableHtml({
   mustEdit,
   onChange,
   editedCells,
+  lockedCells,
   markEdited,
 }: {
   html: string;
@@ -3629,6 +3637,7 @@ function EditableTableHtml({
   mustEdit: boolean;
   onChange: (v: string) => void;
   editedCells?: Set<string>;
+  lockedCells?: Set<string>;
   markEdited?: (rowIdx: number, colIdx: number) => void;
 }) {
   const { recordId, aiRejectionReason } = useContext(DetailRecordContext);
@@ -3689,10 +3698,30 @@ function EditableTableHtml({
   const syncEditableCells = () => {
     const table = ref.current?.querySelector("table");
     if (!table) return;
-    table.querySelectorAll("td, th").forEach((cell) => {
+    // 表头 & 只读态：不可编辑
+    table.querySelectorAll("thead th").forEach((cell) => {
+      cell.removeAttribute("contenteditable");
+    });
+    const bodyRows = Array.from(table.querySelectorAll("tbody > tr")) as HTMLTableRowElement[];
+    const dataRows = bodyRows.filter((r) => {
+      const inner = r.innerHTML;
+      return !/colspan\s*=/i.test(inner) && !/总计|合计/.test(inner);
+    });
+    // 先全部按 readOnly 铺一遍
+    table.querySelectorAll("tbody td").forEach((cell) => {
       if (readOnly) cell.removeAttribute("contenteditable");
       else cell.setAttribute("contenteditable", "true");
     });
+    // 已锁定单元格：即使 readOnly=false 也不允许编辑
+    if (!readOnly && lockedCells && lockedCells.size > 0) {
+      dataRows.forEach((tr, rowIdx) => {
+        Array.from(tr.children).forEach((cellNode, colIdx) => {
+          if (lockedCells.has(`${rowIdx}-${colIdx}`)) {
+            (cellNode as HTMLElement).removeAttribute("contenteditable");
+          }
+        });
+      });
+    }
   };
 
   useEffect(() => {
@@ -3709,7 +3738,7 @@ function EditableTableHtml({
     syncEditableCells();
     layoutTable();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [html, mismatchSourceLabel, editedCells]);
+  }, [html, mismatchSourceLabel, editedCells, lockedCells, readOnly]);
 
   // 容器宽度变化时重新计算列宽
   useEffect(() => {
@@ -3977,18 +4006,25 @@ function TableChunkView({
   mustEdit: boolean;
   readOnly: boolean;
 }) {
+  const { recordId, recordStatus } = useContext(DetailRecordContext);
+  const storeKey = editedCellsKey(recordId, chunk.id);
   const [filterOn, setFilterOn] = useState(true);
   const [overrides, setOverrides] = useState<Record<string, number>>({});
-  const [editedCells, setEditedCells] = useState<Set<string>>(new Set());
+  const [editedCells, setEditedCells] = useState<Set<string>>(
+    () => new Set(editedCellsStore.get(storeKey) ?? []),
+  );
   const markEdited = (rowIdx: number, colIdx: number) => {
     setEditedCells((prev) => {
       const key = `${rowIdx}-${colIdx}`;
       if (prev.has(key)) return prev;
       const next = new Set(prev);
       next.add(key);
+      editedCellsStore.set(storeKey, new Set(next));
       return next;
     });
   };
+  const locked = recordStatus === "verified";
+  const lockedCells = locked ? editedCells : undefined;
   const handleOverride = (key: string, idx: number | undefined) => {
     setOverrides((prev) => {
       const next = { ...prev };
@@ -4021,6 +4057,7 @@ function TableChunkView({
           readOnly={readOnly}
           onChange={onChange}
           editedCells={editedCells}
+          lockedCells={lockedCells}
           markEdited={markEdited}
         />
       ) : (
@@ -4030,6 +4067,7 @@ function TableChunkView({
           mustEdit={mustEdit}
           onChange={onChange}
           editedCells={editedCells}
+          lockedCells={lockedCells}
           markEdited={markEdited}
         />
       )}
@@ -4044,6 +4082,7 @@ function FilteredTableView({
   readOnly,
   onChange,
   editedCells,
+  lockedCells,
   markEdited,
 }: {
   html: string;
@@ -4052,6 +4091,7 @@ function FilteredTableView({
   readOnly?: boolean;
   onChange?: (v: string) => void;
   editedCells?: Set<string>;
+  lockedCells?: Set<string>;
   markEdited?: (rowIdx: number, colIdx: number) => void;
 }) {
   const { recordId, aiRejectionReason } = useContext(DetailRecordContext);
@@ -4150,7 +4190,8 @@ function FilteredTableView({
                   !edited && PRODUCT_QUANTITY_KEYS.has(col.key)
                     ? computeMismatch(rowIdx, col.key, val, mismatchOpts)
                     : null;
-                const editable = !readOnly && !!onChange;
+                const isLocked = lockedCells?.has(`${rowIdx}-${sourceIdx}`) ?? false;
+                const editable = !readOnly && !!onChange && !isLocked;
                 const handleBlur = (e: React.FocusEvent<HTMLSpanElement>) => {
                   if (!onChange) return;
                   const next = (e.currentTarget.textContent ?? "").trim();
@@ -4187,7 +4228,7 @@ function FilteredTableView({
                       </span>
                     )}
                     {edited && (
-                      <span contentEditable={false} className="ml-0.5">
+                      <span contentEditable={false} className="ml-0.5 text-xs italic">
                         （已编辑）
                       </span>
                     )}
