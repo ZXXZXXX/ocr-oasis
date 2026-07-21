@@ -3986,7 +3986,7 @@ function FilteredTableView({
   const mismatchOpts = { hasRejection: !!aiRejectionReason, recordId };
   const mismatchSourceLabel = aiRejectionReason
     ? REJECTION_SOURCE_LABEL[aiRejectionReason]
-    : "签收数据";
+    : "物流签收单";
   const parsed = useMemo(() => parseTableStructure(html), [html]);
   const autoMap = useMemo(
     () => (parsed ? computeAutoTableMapping(parsed.headerCells) : new Map<string, number>()),
