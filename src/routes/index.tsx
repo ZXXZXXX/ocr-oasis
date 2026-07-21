@@ -1305,6 +1305,7 @@ function seedRecords(): OcrRecord[] {
     status: Extract<Status, "pending_review" | "verified" | "failed">;
     aiVerdict?: AiVerdict;
     failedReason?: string;
+    aiExceptionReason?: string;
   };
   // 送货单始终有；出货传票作为参考图，一定附带
   const seeds: Seed[] = [
