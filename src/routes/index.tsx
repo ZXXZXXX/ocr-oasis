@@ -1601,7 +1601,7 @@ function Workbench() {
   const [selectedConfidenceTones, setSelectedConfidenceTones] = useState<Set<"high" | "mid" | "low">>(
     new Set(["high", "mid", "low"]),
   );
-  const [aiVerdictFilter, setAiVerdictFilter] = useState<"all" | "pass" | "fail">("all");
+  const [aiVerdictFilter, setAiVerdictFilter] = useState<"all" | "pass" | "fail" | "exception">("all");
 
   // Draft filters for the popover UI
   const [draftDateFrom, setDraftDateFrom] = useState("");
