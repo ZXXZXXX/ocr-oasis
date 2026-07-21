@@ -4193,7 +4193,19 @@ function FilteredTableView({
                   className="border border-border bg-muted px-4 py-2 text-left align-top font-medium"
                 >
                   <div className="flex flex-col gap-0.5">
-                    <span className="whitespace-nowrap text-sm">{col.key}</span>
+                    <span className="flex items-center gap-1 whitespace-nowrap text-sm">
+                      {col.sourceIdx === undefined && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <AlertTriangle className="size-3.5 shrink-0 cursor-help text-amber-500" />
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="text-xs">
+                            未找到匹配列，可手动选择列
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                      {col.key}
+                    </span>
                     <Select
                       value={selectValue}
                       onValueChange={(v) => {
