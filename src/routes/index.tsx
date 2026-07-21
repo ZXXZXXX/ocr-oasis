@@ -3581,11 +3581,15 @@ function EditableTableHtml({
   readOnly,
   mustEdit,
   onChange,
+  editedCells,
+  markEdited,
 }: {
   html: string;
   readOnly: boolean;
   mustEdit: boolean;
   onChange: (v: string) => void;
+  editedCells?: Set<string>;
+  markEdited?: (rowIdx: number, colIdx: number) => void;
 }) {
   const { aiRejectionReason } = useContext(DetailRecordContext);
   const mismatchSourceLabel = aiRejectionReason
