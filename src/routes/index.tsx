@@ -943,6 +943,8 @@ function computeMismatch(
   return { safeThird };
 }
 
+const ROW_MISMATCH_BG = "#fde7ec";
+
 function clearTableAnnotations(root: HTMLElement) {
   root.querySelectorAll("[data-annotation]").forEach((n) => n.remove());
   root.querySelectorAll("[data-mismatch]").forEach((n) => {
@@ -950,6 +952,10 @@ function clearTableAnnotations(root: HTMLElement) {
     if (!p) return;
     while (n.firstChild) p.insertBefore(n.firstChild, n);
     p.removeChild(n);
+  });
+  root.querySelectorAll("tr[data-row-mismatch]").forEach((tr) => {
+    (tr as HTMLElement).style.backgroundColor = "";
+    tr.removeAttribute("data-row-mismatch");
   });
 }
 
