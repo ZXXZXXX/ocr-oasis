@@ -4060,6 +4060,7 @@ function FilteredTableView({
   readOnly,
   onChange,
   editedCells,
+  lockedCells,
   markEdited,
 }: {
   html: string;
@@ -4068,6 +4069,7 @@ function FilteredTableView({
   readOnly?: boolean;
   onChange?: (v: string) => void;
   editedCells?: Set<string>;
+  lockedCells?: Set<string>;
   markEdited?: (rowIdx: number, colIdx: number) => void;
 }) {
   const { recordId, aiRejectionReason } = useContext(DetailRecordContext);
