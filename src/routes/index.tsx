@@ -2401,8 +2401,14 @@ function VerdictBadge({ value }: { value: AiVerdict }) {
         <CheckCircle2 className="size-3" /> {VERDICT_LABEL[value]}
       </Badge>
     );
+  if (value === "fail")
+    return (
+      <Badge variant="status" className="w-20 justify-center gap-1 border-0 bg-destructive/15 font-normal text-destructive">
+        <X className="size-3" /> {VERDICT_LABEL[value]}
+      </Badge>
+    );
   return (
-    <Badge variant="status" className="w-20 justify-center gap-1 border-0 bg-[color:var(--warning)]/20 font-normal text-[color:var(--warning-foreground)]">
+    <Badge variant="status" className="w-20 justify-center gap-1 border-0 bg-[color:var(--warning)]/25 font-normal text-[color:var(--warning-foreground)]">
       <AlertTriangle className="size-3" /> {VERDICT_LABEL[value]}
     </Badge>
   );
