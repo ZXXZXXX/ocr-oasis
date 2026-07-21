@@ -4076,7 +4076,7 @@ function FilteredTableView({
                 const edited = editedCells?.has(`${rowIdx}-${sourceIdx}`) ?? false;
                 const mismatch =
                   !edited && PRODUCT_QUANTITY_KEYS.has(col.key)
-                    ? computeMismatch(rowIdx, col.key, val)
+                    ? computeMismatch(rowIdx, col.key, val, mismatchOpts)
                     : null;
                 const editable = !readOnly && !!onChange;
                 const handleBlur = (e: React.FocusEvent<HTMLSpanElement>) => {
