@@ -1665,8 +1665,7 @@ function seedRecords(): OcrRecord[] {
     driver: "周海明",
     plateNo: "沪C·39102",
     signatureStatus: undefined,
-    aiVerdict: "exception",
-    aiExceptionReason: "物流签收数据缺失",
+    // 缺少物流签收数据 → AI 不输出预审结论，也不做数据冲突展示
     shippingSlipNo: makeShippingSlipNo(missingSignCreatedAt, 4_100_001),
   };
 
