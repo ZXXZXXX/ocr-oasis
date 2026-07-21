@@ -153,6 +153,7 @@ const rejectionMismatchCount = (record: { createdAt: number }) =>
 const DetailRecordContext = createContext<{
   recordId?: string;
   aiRejectionReason?: AiRejectionReason;
+  aiExceptionReason?: string;
   recordStatus?: Status;
   aiVerdict?: AiVerdict;
 }>({});
@@ -261,6 +262,7 @@ interface OcrRecord {
   signatureStatus: SignatureStatus;
   aiVerdict?: AiVerdict; // 识别完成后由AI给出
   aiRejectionReason?: AiRejectionReason; // AI 不通过原因
+  aiExceptionReason?: string; // AI 审核异常原因（如 "物料数据列无法匹配" / "物流签收数据缺失"）
   failedReason?: string; // AI 识别失败原因，如 "图片无法识别" / "图片质量过低"
   verifiedAt?: number; // 人工提交验收结论时间
   verifiedBy?: string;
