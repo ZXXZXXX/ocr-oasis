@@ -4035,6 +4035,7 @@ function TableChunkView({
           readOnly={readOnly}
           onChange={onChange}
           editedCells={editedCells}
+          lockedCells={lockedCells}
           markEdited={markEdited}
         />
       ) : (
@@ -4044,6 +4045,7 @@ function TableChunkView({
           mustEdit={mustEdit}
           onChange={onChange}
           editedCells={editedCells}
+          lockedCells={lockedCells}
           markEdited={markEdited}
         />
       )}
