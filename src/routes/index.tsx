@@ -1283,7 +1283,7 @@ function seedRecords(): OcrRecord[] {
       mode: "mid",
       signatureStatus: "partial",
       status: "pending_review",
-      aiVerdict: "fail",
+      aiVerdict: "exception",
     },
     {
       minutesAgo: 180,
