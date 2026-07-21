@@ -890,6 +890,14 @@ function stableStrHash(s: string): number {
   return Math.abs(h);
 }
 
+function parseQuantityText(val: string): number | null {
+  const text = val.replace(/,/g, "").trim();
+  const match = text.match(/-?\d+(?:\.\d+)?/);
+  if (!match) return null;
+  const num = Number(match[0]);
+  return Number.isFinite(num) ? num : null;
+}
+
 // 基于稳定哈希的差异模拟：当记录带有 AI 不通过原因时，显著提高匹配率，
 // 且保证每行至少有一列出现差异（否则用户无法看到不匹配的数据）。
 function computeMismatch(
@@ -899,8 +907,8 @@ function computeMismatch(
   opts?: { hasRejection?: boolean; recordId?: string; aiRejectionReason?: AiRejectionReason },
 ): { safeThird: number } | null {
   if (!val) return null;
-  const num = Number(val);
-  if (!Number.isFinite(num) || num <= 0) return null;
+  const num = parseQuantityText(val);
+  if (num === null || num <= 0) return null;
   // 依据不通过原因限定允许出现勘误的列
   const allowed = opts?.aiRejectionReason
     ? REJECTION_MISMATCH_COLS[opts.aiRejectionReason]
@@ -926,18 +934,22 @@ function computeMismatch(
   return { safeThird };
 }
 
-// 剥离注入的差异展示节点，得到干净的原始 HTML
-function stripMismatchAnnotations(html: string): string {
-  if (typeof document === "undefined") return html;
-  const div = document.createElement("div");
-  div.innerHTML = html;
-  div.querySelectorAll("[data-annotation]").forEach((n) => n.remove());
-  div.querySelectorAll("[data-mismatch]").forEach((n) => {
+function clearTableAnnotations(root: HTMLElement) {
+  root.querySelectorAll("[data-annotation]").forEach((n) => n.remove());
+  root.querySelectorAll("[data-mismatch]").forEach((n) => {
     const p = n.parentNode;
     if (!p) return;
     while (n.firstChild) p.insertBefore(n.firstChild, n);
     p.removeChild(n);
   });
+}
+
+// 剥离注入的差异展示节点，得到干净的原始 HTML
+function stripMismatchAnnotations(html: string): string {
+  if (typeof document === "undefined") return html;
+  const div = document.createElement("div");
+  div.innerHTML = html;
+  clearTableAnnotations(div);
   return div.innerHTML;
 }
 
@@ -948,6 +960,7 @@ function annotateMismatchesInDOM(
   editedCells?: Set<string>,
   opts?: { hasRejection?: boolean; recordId?: string; aiRejectionReason?: AiRejectionReason },
 ) {
+  clearTableAnnotations(root);
   const table = root.querySelector("table");
   if (!table) return;
   const thead = table.querySelector("thead");
