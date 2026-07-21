@@ -918,8 +918,12 @@ function stripMismatchAnnotations(html: string): string {
   return div.innerHTML;
 }
 
-// 在原始 OCR 表格 DOM 上对数量列进行差异高亮
-function annotateMismatchesInDOM(root: HTMLElement, label: string) {
+// 在原始 OCR 表格 DOM 上对数量列进行差异高亮 / 编辑标注
+function annotateMismatchesInDOM(
+  root: HTMLElement,
+  label: string,
+  editedCells?: Set<string>,
+) {
   const table = root.querySelector("table");
   if (!table) return;
   const thead = table.querySelector("thead");
@@ -933,7 +937,6 @@ function annotateMismatchesInDOM(root: HTMLElement, label: string) {
     const idx = autoMap.get(key);
     if (idx !== undefined) qtyCols.push({ key, idx });
   });
-  if (qtyCols.length === 0) return;
   const bodyRows = Array.from(
     table.querySelectorAll("tbody > tr"),
   ) as HTMLTableRowElement[];
@@ -941,10 +944,30 @@ function annotateMismatchesInDOM(root: HTMLElement, label: string) {
     const inner = r.innerHTML;
     return !/colspan\s*=/i.test(inner) && !/总计|合计/.test(inner);
   });
+  const appendEditedTag = (cell: HTMLElement) => {
+    const ann = document.createElement("span");
+    ann.setAttribute("data-annotation", "");
+    ann.setAttribute("contenteditable", "false");
+    ann.style.marginLeft = "2px";
+    ann.style.color = "inherit";
+    ann.textContent = `（已编辑）`;
+    cell.appendChild(ann);
+  };
   dataRows.forEach((tr, rowIdx) => {
+    // 编辑标注：所有列都可能被编辑
+    if (editedCells) {
+      Array.from(tr.children).forEach((cellNode, colIdx) => {
+        const cell = cellNode as HTMLElement;
+        if (!editedCells.has(`${rowIdx}-${colIdx}`)) return;
+        if (cell.querySelector("[data-annotation]")) return;
+        appendEditedTag(cell);
+      });
+    }
+    // 差异高亮（编辑过的单元格跳过）
     qtyCols.forEach(({ key, idx }) => {
       const cell = tr.children[idx] as HTMLElement | undefined;
       if (!cell) return;
+      if (editedCells?.has(`${rowIdx}-${idx}`)) return;
       if (cell.querySelector("[data-mismatch]")) return;
       const val = (cell.textContent || "").trim();
       const m = computeMismatch(rowIdx, key, val);
@@ -3558,11 +3581,15 @@ function EditableTableHtml({
   readOnly,
   mustEdit,
   onChange,
+  editedCells,
+  markEdited,
 }: {
   html: string;
   readOnly: boolean;
   mustEdit: boolean;
   onChange: (v: string) => void;
+  editedCells?: Set<string>;
+  markEdited?: (rowIdx: number, colIdx: number) => void;
 }) {
   const { aiRejectionReason } = useContext(DetailRecordContext);
   const mismatchSourceLabel = aiRejectionReason
@@ -3623,11 +3650,11 @@ function EditableTableHtml({
       el.innerHTML = html;
       lastAppliedHtmlRef.current = html;
     }
-    annotateMismatchesInDOM(el, mismatchSourceLabel);
+    annotateMismatchesInDOM(el, mismatchSourceLabel, editedCells);
     syncTitles(el);
     layoutTable();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [html, mismatchSourceLabel]);
+  }, [html, mismatchSourceLabel, editedCells]);
 
   // 容器宽度变化时重新计算列宽
   useEffect(() => {
@@ -3668,7 +3695,7 @@ function EditableTableHtml({
     // 布局可能因行列数变化需要重新计算
     requestAnimationFrame(() => {
       const cur = ref.current;
-      if (cur) annotateMismatchesInDOM(cur, mismatchSourceLabel);
+      if (cur) annotateMismatchesInDOM(cur, mismatchSourceLabel, editedCells);
       layoutTable();
     });
   };
@@ -3842,6 +3869,10 @@ function EditableTableHtml({
           onInput={(e) => {
             const el = e.currentTarget as HTMLDivElement;
             syncTitles(el);
+            // 记录当前编辑的单元格
+            if (markEdited && sel && sel.bodyRow >= 0) {
+              markEdited(sel.bodyRow, sel.col);
+            }
             const clean = stripMismatchAnnotations(el.innerHTML);
             lastAppliedHtmlRef.current = clean;
             onChange(clean);
@@ -3865,6 +3896,16 @@ function TableChunkView({
 }) {
   const [filterOn, setFilterOn] = useState(true);
   const [overrides, setOverrides] = useState<Record<string, number>>({});
+  const [editedCells, setEditedCells] = useState<Set<string>>(new Set());
+  const markEdited = (rowIdx: number, colIdx: number) => {
+    setEditedCells((prev) => {
+      const key = `${rowIdx}-${colIdx}`;
+      if (prev.has(key)) return prev;
+      const next = new Set(prev);
+      next.add(key);
+      return next;
+    });
+  };
   const handleOverride = (key: string, idx: number | undefined) => {
     setOverrides((prev) => {
       const next = { ...prev };
@@ -3896,6 +3937,8 @@ function TableChunkView({
           onOverrideChange={handleOverride}
           readOnly={readOnly}
           onChange={onChange}
+          editedCells={editedCells}
+          markEdited={markEdited}
         />
       ) : (
         <EditableTableHtml
@@ -3903,6 +3946,8 @@ function TableChunkView({
           readOnly={readOnly}
           mustEdit={mustEdit}
           onChange={onChange}
+          editedCells={editedCells}
+          markEdited={markEdited}
         />
       )}
     </div>
@@ -3915,12 +3960,16 @@ function FilteredTableView({
   onOverrideChange,
   readOnly,
   onChange,
+  editedCells,
+  markEdited,
 }: {
   html: string;
   overrides: Record<string, number>;
   onOverrideChange: (key: string, sourceIdx: number | undefined) => void;
   readOnly?: boolean;
   onChange?: (v: string) => void;
+  editedCells?: Set<string>;
+  markEdited?: (rowIdx: number, colIdx: number) => void;
 }) {
   const { aiRejectionReason } = useContext(DetailRecordContext);
   const mismatchSourceLabel = aiRejectionReason
@@ -4012,8 +4061,9 @@ function FilteredTableView({
                 }
                 const sourceIdx = col.sourceIdx;
                 const val = row[sourceIdx] ?? "";
+                const edited = editedCells?.has(`${rowIdx}-${sourceIdx}`) ?? false;
                 const mismatch =
-                  PRODUCT_QUANTITY_KEYS.has(col.key)
+                  !edited && PRODUCT_QUANTITY_KEYS.has(col.key)
                     ? computeMismatch(rowIdx, col.key, val)
                     : null;
                 const editable = !readOnly && !!onChange;
@@ -4021,6 +4071,7 @@ function FilteredTableView({
                   if (!onChange) return;
                   const next = (e.currentTarget.textContent ?? "").trim();
                   if (next === val) return;
+                  markEdited?.(rowIdx, sourceIdx);
                   onChange(updateHtmlTableCell(html, rowIdx, sourceIdx, next));
                 };
                 return (
@@ -4049,6 +4100,11 @@ function FilteredTableView({
                         style={{ color: "#dc2626" }}
                       >
                         （{mismatchSourceLabel}：{mismatch.safeThird}）
+                      </span>
+                    )}
+                    {edited && (
+                      <span contentEditable={false} className="ml-0.5">
+                        （已编辑）
                       </span>
                     )}
                   </td>
