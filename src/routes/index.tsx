@@ -1636,7 +1636,7 @@ function seedRecords(): OcrRecord[] {
         imageId: missingSignImages[0]!.id,
         sourceImage: missingSignImages[0]!.name,
         pageBox: [0, 0, missingSignImages[0]!.width, missingSignImages[0]!.height],
-        chunks: enrichTableChunks(mockLingshiChunks()),
+        chunks: enrichTableChunks(mockMissingSignChunks()),
       },
     ],
   };
