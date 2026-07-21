@@ -2552,8 +2552,9 @@ function DetailView({
             <AlertTriangle className="mt-0.5 size-4 shrink-0" />
             <div className="flex-1 leading-relaxed">
               <span className="font-semibold">AI 预审不通过原因：</span>
-              {record.aiRejectionReason}
+              {record.aiRejectionReason}，共发现{rejectionMismatchCount(record)}项商品存在差异
             </div>
+
           </div>
         )}
       </SheetHeader>
