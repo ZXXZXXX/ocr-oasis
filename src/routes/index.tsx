@@ -4190,7 +4190,8 @@ function FilteredTableView({
                   !edited && PRODUCT_QUANTITY_KEYS.has(col.key)
                     ? computeMismatch(rowIdx, col.key, val, mismatchOpts)
                     : null;
-                const editable = !readOnly && !!onChange;
+                const isLocked = lockedCells?.has(`${rowIdx}-${sourceIdx}`) ?? false;
+                const editable = !readOnly && !!onChange && !isLocked;
                 const handleBlur = (e: React.FocusEvent<HTMLSpanElement>) => {
                   if (!onChange) return;
                   const next = (e.currentTarget.textContent ?? "").trim();
