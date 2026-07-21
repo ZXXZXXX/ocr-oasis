@@ -3636,6 +3636,7 @@ function EditableTableHtml({
   const ref = useRef<HTMLDivElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const lastAppliedHtmlRef = useRef<string>("");
+  const dirtyRef = useRef(false);
   // 选中单元格：bodyRow 为 tbody 内行号（0 起）；-1 表示位于 thead
   const [sel, setSel] = useState<{ bodyRow: number; col: number } | null>(null);
 
@@ -3684,6 +3685,8 @@ function EditableTableHtml({
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    const activeInside = typeof document !== "undefined" && el.contains(document.activeElement);
+    if (activeInside) return;
     if (html !== lastAppliedHtmlRef.current) {
       el.innerHTML = html;
       lastAppliedHtmlRef.current = html;
@@ -3713,6 +3716,9 @@ function EditableTableHtml({
     if (!row) return;
     const inThead = !!row.closest("thead");
     const col = cell.cellIndex;
+    if (!readOnly && !inThead) {
+      clearTableAnnotations(cell);
+    }
     if (inThead) {
       setSel({ bodyRow: -1, col });
     } else {
@@ -3729,6 +3735,7 @@ function EditableTableHtml({
     syncTitles(el);
     const clean = stripMismatchAnnotations(el.innerHTML);
     lastAppliedHtmlRef.current = clean;
+    dirtyRef.current = false;
     onChange(clean);
     // 布局可能因行列数变化需要重新计算
     requestAnimationFrame(() => {
@@ -3907,13 +3914,23 @@ function EditableTableHtml({
           onInput={(e) => {
             const el = e.currentTarget as HTMLDivElement;
             syncTitles(el);
+            dirtyRef.current = true;
             // 记录当前编辑的单元格
             if (markEdited && sel && sel.bodyRow >= 0) {
               markEdited(sel.bodyRow, sel.col);
             }
-            const clean = stripMismatchAnnotations(el.innerHTML);
-            lastAppliedHtmlRef.current = clean;
-            onChange(clean);
+          }}
+          onBlurCapture={() => {
+            requestAnimationFrame(() => {
+              const el = ref.current;
+              if (!el || el.contains(document.activeElement)) return;
+              if (dirtyRef.current) {
+                commit();
+                return;
+              }
+              annotateMismatchesInDOM(el, mismatchSourceLabel, editedCells, mismatchOpts);
+              layoutTable();
+            });
           }}
         />
       </div>
