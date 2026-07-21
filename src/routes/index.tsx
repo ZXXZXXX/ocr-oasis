@@ -1757,16 +1757,18 @@ function Workbench() {
           const next = Math.min(100, r.progress + 4 + Math.random() * 6);
           if (next >= 100) {
             if (Math.random() < AI_FAILURE_CHANCE) {
+              const reason =
+                AI_FAILURE_REASONS[Math.floor(Math.random() * AI_FAILURE_REASONS.length)];
               return {
                 ...r,
                 progress: 100,
-                status: "failed",
+                status: "pending_review",
                 confidence: undefined,
                 results: undefined,
-                aiVerdict: undefined,
+                aiVerdict: "exception",
                 aiRejectionReason: undefined,
-                failedReason:
-                  AI_FAILURE_REASONS[Math.floor(Math.random() * AI_FAILURE_REASONS.length)],
+                aiExceptionReason: reason,
+                failedReason: undefined,
               };
             }
             const result = fabricateResult(r.images);
