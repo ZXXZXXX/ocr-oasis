@@ -3686,6 +3686,15 @@ function EditableTableHtml({
     table.style.width = `${Math.max(sum, available)}px`;
   };
 
+  const syncEditableCells = () => {
+    const table = ref.current?.querySelector("table");
+    if (!table) return;
+    table.querySelectorAll("td, th").forEach((cell) => {
+      if (readOnly) cell.removeAttribute("contenteditable");
+      else cell.setAttribute("contenteditable", "true");
+    });
+  };
+
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
