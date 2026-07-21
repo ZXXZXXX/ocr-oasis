@@ -3650,11 +3650,11 @@ function EditableTableHtml({
       el.innerHTML = html;
       lastAppliedHtmlRef.current = html;
     }
-    annotateMismatchesInDOM(el, mismatchSourceLabel);
+    annotateMismatchesInDOM(el, mismatchSourceLabel, editedCells);
     syncTitles(el);
     layoutTable();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [html, mismatchSourceLabel]);
+  }, [html, mismatchSourceLabel, editedCells]);
 
   // 容器宽度变化时重新计算列宽
   useEffect(() => {
