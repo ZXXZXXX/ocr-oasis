@@ -2653,7 +2653,11 @@ function DetailView({
               <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
                 <span className="text-muted-foreground">ai识别结果：</span>
                 <VerdictBadge value={record.aiVerdict} />
-                <ConfidenceBadge score={record.confidence ?? 0} />
+                {record.confidence != null ? (
+                  <ConfidenceBadge score={record.confidence} />
+                ) : (
+                  <EmptyBadge className="w-12" />
+                )}
               </div>
             )}
             <SheetDescription className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs">
