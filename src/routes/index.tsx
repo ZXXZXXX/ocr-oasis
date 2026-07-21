@@ -154,6 +154,7 @@ const DetailRecordContext = createContext<{
   recordId?: string;
   aiRejectionReason?: AiRejectionReason;
   recordStatus?: Status;
+  aiVerdict?: AiVerdict;
 }>({});
 // 持久化每条记录 · 每个块的「已编辑单元格」，跨抽屉重开保留
 const editedCellsStore = new Map<string, Set<string>>();
@@ -167,7 +168,7 @@ type DocType = "delivery_note" | "shipping_slip";
 type Status = "queued" | "recognizing" | "pending_review" | "verified" | "failed";
 const MAX_CONCURRENT_OCR = 3;
 type SignatureStatus = "perfect" | "partial";
-type AiVerdict = "pass" | "fail";
+type AiVerdict = "pass" | "fail" | "exception";
 
 const SIGNATURE_LABEL: Record<SignatureStatus, string> = {
   perfect: "完美签收",
@@ -176,7 +177,15 @@ const SIGNATURE_LABEL: Record<SignatureStatus, string> = {
 const VERDICT_LABEL: Record<AiVerdict, string> = {
   pass: "通过",
   fail: "不通过",
+  exception: "审核异常",
 };
+// AI 预审结论为「审核异常」时，视为「物料数据列无法匹配」——固定这些数量列在过滤展示时无法自动匹配
+const EXCEPTION_UNMATCHED_COLS = new Set<string>(["订单数量", "拒收数量"]);
+// 生成「审核异常」下未匹配列的 KA 验收单期望值（稳定伪随机，仅用于演示校验）
+function kaExpectedForCell(recordId: string | undefined, rowIdx: number, key: string): number {
+  const h = stableStrHash(`ka-${recordId ?? ""}-${rowIdx}-${key}`);
+  return (h % 30) + 1;
+}
 const STATUS_LABEL: Record<Status, string> = {
   queued: "排队中",
   recognizing: "AI 识别中",
@@ -1275,7 +1284,7 @@ function seedRecords(): OcrRecord[] {
       mode: "mid",
       signatureStatus: "partial",
       status: "pending_review",
-      aiVerdict: "fail",
+      aiVerdict: "exception",
     },
     {
       minutesAgo: 180,
@@ -1593,7 +1602,7 @@ function Workbench() {
   const [selectedConfidenceTones, setSelectedConfidenceTones] = useState<Set<"high" | "mid" | "low">>(
     new Set(["high", "mid", "low"]),
   );
-  const [aiVerdictFilter, setAiVerdictFilter] = useState<"all" | "pass" | "fail">("all");
+  const [aiVerdictFilter, setAiVerdictFilter] = useState<"all" | "pass" | "fail" | "exception">("all");
 
   // Draft filters for the popover UI
   const [draftDateFrom, setDraftDateFrom] = useState("");
@@ -1601,7 +1610,7 @@ function Workbench() {
   const [draftConfidenceTones, setDraftConfidenceTones] = useState<Set<"high" | "mid" | "low">>(
     new Set(["high", "mid", "low"]),
   );
-  const [draftAiVerdictFilter, setDraftAiVerdictFilter] = useState<"all" | "pass" | "fail">("all");
+  const [draftAiVerdictFilter, setDraftAiVerdictFilter] = useState<"all" | "pass" | "fail" | "exception">("all");
 
   useEffect(() => {
     if (filterOpen) {
@@ -1995,6 +2004,7 @@ function Workbench() {
                             { value: "all", label: "全部" },
                             { value: "pass", label: "通过" },
                             { value: "fail", label: "不通过" },
+                            { value: "exception", label: "审核异常" },
                           ].map((opt) => {
                             const selected = draftAiVerdictFilter === opt.value;
                             return (
@@ -2392,8 +2402,14 @@ function VerdictBadge({ value }: { value: AiVerdict }) {
         <CheckCircle2 className="size-3" /> {VERDICT_LABEL[value]}
       </Badge>
     );
+  if (value === "fail")
+    return (
+      <Badge variant="status" className="w-20 justify-center gap-1 border-0 bg-destructive/15 font-normal text-destructive">
+        <X className="size-3" /> {VERDICT_LABEL[value]}
+      </Badge>
+    );
   return (
-    <Badge variant="status" className="w-20 justify-center gap-1 border-0 bg-[color:var(--warning)]/20 font-normal text-[color:var(--warning-foreground)]">
+    <Badge variant="status" className="w-20 justify-center gap-1 border-0 bg-[color:var(--warning)]/25 font-normal text-[color:var(--warning-foreground)]">
       <AlertTriangle className="size-3" /> {VERDICT_LABEL[value]}
     </Badge>
   );
@@ -2504,7 +2520,7 @@ function DetailView({
   }
 
   return (
-    <DetailRecordContext.Provider value={{ recordId: record.id, aiRejectionReason: record.aiRejectionReason, recordStatus: record.status }}>
+    <DetailRecordContext.Provider value={{ recordId: record.id, aiRejectionReason: record.aiRejectionReason, recordStatus: record.status, aiVerdict: record.aiVerdict }}>
     <>
       <SheetHeader className="border-b border-border px-6 py-4">
         <div className="flex items-start justify-between gap-4">
@@ -4116,7 +4132,8 @@ function FilteredTableView({
   lockedCells?: Set<string>;
   markEdited?: (rowIdx: number, colIdx: number) => void;
 }) {
-  const { recordId, aiRejectionReason } = useContext(DetailRecordContext);
+  const { recordId, aiRejectionReason, aiVerdict } = useContext(DetailRecordContext);
+  const isException = aiVerdict === "exception";
   const mismatchOpts = { hasRejection: !!aiRejectionReason, recordId, aiRejectionReason };
   const mismatchSourceLabel = aiRejectionReason
     ? REJECTION_SOURCE_LABEL[aiRejectionReason]
@@ -4137,15 +4154,30 @@ function FilteredTableView({
 
   const columns = PRODUCT_TABLE_COLUMNS.map((key) => {
     const overrideIdx = overrides[key];
-    const sourceIdx = overrideIdx !== undefined ? overrideIdx : autoMap.get(key);
+    // 「审核异常」记录：固定的几列物料数量列视为未匹配（除非用户手动指定）
+    const autoIdx = isException && EXCEPTION_UNMATCHED_COLS.has(key)
+      ? undefined
+      : autoMap.get(key);
+    const sourceIdx = overrideIdx !== undefined ? overrideIdx : autoIdx;
     const originalHeader = sourceIdx !== undefined ? headerCells[sourceIdx] : undefined;
+    const isExceptionCol = isException && EXCEPTION_UNMATCHED_COLS.has(key);
     return {
       key,
       sourceIdx,
       originalHeader,
       isOverridden: overrideIdx !== undefined,
+      isExceptionCol,
     };
   });
+
+  // 计算异常列的 KA 期望值 & 当前是否与 OCR 单元格匹配
+  const kaValueFor = (rowIdx: number, key: string) => kaExpectedForCell(recordId, rowIdx, key);
+  const isExceptionCellMismatch = (rowIdx: number, key: string, val: string) => {
+    const expected = kaValueFor(rowIdx, key);
+    const num = parseQuantityText(val);
+    return num === null || num !== expected;
+  };
+
 
   return (
     <div className="overflow-x-auto text-xs">
@@ -4199,12 +4231,29 @@ function FilteredTableView({
               const edited = editedCells?.has(`${rowIdx}-${col.sourceIdx}`) ?? false;
               if (edited) return false;
               const val = row[col.sourceIdx] ?? "";
+              if (col.isExceptionCol) {
+                return isExceptionCellMismatch(rowIdx, col.key, val);
+              }
               return !!computeMismatch(rowIdx, col.key, val, mismatchOpts);
             });
             return (
             <tr key={rowIdx} style={rowMismatch ? { backgroundColor: ROW_MISMATCH_BG } : undefined}>
               {columns.map((col) => {
                 if (col.sourceIdx === undefined) {
+                  // 「审核异常」的未匹配列：浅灰色展示 KA 验收单的对应数据
+                  if (col.isExceptionCol) {
+                    const kaVal = kaValueFor(rowIdx, col.key);
+                    return (
+                      <td
+                        key={col.key}
+                        className="border border-border px-4 py-2 text-sm leading-loose"
+                        style={{ color: "#9ca3af" }}
+                        title="AI 未识别到对应列，显示 KA 验收单数据；请手动选择列进行校验"
+                      >
+                        {kaVal}
+                      </td>
+                    );
+                  }
                   return (
                     <td
                       key={col.key}
@@ -4217,8 +4266,13 @@ function FilteredTableView({
                 const sourceIdx = col.sourceIdx;
                 const val = row[sourceIdx] ?? "";
                 const edited = editedCells?.has(`${rowIdx}-${sourceIdx}`) ?? false;
+                const exceptionMismatch =
+                  !edited && col.isExceptionCol
+                    ? isExceptionCellMismatch(rowIdx, col.key, val)
+                    : false;
+                const kaExpected = col.isExceptionCol ? kaValueFor(rowIdx, col.key) : null;
                 const mismatch =
-                  !edited && PRODUCT_QUANTITY_KEYS.has(col.key)
+                  !edited && !col.isExceptionCol && PRODUCT_QUANTITY_KEYS.has(col.key)
                     ? computeMismatch(rowIdx, col.key, val, mismatchOpts)
                     : null;
                 const isLocked = lockedCells?.has(`${rowIdx}-${sourceIdx}`) ?? false;
@@ -4230,6 +4284,7 @@ function FilteredTableView({
                   markEdited?.(rowIdx, sourceIdx);
                   onChange(updateHtmlTableCell(html, rowIdx, sourceIdx, next));
                 };
+                const isRed = !!mismatch || exceptionMismatch;
                 return (
                   <td
                     key={col.key}
@@ -4245,7 +4300,7 @@ function FilteredTableView({
                         editable &&
                           "cursor-text rounded px-0.5 hover:bg-muted/50 focus:bg-muted/70",
                       )}
-                      style={mismatch ? { color: "#dc2626" } : undefined}
+                      style={isRed ? { color: "#dc2626" } : undefined}
                     >
                       {val}
                     </span>
@@ -4256,6 +4311,15 @@ function FilteredTableView({
                         style={{ color: "#dc2626" }}
                       >
                         （{mismatchSourceLabel}：{mismatch.safeThird}）
+                      </span>
+                    )}
+                    {exceptionMismatch && kaExpected != null && (
+                      <span
+                        contentEditable={false}
+                        className="ml-0.5 text-xs"
+                        style={{ color: "#dc2626" }}
+                      >
+                        （KA验收单：{kaExpected}）
                       </span>
                     )}
                     {edited && (
