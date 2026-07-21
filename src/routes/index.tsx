@@ -980,7 +980,7 @@ function annotateMismatchesInDOM(
       if (editedCells?.has(`${rowIdx}-${idx}`)) return;
       if (cell.querySelector("[data-mismatch]")) return;
       const val = (cell.textContent || "").trim();
-      const m = computeMismatch(rowIdx, key, val);
+      const m = computeMismatch(rowIdx, key, val, opts);
       if (!m) return;
       cell.textContent = "";
       const outer = document.createElement("span");
