@@ -3706,6 +3706,7 @@ function EditableTableHtml({
     }
     annotateMismatchesInDOM(el, mismatchSourceLabel, editedCells, mismatchOpts);
     syncTitles(el);
+    syncEditableCells();
     layoutTable();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [html, mismatchSourceLabel, editedCells]);
@@ -3762,6 +3763,7 @@ function EditableTableHtml({
     requestAnimationFrame(() => {
       const cur = ref.current;
       if (cur) annotateMismatchesInDOM(cur, mismatchSourceLabel, editedCells, mismatchOpts);
+      syncEditableCells();
       layoutTable();
     });
   };
