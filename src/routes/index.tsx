@@ -139,6 +139,12 @@ const REJECTION_SOURCE_LABEL: Record<AiRejectionReason, string> = {
   "与《物流签收单》数据不匹配": "物流签收单",
   "与《KA验收单》数据不匹配": "KA验收单",
 };
+// 不通过原因 → 允许出现勘误标注的数量列
+const REJECTION_MISMATCH_COLS: Record<AiRejectionReason, readonly string[]> = {
+  "与《出货传票》数据不匹配": ["订单数量", "发货数量"],
+  "与《物流签收单》数据不匹配": ["订单数量", "签收数量"],
+  "与《KA验收单》数据不匹配": ["签收数量"],
+};
 // 供子组件读取当前详情记录信息
 const DetailRecordContext = createContext<{
   recordId?: string;
@@ -890,20 +896,28 @@ function computeMismatch(
   rowIdx: number,
   key: string,
   val: string,
-  opts?: { hasRejection?: boolean; recordId?: string },
+  opts?: { hasRejection?: boolean; recordId?: string; aiRejectionReason?: AiRejectionReason },
 ): { safeThird: number } | null {
   if (!val) return null;
   const num = Number(val);
   if (!Number.isFinite(num) || num <= 0) return null;
+  // 依据不通过原因限定允许出现勘误的列
+  const allowed = opts?.aiRejectionReason
+    ? REJECTION_MISMATCH_COLS[opts.aiRejectionReason]
+    : undefined;
+  if (allowed && !allowed.includes(key)) return null;
   const seed = opts?.recordId ? `${opts.recordId}-${rowIdx}-${key}` : `${rowIdx}-${key}`;
   const h = stableStrHash(seed);
   const hasRejection = !!opts?.hasRejection;
   // 命中阈值：默认 ~18%，有拒绝原因时提升到 ~55%
   let hit = hasRejection ? h % 100 < 55 : h % 100 < 18;
-  // 保证该行至少一列出现差异：使用行哈希决定"强制列"
+  // 保证该行至少一列出现差异：从允许列中选一列强制命中
   if (!hit && hasRejection) {
-    const forcedIdx = stableStrHash(`${opts?.recordId ?? ""}-${rowIdx}`) % PRODUCT_QUANTITY_ORDER.length;
-    if (PRODUCT_QUANTITY_ORDER[forcedIdx] === key) hit = true;
+    const candidates = allowed ?? PRODUCT_QUANTITY_ORDER;
+    if (candidates.length > 0) {
+      const forcedIdx = stableStrHash(`${opts?.recordId ?? ""}-${rowIdx}`) % candidates.length;
+      if (candidates[forcedIdx] === key) hit = true;
+    }
   }
   if (!hit) return null;
   const delta = (h % 5) + 1;
@@ -932,7 +946,7 @@ function annotateMismatchesInDOM(
   root: HTMLElement,
   label: string,
   editedCells?: Set<string>,
-  opts?: { hasRejection?: boolean; recordId?: string },
+  opts?: { hasRejection?: boolean; recordId?: string; aiRejectionReason?: AiRejectionReason },
 ) {
   const table = root.querySelector("table");
   if (!table) return;
@@ -3605,7 +3619,7 @@ function EditableTableHtml({
   const mismatchSourceLabel = aiRejectionReason
     ? REJECTION_SOURCE_LABEL[aiRejectionReason]
     : "物流签收单";
-  const mismatchOpts = { hasRejection: !!aiRejectionReason, recordId };
+  const mismatchOpts = { hasRejection: !!aiRejectionReason, recordId, aiRejectionReason };
   const ref = useRef<HTMLDivElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const lastAppliedHtmlRef = useRef<string>("");
@@ -3983,7 +3997,7 @@ function FilteredTableView({
   markEdited?: (rowIdx: number, colIdx: number) => void;
 }) {
   const { recordId, aiRejectionReason } = useContext(DetailRecordContext);
-  const mismatchOpts = { hasRejection: !!aiRejectionReason, recordId };
+  const mismatchOpts = { hasRejection: !!aiRejectionReason, recordId, aiRejectionReason };
   const mismatchSourceLabel = aiRejectionReason
     ? REJECTION_SOURCE_LABEL[aiRejectionReason]
     : "物流签收单";
