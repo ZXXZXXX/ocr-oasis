@@ -177,7 +177,7 @@ const SIGNATURE_LABEL: Record<SignatureStatus, string> = {
 const VERDICT_LABEL: Record<AiVerdict, string> = {
   pass: "通过",
   fail: "不通过",
-  exception: "异常异常",
+  exception: "异常",
 };
 // AI 预审结论为「审核异常」时，视为「物料数据列无法匹配」——固定这些数量列在过滤展示时无法自动匹配
 const EXCEPTION_UNMATCHED_COLS = new Set<string>(["订单数量", "拒收数量"]);
