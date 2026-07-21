@@ -1821,9 +1821,10 @@ function Workbench() {
       if (r.status !== "recognizing" && r.status !== "failed" && r.status !== "queued" && r.confidence != null) {
         const tone = confidenceTone(r.confidence / 100);
         if (!selectedConfidenceTones.has(tone)) return false;
-      } else {
+      } else if (r.status === "recognizing" || r.status === "failed" || r.status === "queued") {
         if (!allTonesSelected) return false;
       }
+      // confidence 为 null 的 pending_review 记录不参与置信度筛选，始终保留
       if (aiVerdictFilter !== "all" && r.aiVerdict !== aiVerdictFilter) return false;
       if (searchQuery.trim()) {
         const kaMatch = fuzzyMatch(searchQuery, r.id);
