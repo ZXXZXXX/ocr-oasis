@@ -1312,6 +1312,12 @@ function seedRecords(): OcrRecord[] {
       status: "failed",
       failedReason: "图片质量过低",
     },
+    {
+      minutesAgo: 200,
+      signatureStatus: "partial",
+      status: "failed",
+      failedReason: "图片数据为空",
+    },
   ];
 
   const docTypes: DocType[] = ["delivery_note", "shipping_slip"];
