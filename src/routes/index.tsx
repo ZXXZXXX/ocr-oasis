@@ -888,15 +888,28 @@ function stableStrHash(s: string): number {
   return Math.abs(h);
 }
 
-// 基于稳定哈希的差异模拟：与 FilteredTableView 完全一致。
-function computeMismatch(rowIdx: number, key: string, val: string):
-  | { safeThird: number }
-  | null {
+// 基于稳定哈希的差异模拟：当记录带有 AI 不通过原因时，显著提高匹配率，
+// 且保证每行至少有一列出现差异（否则用户无法看到不匹配的数据）。
+function computeMismatch(
+  rowIdx: number,
+  key: string,
+  val: string,
+  opts?: { hasRejection?: boolean; recordId?: string },
+): { safeThird: number } | null {
   if (!val) return null;
   const num = Number(val);
   if (!Number.isFinite(num) || num <= 0) return null;
-  const h = stableStrHash(`${rowIdx}-${key}`);
-  if (h % 100 >= 18) return null;
+  const seed = opts?.recordId ? `${opts.recordId}-${rowIdx}-${key}` : `${rowIdx}-${key}`;
+  const h = stableStrHash(seed);
+  const hasRejection = !!opts?.hasRejection;
+  // 命中阈值：默认 ~18%，有拒绝原因时提升到 ~55%
+  let hit = hasRejection ? h % 100 < 55 : h % 100 < 18;
+  // 保证该行至少一列出现差异：使用行哈希决定"强制列"
+  if (!hit && hasRejection) {
+    const forcedIdx = stableStrHash(`${opts?.recordId ?? ""}-${rowIdx}`) % PRODUCT_QUANTITY_ORDER.length;
+    if (PRODUCT_QUANTITY_ORDER[forcedIdx] === key) hit = true;
+  }
+  if (!hit) return null;
   const delta = (h % 5) + 1;
   const third = h % 2 === 0 ? num - delta : num + delta;
   const safeThird = third < 0 ? num + delta : third;
