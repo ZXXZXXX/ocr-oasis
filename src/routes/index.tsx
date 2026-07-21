@@ -943,6 +943,8 @@ function computeMismatch(
   return { safeThird };
 }
 
+const ROW_MISMATCH_BG = "#fde7ec";
+
 function clearTableAnnotations(root: HTMLElement) {
   root.querySelectorAll("[data-annotation]").forEach((n) => n.remove());
   root.querySelectorAll("[data-mismatch]").forEach((n) => {
@@ -950,6 +952,10 @@ function clearTableAnnotations(root: HTMLElement) {
     if (!p) return;
     while (n.firstChild) p.insertBefore(n.firstChild, n);
     p.removeChild(n);
+  });
+  root.querySelectorAll("tr[data-row-mismatch]").forEach((tr) => {
+    (tr as HTMLElement).style.backgroundColor = "";
+    tr.removeAttribute("data-row-mismatch");
   });
 }
 
@@ -1015,14 +1021,19 @@ function annotateMismatchesInDOM(
       });
     }
     // 差异高亮（编辑过的单元格跳过）
+    let rowHasMismatch = false;
     qtyCols.forEach(({ key, idx }) => {
       const cell = tr.children[idx] as HTMLElement | undefined;
       if (!cell) return;
       if (editedCells?.has(`${rowIdx}-${idx}`)) return;
-      if (cell.querySelector("[data-mismatch]")) return;
+      if (cell.querySelector("[data-mismatch]")) {
+        rowHasMismatch = true;
+        return;
+      }
       const val = (cell.textContent || "").trim();
       const m = computeMismatch(rowIdx, key, val, opts);
       if (!m) return;
+      rowHasMismatch = true;
       cell.textContent = "";
       const outer = document.createElement("span");
       outer.setAttribute("data-mismatch", "");
@@ -1037,6 +1048,10 @@ function annotateMismatchesInDOM(
       outer.appendChild(ann);
       cell.appendChild(outer);
     });
+    if (rowHasMismatch) {
+      tr.setAttribute("data-row-mismatch", "");
+      tr.style.backgroundColor = ROW_MISMATCH_BG;
+    }
   });
 }
 
@@ -4175,8 +4190,17 @@ function FilteredTableView({
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, rowIdx) => (
-            <tr key={rowIdx}>
+          {rows.map((row, rowIdx) => {
+            const rowMismatch = columns.some((col) => {
+              if (col.sourceIdx === undefined) return false;
+              if (!PRODUCT_QUANTITY_KEYS.has(col.key)) return false;
+              const edited = editedCells?.has(`${rowIdx}-${col.sourceIdx}`) ?? false;
+              if (edited) return false;
+              const val = row[col.sourceIdx] ?? "";
+              return !!computeMismatch(rowIdx, col.key, val, mismatchOpts);
+            });
+            return (
+            <tr key={rowIdx} style={rowMismatch ? { backgroundColor: ROW_MISMATCH_BG } : undefined}>
               {columns.map((col) => {
                 if (col.sourceIdx === undefined) {
                   return (
@@ -4241,7 +4265,8 @@ function FilteredTableView({
                 );
               })}
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>
