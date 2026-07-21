@@ -2717,7 +2717,7 @@ function DetailView({
           <div className="flex-1 leading-relaxed">
             <span className="font-semibold">AI 预审异常原因：</span>
             {record.aiExceptionReason === "物流签收数据缺失"
-              ? "物流签收数据缺失，已上传图片中未识别到物流签收信息，请确认签收数据是否完整或联系承运方补充。"
+              ? "物流签收数据缺失"
               : record.aiExceptionReason === "图片无法识别"
               ? "图片无法识别，AI 无法从图片中提取有效单据信息，请确认图片内容是否完整或重新上传清晰图片。"
               : record.aiExceptionReason === "图片质量过低"
