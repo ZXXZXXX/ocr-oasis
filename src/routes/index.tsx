@@ -167,7 +167,7 @@ type DocType = "delivery_note" | "shipping_slip";
 type Status = "queued" | "recognizing" | "pending_review" | "verified" | "failed";
 const MAX_CONCURRENT_OCR = 3;
 type SignatureStatus = "perfect" | "partial";
-type AiVerdict = "pass" | "fail";
+type AiVerdict = "pass" | "fail" | "exception";
 
 const SIGNATURE_LABEL: Record<SignatureStatus, string> = {
   perfect: "完美签收",
@@ -176,7 +176,15 @@ const SIGNATURE_LABEL: Record<SignatureStatus, string> = {
 const VERDICT_LABEL: Record<AiVerdict, string> = {
   pass: "通过",
   fail: "不通过",
+  exception: "审核异常",
 };
+// AI 预审结论为「审核异常」时，视为「物料数据列无法匹配」——固定这些数量列在过滤展示时无法自动匹配
+const EXCEPTION_UNMATCHED_COLS = new Set<string>(["订单数量", "拒收数量"]);
+// 生成「审核异常」下未匹配列的 KA 验收单期望值（稳定伪随机，仅用于演示校验）
+function kaExpectedForCell(recordId: string | undefined, rowIdx: number, key: string): number {
+  const h = stableStrHash(`ka-${recordId ?? ""}-${rowIdx}-${key}`);
+  return (h % 30) + 1;
+}
 const STATUS_LABEL: Record<Status, string> = {
   queued: "排队中",
   recognizing: "AI 识别中",
