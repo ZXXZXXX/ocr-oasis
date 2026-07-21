@@ -2003,6 +2003,7 @@ function Workbench() {
                             { value: "all", label: "全部" },
                             { value: "pass", label: "通过" },
                             { value: "fail", label: "不通过" },
+                            { value: "exception", label: "审核异常" },
                           ].map((opt) => {
                             const selected = draftAiVerdictFilter === opt.value;
                             return (
