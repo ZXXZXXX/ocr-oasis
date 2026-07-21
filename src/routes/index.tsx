@@ -3706,7 +3706,7 @@ function EditableTableHtml({
     // 布局可能因行列数变化需要重新计算
     requestAnimationFrame(() => {
       const cur = ref.current;
-      if (cur) annotateMismatchesInDOM(cur, mismatchSourceLabel, editedCells);
+      if (cur) annotateMismatchesInDOM(cur, mismatchSourceLabel, editedCells, mismatchOpts);
       layoutTable();
     });
   };
