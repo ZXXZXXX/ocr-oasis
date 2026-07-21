@@ -4194,7 +4194,7 @@ function FilteredTableView({
                       </span>
                     )}
                     {edited && (
-                      <span contentEditable={false} className="ml-0.5">
+                      <span contentEditable={false} className="ml-0.5 text-xs italic">
                         （已编辑）
                       </span>
                     )}
