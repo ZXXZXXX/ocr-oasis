@@ -2481,7 +2481,7 @@ function DetailView({
   }
 
   return (
-    <DetailRecordContext.Provider value={{ recordId: record.id, aiRejectionReason: record.aiRejectionReason }}>
+    <DetailRecordContext.Provider value={{ recordId: record.id, aiRejectionReason: record.aiRejectionReason, recordStatus: record.status }}>
     <>
       <SheetHeader className="border-b border-border px-6 py-4">
         <div className="flex items-start justify-between gap-4">
