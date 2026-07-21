@@ -1734,7 +1734,7 @@ function Workbench() {
     }
   }, [filterOpen, dateFrom, dateTo, selectedConfidenceTones, aiVerdictFilter]);
 
-  const [quickStatus, setQuickStatus] = useState<"all" | "pending_review">("all");
+  const [quickStatus, setQuickStatus] = useState<"all" | "unreviewed">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
