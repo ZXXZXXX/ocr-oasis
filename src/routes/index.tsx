@@ -4035,7 +4035,8 @@ function FilteredTableView({
                       onBlur={handleBlur}
                       className={cn(
                         "inline-block min-w-[1ch] outline-none",
-                        editable && "rounded px-0.5 focus:bg-muted/60",
+                        editable &&
+                          "cursor-text rounded px-0.5 hover:bg-muted/50 focus:bg-muted/70",
                       )}
                       style={mismatch ? { color: "#dc2626" } : undefined}
                     >
