@@ -3955,6 +3955,7 @@ function EditableTableHtml({
                 return;
               }
               annotateMismatchesInDOM(el, mismatchSourceLabel, editedCells, mismatchOpts);
+              syncEditableCells();
               layoutTable();
             });
           }}
