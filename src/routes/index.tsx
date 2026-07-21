@@ -946,7 +946,7 @@ function annotateMismatchesInDOM(
   root: HTMLElement,
   label: string,
   editedCells?: Set<string>,
-  opts?: { hasRejection?: boolean; recordId?: string },
+  opts?: { hasRejection?: boolean; recordId?: string; aiRejectionReason?: AiRejectionReason },
 ) {
   const table = root.querySelector("table");
   if (!table) return;
