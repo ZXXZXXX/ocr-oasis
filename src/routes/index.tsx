@@ -149,7 +149,12 @@ const REJECTION_MISMATCH_COLS: Record<AiRejectionReason, readonly string[]> = {
 const DetailRecordContext = createContext<{
   recordId?: string;
   aiRejectionReason?: AiRejectionReason;
+  recordStatus?: Status;
 }>({});
+// 持久化每条记录 · 每个块的「已编辑单元格」，跨抽屉重开保留
+const editedCellsStore = new Map<string, Set<string>>();
+const editedCellsKey = (recordId: string | undefined, chunkId: string) =>
+  `${recordId ?? "_"}::${chunkId}`;
 const AI_FAILURE_CHANCE = 0.1; // 模拟识别失败概率
 
 
