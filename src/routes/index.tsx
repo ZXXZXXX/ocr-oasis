@@ -123,28 +123,30 @@ const CURRENT_USER = "审核员 · 李婷";
 const LOW_CONF_THRESHOLD = 0.8;
 const AI_FAILURE_REASONS = ["图片无法识别", "图片质量过低"] as const;
 const AI_REJECTION_REASONS = [
-  "与《出货传票》数据不匹配",
-  "与《物流签收单》数据不匹配",
-  "与《KA验收单》数据不匹配",
+  "《KA验收单》与《出货传票》数据不匹配",
+  "《KA验收单》与《物流签收单》数据不匹配",
+  "ocr识别结果与《KA验收单》数据不匹配",
 ] as const;
 type AiRejectionReason = (typeof AI_REJECTION_REASONS)[number];
 // 特定任务的固定不通过原因（用于演示）
 const AI_REJECTION_OVERRIDES: Record<string, AiRejectionReason> = {
-  CD202607143260522: "与《KA验收单》数据不匹配",
-  CD202607141000274: "与《出货传票》数据不匹配",
+  CD202607143260522: "《KA验收单》与《物流签收单》数据不匹配",
+  CD202607141000274: "《KA验收单》与《出货传票》数据不匹配",
 };
 // 不通过原因 → 第三方数据来源标签（用于不匹配单元格括号内展示）
+// 无论何种原因，表格内只特殊展示与《KA验收单》不匹配的数据
 const REJECTION_SOURCE_LABEL: Record<AiRejectionReason, string> = {
-  "与《出货传票》数据不匹配": "出货传票",
-  "与《物流签收单》数据不匹配": "物流签收单",
-  "与《KA验收单》数据不匹配": "KA验收单",
+  "《KA验收单》与《出货传票》数据不匹配": "KA验收单",
+  "《KA验收单》与《物流签收单》数据不匹配": "KA验收单",
+  "ocr识别结果与《KA验收单》数据不匹配": "KA验收单",
 };
-// 不通过原因 → 允许出现勘误标注的数量列
+// 不通过原因 → 允许出现勘误标注的数量列（统一只标注签收数量，即与KA验收单对比列）
 const REJECTION_MISMATCH_COLS: Record<AiRejectionReason, readonly string[]> = {
-  "与《出货传票》数据不匹配": ["订单数量", "发货数量"],
-  "与《物流签收单》数据不匹配": ["订单数量", "签收数量"],
-  "与《KA验收单》数据不匹配": ["签收数量"],
+  "《KA验收单》与《出货传票》数据不匹配": ["签收数量"],
+  "《KA验收单》与《物流签收单》数据不匹配": ["签收数量"],
+  "ocr识别结果与《KA验收单》数据不匹配": ["签收数量"],
 };
+
 // 供子组件读取当前详情记录信息
 const DetailRecordContext = createContext<{
   recordId?: string;
