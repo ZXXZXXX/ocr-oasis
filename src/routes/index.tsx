@@ -1305,6 +1305,7 @@ function seedRecords(): OcrRecord[] {
     status: Extract<Status, "pending_review" | "verified" | "failed">;
     aiVerdict?: AiVerdict;
     failedReason?: string;
+    aiExceptionReason?: string;
   };
   // 送货单始终有；出货传票作为参考图，一定附带
   const seeds: Seed[] = [
@@ -1339,14 +1340,16 @@ function seedRecords(): OcrRecord[] {
     {
       minutesAgo: 90,
       signatureStatus: "perfect",
-      status: "failed",
-      failedReason: "图片无法识别",
+      status: "pending_review",
+      aiVerdict: "exception",
+      aiExceptionReason: "图片无法识别",
     },
     {
       minutesAgo: 140,
       signatureStatus: "partial",
-      status: "failed",
-      failedReason: "图片质量过低",
+      status: "pending_review",
+      aiVerdict: "exception",
+      aiExceptionReason: "图片质量过低",
     },
     {
       minutesAgo: 200,
@@ -1370,10 +1373,13 @@ function seedRecords(): OcrRecord[] {
       width: 1920,
       height: 720,
     }));
-    // 只对送货单执行 OCR；识别失败的任务无结果
+    // 只对送货单执行 OCR；识别失败/图片无法识别的任务无结果
     const isFailed = s.status === "failed";
+    const isRecognitionException =
+      s.aiExceptionReason === "图片无法识别" || s.aiExceptionReason === "图片质量过低";
+    const hasResults = !isFailed && !isRecognitionException;
     const results: Partial<Record<DocType, DocPage[]>> = {};
-    if (!isFailed) {
+    if (hasResults) {
       const dImg = images.find((i) => i.docType === "delivery_note")!;
       const rand = createRand(idx + 1);
       results.delivery_note = [
@@ -1393,7 +1399,7 @@ function seedRecords(): OcrRecord[] {
       createdAt,
       status: s.status,
       progress: 100,
-      confidence: isFailed ? undefined : averageConfidence(allPages),
+      confidence: hasResults ? averageConfidence(allPages) : undefined,
       deliveryCount: 1,
       shippingCount: 1,
       images,
@@ -1402,12 +1408,13 @@ function seedRecords(): OcrRecord[] {
       plateNo: who.plate,
       signatureStatus: s.signatureStatus,
       aiVerdict: isFailed ? undefined : s.aiVerdict,
+      aiExceptionReason: s.aiExceptionReason,
       failedReason: isFailed ? s.failedReason : undefined,
       verifiedAt: s.status === "verified" ? now - (s.minutesAgo - 10) * 60_000 : undefined,
       verifiedBy: s.status === "verified" ? CURRENT_USER : undefined,
       shippingSlipNo: makeShippingSlipNo(createdAt, 1_000 + idx * 137),
     };
-    return { ...record, aiRejectionReason: isFailed ? undefined : makeAiRejectionReason(record) };
+    return { ...record, aiRejectionReason: hasResults ? makeAiRejectionReason(record) : undefined };
 
   });
 
@@ -1750,16 +1757,18 @@ function Workbench() {
           const next = Math.min(100, r.progress + 4 + Math.random() * 6);
           if (next >= 100) {
             if (Math.random() < AI_FAILURE_CHANCE) {
+              const reason =
+                AI_FAILURE_REASONS[Math.floor(Math.random() * AI_FAILURE_REASONS.length)];
               return {
                 ...r,
                 progress: 100,
-                status: "failed",
+                status: "pending_review",
                 confidence: undefined,
                 results: undefined,
-                aiVerdict: undefined,
+                aiVerdict: "exception",
                 aiRejectionReason: undefined,
-                failedReason:
-                  AI_FAILURE_REASONS[Math.floor(Math.random() * AI_FAILURE_REASONS.length)],
+                aiExceptionReason: reason,
+                failedReason: undefined,
               };
             }
             const result = fabricateResult(r.images);
@@ -1812,9 +1821,10 @@ function Workbench() {
       if (r.status !== "recognizing" && r.status !== "failed" && r.status !== "queued" && r.confidence != null) {
         const tone = confidenceTone(r.confidence / 100);
         if (!selectedConfidenceTones.has(tone)) return false;
-      } else {
+      } else if (r.status === "recognizing" || r.status === "failed" || r.status === "queued") {
         if (!allTonesSelected) return false;
       }
+      // confidence 为 null 的 pending_review 记录不参与置信度筛选，始终保留
       if (aiVerdictFilter !== "all" && r.aiVerdict !== aiVerdictFilter) return false;
       if (searchQuery.trim()) {
         const kaMatch = fuzzyMatch(searchQuery, r.id);
@@ -2643,7 +2653,11 @@ function DetailView({
               <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
                 <span className="text-muted-foreground">ai识别结果：</span>
                 <VerdictBadge value={record.aiVerdict} />
-                <ConfidenceBadge score={record.confidence ?? 0} />
+                {record.confidence != null ? (
+                  <ConfidenceBadge score={record.confidence} />
+                ) : (
+                  <EmptyBadge className="w-12" />
+                )}
               </div>
             )}
             <SheetDescription className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs">
@@ -2699,6 +2713,10 @@ function DetailView({
             <span className="font-semibold">AI 预审异常原因：</span>
             {record.aiExceptionReason === "物流签收数据缺失"
               ? "物流签收数据缺失，已上传图片中未识别到物流签收信息，请确认签收数据是否完整或联系承运方补充。"
+              : record.aiExceptionReason === "图片无法识别"
+              ? "图片无法识别，AI 无法从图片中提取有效单据信息，请确认图片内容是否完整或重新上传清晰图片。"
+              : record.aiExceptionReason === "图片质量过低"
+              ? "图片质量过低，AI 无法清晰识别单据内容，请重新上传清晰度更高的图片。"
               : "物料数据列无法匹配，「订单数量」「拒收数量」等关键数量列未能自动识别，请在下方货品明细中手动选择对应列以完成校验。"}
           </div>
         </div>
