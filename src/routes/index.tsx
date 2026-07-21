@@ -995,6 +995,8 @@ function annotateMismatchesInDOM(
     ann.setAttribute("contenteditable", "false");
     ann.style.marginLeft = "2px";
     ann.style.color = "inherit";
+    ann.style.fontSize = "0.85em";
+    ann.style.fontStyle = "italic";
     ann.textContent = `（已编辑）`;
     cell.appendChild(ann);
   };
