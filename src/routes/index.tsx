@@ -4053,8 +4053,9 @@ function FilteredTableView({
                 }
                 const sourceIdx = col.sourceIdx;
                 const val = row[sourceIdx] ?? "";
+                const edited = editedCells?.has(`${rowIdx}-${sourceIdx}`) ?? false;
                 const mismatch =
-                  PRODUCT_QUANTITY_KEYS.has(col.key)
+                  !edited && PRODUCT_QUANTITY_KEYS.has(col.key)
                     ? computeMismatch(rowIdx, col.key, val)
                     : null;
                 const editable = !readOnly && !!onChange;
@@ -4062,6 +4063,7 @@ function FilteredTableView({
                   if (!onChange) return;
                   const next = (e.currentTarget.textContent ?? "").trim();
                   if (next === val) return;
+                  markEdited?.(rowIdx, sourceIdx);
                   onChange(updateHtmlTableCell(html, rowIdx, sourceIdx, next));
                 };
                 return (
@@ -4090,6 +4092,11 @@ function FilteredTableView({
                         style={{ color: "#dc2626" }}
                       >
                         （{mismatchSourceLabel}：{mismatch.safeThird}）
+                      </span>
+                    )}
+                    {edited && (
+                      <span contentEditable={false} className="ml-0.5">
+                        （已编辑）
                       </span>
                     )}
                   </td>
