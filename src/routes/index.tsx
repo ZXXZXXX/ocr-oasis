@@ -2590,6 +2590,15 @@ function DetailView({
 
           </div>
         )}
+      {record.status === "pending_review" && record.aiVerdict === "exception" && (
+        <div className="mt-4 flex items-start gap-3 rounded-xl border border-[color:var(--warning)]/30 bg-[color:var(--warning)]/15 px-4 py-3 text-xs text-[color:var(--warning-foreground)]">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+          <div className="flex-1 leading-relaxed">
+            <span className="font-semibold">AI 预审异常原因：</span>
+            物料数据列无法匹配，「订单数量」「拒收数量」等关键数量列未能自动识别，请在下方货品明细中手动选择对应列以完成校验。
+          </div>
+        </div>
+      )}
       </SheetHeader>
 
       <DocPanel
