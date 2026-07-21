@@ -3933,7 +3933,7 @@ function EditableTableHtml({
       >
         <div
           ref={ref}
-          contentEditable={!readOnly}
+          contentEditable={false}
           suppressContentEditableWarning
           spellCheck={false}
           onInput={(e) => {
