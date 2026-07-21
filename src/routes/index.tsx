@@ -890,6 +890,14 @@ function stableStrHash(s: string): number {
   return Math.abs(h);
 }
 
+function parseQuantityText(val: string): number | null {
+  const text = val.replace(/,/g, "").trim();
+  const match = text.match(/-?\d+(?:\.\d+)?/);
+  if (!match) return null;
+  const num = Number(match[0]);
+  return Number.isFinite(num) ? num : null;
+}
+
 // 基于稳定哈希的差异模拟：当记录带有 AI 不通过原因时，显著提高匹配率，
 // 且保证每行至少有一列出现差异（否则用户无法看到不匹配的数据）。
 function computeMismatch(
@@ -899,8 +907,8 @@ function computeMismatch(
   opts?: { hasRejection?: boolean; recordId?: string; aiRejectionReason?: AiRejectionReason },
 ): { safeThird: number } | null {
   if (!val) return null;
-  const num = Number(val);
-  if (!Number.isFinite(num) || num <= 0) return null;
+  const num = parseQuantityText(val);
+  if (num === null || num <= 0) return null;
   // 依据不通过原因限定允许出现勘误的列
   const allowed = opts?.aiRejectionReason
     ? REJECTION_MISMATCH_COLS[opts.aiRejectionReason]
@@ -926,18 +934,25 @@ function computeMismatch(
   return { safeThird };
 }
 
-// 剥离注入的差异展示节点，得到干净的原始 HTML
-function stripMismatchAnnotations(html: string): string {
-  if (typeof document === "undefined") return html;
-  const div = document.createElement("div");
-  div.innerHTML = html;
-  div.querySelectorAll("[data-annotation]").forEach((n) => n.remove());
-  div.querySelectorAll("[data-mismatch]").forEach((n) => {
+function clearTableAnnotations(root: HTMLElement) {
+  root.querySelectorAll("[data-annotation]").forEach((n) => n.remove());
+  root.querySelectorAll("[data-mismatch]").forEach((n) => {
     const p = n.parentNode;
     if (!p) return;
     while (n.firstChild) p.insertBefore(n.firstChild, n);
     p.removeChild(n);
   });
+}
+
+// 剥离注入的差异展示节点，得到干净的原始 HTML
+function stripMismatchAnnotations(html: string): string {
+  if (typeof document === "undefined") return html;
+  const div = document.createElement("div");
+  div.innerHTML = html;
+  clearTableAnnotations(div);
+  div.querySelectorAll("td[contenteditable], th[contenteditable]").forEach((n) =>
+    n.removeAttribute("contenteditable"),
+  );
   return div.innerHTML;
 }
 
@@ -948,6 +963,7 @@ function annotateMismatchesInDOM(
   editedCells?: Set<string>,
   opts?: { hasRejection?: boolean; recordId?: string; aiRejectionReason?: AiRejectionReason },
 ) {
+  clearTableAnnotations(root);
   const table = root.querySelector("table");
   if (!table) return;
   const thead = table.querySelector("thead");
@@ -3623,6 +3639,8 @@ function EditableTableHtml({
   const ref = useRef<HTMLDivElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const lastAppliedHtmlRef = useRef<string>("");
+  const dirtyRef = useRef(false);
+  const selRef = useRef<{ bodyRow: number; col: number } | null>(null);
   // 选中单元格：bodyRow 为 tbody 内行号（0 起）；-1 表示位于 thead
   const [sel, setSel] = useState<{ bodyRow: number; col: number } | null>(null);
 
@@ -3668,15 +3686,27 @@ function EditableTableHtml({
     table.style.width = `${Math.max(sum, available)}px`;
   };
 
+  const syncEditableCells = () => {
+    const table = ref.current?.querySelector("table");
+    if (!table) return;
+    table.querySelectorAll("td, th").forEach((cell) => {
+      if (readOnly) cell.removeAttribute("contenteditable");
+      else cell.setAttribute("contenteditable", "true");
+    });
+  };
+
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    const activeInside = typeof document !== "undefined" && el.contains(document.activeElement);
+    if (activeInside) return;
     if (html !== lastAppliedHtmlRef.current) {
       el.innerHTML = html;
       lastAppliedHtmlRef.current = html;
     }
     annotateMismatchesInDOM(el, mismatchSourceLabel, editedCells, mismatchOpts);
     syncTitles(el);
+    syncEditableCells();
     layoutTable();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [html, mismatchSourceLabel, editedCells]);
@@ -3700,27 +3730,40 @@ function EditableTableHtml({
     if (!row) return;
     const inThead = !!row.closest("thead");
     const col = cell.cellIndex;
+    if (!readOnly && !inThead) {
+      clearTableAnnotations(cell);
+    }
     if (inThead) {
-      setSel({ bodyRow: -1, col });
+      const next = { bodyRow: -1, col };
+      selRef.current = next;
+      setSel(next);
     } else {
       const tbody = row.parentElement as HTMLTableSectionElement | null;
       if (!tbody) return;
       const bodyRow = Array.from(tbody.children).indexOf(row);
-      setSel({ bodyRow, col });
+      const next = { bodyRow, col };
+      selRef.current = next;
+      setSel(next);
     }
   };
 
   const commit = () => {
     const el = ref.current;
     if (!el) return;
+    const curSel = selRef.current;
+    if (dirtyRef.current && markEdited && curSel && curSel.bodyRow >= 0) {
+      markEdited(curSel.bodyRow, curSel.col);
+    }
     syncTitles(el);
     const clean = stripMismatchAnnotations(el.innerHTML);
     lastAppliedHtmlRef.current = clean;
+    dirtyRef.current = false;
     onChange(clean);
     // 布局可能因行列数变化需要重新计算
     requestAnimationFrame(() => {
       const cur = ref.current;
       if (cur) annotateMismatchesInDOM(cur, mismatchSourceLabel, editedCells, mismatchOpts);
+      syncEditableCells();
       layoutTable();
     });
   };
@@ -3761,6 +3804,7 @@ function EditableTableHtml({
     const row = tbody.children[sel.bodyRow];
     if (!row) return;
     row.remove();
+    selRef.current = null;
     setSel(null);
     commit();
   };
@@ -3796,6 +3840,7 @@ function EditableTableHtml({
     };
     table.querySelectorAll("thead > tr").forEach(removeAt);
     table.querySelectorAll("tbody > tr").forEach(removeAt);
+    selRef.current = null;
     setSel(null);
     commit();
   };
@@ -3888,19 +3933,32 @@ function EditableTableHtml({
       >
         <div
           ref={ref}
-          contentEditable={!readOnly}
+          contentEditable={false}
           suppressContentEditableWarning
           spellCheck={false}
           onInput={(e) => {
             const el = e.currentTarget as HTMLDivElement;
             syncTitles(el);
+            dirtyRef.current = true;
             // 记录当前编辑的单元格
-            if (markEdited && sel && sel.bodyRow >= 0) {
-              markEdited(sel.bodyRow, sel.col);
+            const curSel = selRef.current ?? sel;
+            if (markEdited && curSel && curSel.bodyRow >= 0) {
+              markEdited(curSel.bodyRow, curSel.col);
             }
-            const clean = stripMismatchAnnotations(el.innerHTML);
-            lastAppliedHtmlRef.current = clean;
-            onChange(clean);
+          }}
+          onBlurCapture={() => {
+            requestAnimationFrame(() => {
+              const el = ref.current;
+              if (!el) return;
+              if (dirtyRef.current) {
+                commit();
+                return;
+              }
+              if (el.contains(document.activeElement)) return;
+              annotateMismatchesInDOM(el, mismatchSourceLabel, editedCells, mismatchOpts);
+              syncEditableCells();
+              layoutTable();
+            });
           }}
         />
       </div>
