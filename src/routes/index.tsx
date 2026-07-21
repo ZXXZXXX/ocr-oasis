@@ -3949,11 +3949,12 @@ function EditableTableHtml({
           onBlurCapture={() => {
             requestAnimationFrame(() => {
               const el = ref.current;
-              if (!el || el.contains(document.activeElement)) return;
+              if (!el) return;
               if (dirtyRef.current) {
                 commit();
                 return;
               }
+              if (el.contains(document.activeElement)) return;
               annotateMismatchesInDOM(el, mismatchSourceLabel, editedCells, mismatchOpts);
               syncEditableCells();
               layoutTable();
