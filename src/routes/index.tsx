@@ -4231,12 +4231,29 @@ function FilteredTableView({
               const edited = editedCells?.has(`${rowIdx}-${col.sourceIdx}`) ?? false;
               if (edited) return false;
               const val = row[col.sourceIdx] ?? "";
+              if (col.isExceptionCol) {
+                return isExceptionCellMismatch(rowIdx, col.key, val);
+              }
               return !!computeMismatch(rowIdx, col.key, val, mismatchOpts);
             });
             return (
             <tr key={rowIdx} style={rowMismatch ? { backgroundColor: ROW_MISMATCH_BG } : undefined}>
               {columns.map((col) => {
                 if (col.sourceIdx === undefined) {
+                  // 「审核异常」的未匹配列：浅灰色展示 KA 验收单的对应数据
+                  if (col.isExceptionCol) {
+                    const kaVal = kaValueFor(rowIdx, col.key);
+                    return (
+                      <td
+                        key={col.key}
+                        className="border border-border px-4 py-2 text-sm leading-loose"
+                        style={{ color: "#9ca3af" }}
+                        title="AI 未识别到对应列，显示 KA 验收单数据；请手动选择列进行校验"
+                      >
+                        {kaVal}
+                      </td>
+                    );
+                  }
                   return (
                     <td
                       key={col.key}
@@ -4249,8 +4266,13 @@ function FilteredTableView({
                 const sourceIdx = col.sourceIdx;
                 const val = row[sourceIdx] ?? "";
                 const edited = editedCells?.has(`${rowIdx}-${sourceIdx}`) ?? false;
+                const exceptionMismatch =
+                  !edited && col.isExceptionCol
+                    ? isExceptionCellMismatch(rowIdx, col.key, val)
+                    : false;
+                const kaExpected = col.isExceptionCol ? kaValueFor(rowIdx, col.key) : null;
                 const mismatch =
-                  !edited && PRODUCT_QUANTITY_KEYS.has(col.key)
+                  !edited && !col.isExceptionCol && PRODUCT_QUANTITY_KEYS.has(col.key)
                     ? computeMismatch(rowIdx, col.key, val, mismatchOpts)
                     : null;
                 const isLocked = lockedCells?.has(`${rowIdx}-${sourceIdx}`) ?? false;
@@ -4262,6 +4284,7 @@ function FilteredTableView({
                   markEdited?.(rowIdx, sourceIdx);
                   onChange(updateHtmlTableCell(html, rowIdx, sourceIdx, next));
                 };
+                const isRed = !!mismatch || exceptionMismatch;
                 return (
                   <td
                     key={col.key}
@@ -4277,7 +4300,7 @@ function FilteredTableView({
                         editable &&
                           "cursor-text rounded px-0.5 hover:bg-muted/50 focus:bg-muted/70",
                       )}
-                      style={mismatch ? { color: "#dc2626" } : undefined}
+                      style={isRed ? { color: "#dc2626" } : undefined}
                     >
                       {val}
                     </span>
@@ -4288,6 +4311,15 @@ function FilteredTableView({
                         style={{ color: "#dc2626" }}
                       >
                         （{mismatchSourceLabel}：{mismatch.safeThird}）
+                      </span>
+                    )}
+                    {exceptionMismatch && kaExpected != null && (
+                      <span
+                        contentEditable={false}
+                        className="ml-0.5 text-xs"
+                        style={{ color: "#dc2626" }}
+                      >
+                        （KA验收单：{kaExpected}）
                       </span>
                     )}
                     {edited && (
