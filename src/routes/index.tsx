@@ -1410,14 +1410,15 @@ function seedRecords(): OcrRecord[] {
       driver: who.driver,
       plateNo: who.plate,
       signatureStatus: s.signatureStatus,
-      aiVerdict: isFailed ? undefined : s.aiVerdict,
-      aiExceptionReason: s.aiExceptionReason,
+      aiVerdict: isFailed || !images.length || !s.signatureStatus ? undefined : s.aiVerdict,
+      aiExceptionReason: !images.length || !s.signatureStatus ? undefined : s.aiExceptionReason,
       failedReason: isFailed ? s.failedReason : undefined,
       verifiedAt: s.status === "verified" ? now - (s.minutesAgo - 10) * 60_000 : undefined,
       verifiedBy: s.status === "verified" ? CURRENT_USER : undefined,
       shippingSlipNo: makeShippingSlipNo(createdAt, 1_000 + idx * 137),
     };
-    return { ...record, aiRejectionReason: hasResults ? makeAiRejectionReason(record) : undefined };
+    const canOutputVerdict = hasResults && !!s.signatureStatus && images.length > 0;
+    return { ...record, aiRejectionReason: canOutputVerdict ? makeAiRejectionReason(record) : undefined };
 
   });
 
@@ -1665,8 +1666,7 @@ function seedRecords(): OcrRecord[] {
     driver: "周海明",
     plateNo: "沪C·39102",
     signatureStatus: undefined,
-    aiVerdict: "exception",
-    aiExceptionReason: "物流签收数据缺失",
+    // 缺少物流签收数据 → AI 不输出预审结论，也不做数据冲突展示
     shippingSlipNo: makeShippingSlipNo(missingSignCreatedAt, 4_100_001),
   };
 
