@@ -2938,23 +2938,23 @@ function DocPanel({
       >
         <div className="flex h-10 items-center justify-between gap-3 border-b border-border bg-background/60 px-3 py-1.5">
           <div className="flex items-center gap-1">
-            {deliveryImages.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setImageTab("delivery_note")}
-                className={cn(
-                  "inline-flex items-center gap-1 rounded px-2 py-1 text-xs",
-                  imageTab === "delivery_note"
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent",
-                )}
-              >
-                <Truck className="size-3.5" /> 送货单
-                <span className="rounded bg-black/10 px-1 text-[10px] tabular-nums">
-                  {deliveryImages.length}
-                </span>
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => setImageTab("delivery_note")}
+              disabled={deliveryImages.length === 0}
+              className={cn(
+                "inline-flex items-center gap-1 rounded px-2 py-1 text-xs",
+                imageTab === "delivery_note"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-accent",
+                deliveryImages.length === 0 && "cursor-default opacity-60",
+              )}
+            >
+              <Truck className="size-3.5" /> 送货单
+              <span className="rounded bg-black/10 px-1 text-[10px] tabular-nums">
+                {deliveryImages.length}
+              </span>
+            </button>
             <button
               type="button"
               onClick={() => setImageTab("shipping_slip")}
