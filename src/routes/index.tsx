@@ -2017,9 +2017,9 @@ function Workbench() {
                 <div className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-1.5">
                   <span className="text-sm font-medium">仅查看未审核</span>
                   <Switch
-                    checked={quickStatus === "pending_review"}
+                    checked={quickStatus === "unreviewed"}
                     onCheckedChange={(checked) =>
-                      setQuickStatus(checked ? "pending_review" : "all")
+                      setQuickStatus(checked ? "unreviewed" : "all")
                     }
                     aria-label="仅查看未审核"
                   />
