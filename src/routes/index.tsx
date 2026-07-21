@@ -3619,7 +3619,7 @@ function EditableTableHtml({
   const mismatchSourceLabel = aiRejectionReason
     ? REJECTION_SOURCE_LABEL[aiRejectionReason]
     : "物流签收单";
-  const mismatchOpts = { hasRejection: !!aiRejectionReason, recordId };
+  const mismatchOpts = { hasRejection: !!aiRejectionReason, recordId, aiRejectionReason };
   const ref = useRef<HTMLDivElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const lastAppliedHtmlRef = useRef<string>("");
