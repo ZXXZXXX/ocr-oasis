@@ -3738,7 +3738,7 @@ function EditableTableHtml({
     syncEditableCells();
     layoutTable();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [html, mismatchSourceLabel, editedCells]);
+  }, [html, mismatchSourceLabel, editedCells, lockedCells, readOnly]);
 
   // 容器宽度变化时重新计算列宽
   useEffect(() => {
