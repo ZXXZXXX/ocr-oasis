@@ -3888,6 +3888,16 @@ function TableChunkView({
 }) {
   const [filterOn, setFilterOn] = useState(true);
   const [overrides, setOverrides] = useState<Record<string, number>>({});
+  const [editedCells, setEditedCells] = useState<Set<string>>(new Set());
+  const markEdited = (rowIdx: number, colIdx: number) => {
+    setEditedCells((prev) => {
+      const key = `${rowIdx}-${colIdx}`;
+      if (prev.has(key)) return prev;
+      const next = new Set(prev);
+      next.add(key);
+      return next;
+    });
+  };
   const handleOverride = (key: string, idx: number | undefined) => {
     setOverrides((prev) => {
       const next = { ...prev };
@@ -3919,6 +3929,8 @@ function TableChunkView({
           onOverrideChange={handleOverride}
           readOnly={readOnly}
           onChange={onChange}
+          editedCells={editedCells}
+          markEdited={markEdited}
         />
       ) : (
         <EditableTableHtml
@@ -3926,6 +3938,8 @@ function TableChunkView({
           readOnly={readOnly}
           mustEdit={mustEdit}
           onChange={onChange}
+          editedCells={editedCells}
+          markEdited={markEdited}
         />
       )}
     </div>
