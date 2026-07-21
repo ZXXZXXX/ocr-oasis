@@ -3661,7 +3661,7 @@ function EditableTableHtml({
       el.innerHTML = html;
       lastAppliedHtmlRef.current = html;
     }
-    annotateMismatchesInDOM(el, mismatchSourceLabel, editedCells);
+    annotateMismatchesInDOM(el, mismatchSourceLabel, editedCells, mismatchOpts);
     syncTitles(el);
     layoutTable();
     // eslint-disable-next-line react-hooks/exhaustive-deps
