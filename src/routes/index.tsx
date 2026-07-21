@@ -3997,7 +3997,7 @@ function FilteredTableView({
   markEdited?: (rowIdx: number, colIdx: number) => void;
 }) {
   const { recordId, aiRejectionReason } = useContext(DetailRecordContext);
-  const mismatchOpts = { hasRejection: !!aiRejectionReason, recordId };
+  const mismatchOpts = { hasRejection: !!aiRejectionReason, recordId, aiRejectionReason };
   const mismatchSourceLabel = aiRejectionReason
     ? REJECTION_SOURCE_LABEL[aiRejectionReason]
     : "物流签收单";
