@@ -259,7 +259,7 @@ interface OcrRecord {
   // 新增：任务级字段
   driver: string;
   plateNo: string;
-  signatureStatus: SignatureStatus;
+  signatureStatus?: SignatureStatus;
   aiVerdict?: AiVerdict; // 识别完成后由AI给出
   aiRejectionReason?: AiRejectionReason; // AI 不通过原因
   aiExceptionReason?: string; // AI 审核异常原因（如 "物料数据列无法匹配" / "物流签收数据缺失"）
