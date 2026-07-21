@@ -3601,10 +3601,11 @@ function EditableTableHtml({
   editedCells?: Set<string>;
   markEdited?: (rowIdx: number, colIdx: number) => void;
 }) {
-  const { aiRejectionReason } = useContext(DetailRecordContext);
+  const { recordId, aiRejectionReason } = useContext(DetailRecordContext);
   const mismatchSourceLabel = aiRejectionReason
     ? REJECTION_SOURCE_LABEL[aiRejectionReason]
     : "签收数据";
+  const mismatchOpts = { hasRejection: !!aiRejectionReason, recordId };
   const ref = useRef<HTMLDivElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const lastAppliedHtmlRef = useRef<string>("");
