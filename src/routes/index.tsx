@@ -3604,7 +3604,7 @@ function EditableTableHtml({
   const { recordId, aiRejectionReason } = useContext(DetailRecordContext);
   const mismatchSourceLabel = aiRejectionReason
     ? REJECTION_SOURCE_LABEL[aiRejectionReason]
-    : "签收数据";
+    : "物流签收单";
   const mismatchOpts = { hasRejection: !!aiRejectionReason, recordId };
   const ref = useRef<HTMLDivElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
