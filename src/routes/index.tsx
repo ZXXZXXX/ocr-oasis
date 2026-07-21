@@ -2943,13 +2943,11 @@ function DocPanel({
             <button
               type="button"
               onClick={() => setImageTab("delivery_note")}
-              disabled={deliveryImages.length === 0}
               className={cn(
                 "inline-flex items-center gap-1 rounded px-2 py-1 text-xs",
                 imageTab === "delivery_note"
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-accent",
-                deliveryImages.length === 0 && "cursor-default opacity-60",
               )}
             >
               <Truck className="size-3.5" /> 送货单
@@ -2960,13 +2958,11 @@ function DocPanel({
             <button
               type="button"
               onClick={() => setImageTab("shipping_slip")}
-              disabled={shippingImages.length === 0}
               className={cn(
                 "inline-flex items-center gap-1 rounded px-2 py-1 text-xs",
                 imageTab === "shipping_slip"
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-accent",
-                shippingImages.length === 0 && "cursor-default opacity-60",
               )}
             >
               <ScrollText className="size-3.5" /> 出货传票
