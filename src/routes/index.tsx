@@ -3698,10 +3698,30 @@ function EditableTableHtml({
   const syncEditableCells = () => {
     const table = ref.current?.querySelector("table");
     if (!table) return;
-    table.querySelectorAll("td, th").forEach((cell) => {
+    // 表头 & 只读态：不可编辑
+    table.querySelectorAll("thead th").forEach((cell) => {
+      cell.removeAttribute("contenteditable");
+    });
+    const bodyRows = Array.from(table.querySelectorAll("tbody > tr")) as HTMLTableRowElement[];
+    const dataRows = bodyRows.filter((r) => {
+      const inner = r.innerHTML;
+      return !/colspan\s*=/i.test(inner) && !/总计|合计/.test(inner);
+    });
+    // 先全部按 readOnly 铺一遍
+    table.querySelectorAll("tbody td").forEach((cell) => {
       if (readOnly) cell.removeAttribute("contenteditable");
       else cell.setAttribute("contenteditable", "true");
     });
+    // 已锁定单元格：即使 readOnly=false 也不允许编辑
+    if (!readOnly && lockedCells && lockedCells.size > 0) {
+      dataRows.forEach((tr, rowIdx) => {
+        Array.from(tr.children).forEach((cellNode, colIdx) => {
+          if (lockedCells.has(`${rowIdx}-${colIdx}`)) {
+            (cellNode as HTMLElement).removeAttribute("contenteditable");
+          }
+        });
+      });
+    }
   };
 
   useEffect(() => {
