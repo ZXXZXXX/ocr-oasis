@@ -950,6 +950,9 @@ function stripMismatchAnnotations(html: string): string {
   const div = document.createElement("div");
   div.innerHTML = html;
   clearTableAnnotations(div);
+  div.querySelectorAll("td[contenteditable], th[contenteditable]").forEach((n) =>
+    n.removeAttribute("contenteditable"),
+  );
   return div.innerHTML;
 }
 
