@@ -1021,14 +1021,19 @@ function annotateMismatchesInDOM(
       });
     }
     // 差异高亮（编辑过的单元格跳过）
+    let rowHasMismatch = false;
     qtyCols.forEach(({ key, idx }) => {
       const cell = tr.children[idx] as HTMLElement | undefined;
       if (!cell) return;
       if (editedCells?.has(`${rowIdx}-${idx}`)) return;
-      if (cell.querySelector("[data-mismatch]")) return;
+      if (cell.querySelector("[data-mismatch]")) {
+        rowHasMismatch = true;
+        return;
+      }
       const val = (cell.textContent || "").trim();
       const m = computeMismatch(rowIdx, key, val, opts);
       if (!m) return;
+      rowHasMismatch = true;
       cell.textContent = "";
       const outer = document.createElement("span");
       outer.setAttribute("data-mismatch", "");
@@ -1043,6 +1048,10 @@ function annotateMismatchesInDOM(
       outer.appendChild(ann);
       cell.appendChild(outer);
     });
+    if (rowHasMismatch) {
+      tr.setAttribute("data-row-mismatch", "");
+      tr.style.backgroundColor = ROW_MISMATCH_BG;
+    }
   });
 }
 
