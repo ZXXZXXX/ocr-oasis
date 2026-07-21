@@ -1361,23 +1361,26 @@ function seedRecords(): OcrRecord[] {
 
   const docTypes: DocType[] = ["delivery_note", "shipping_slip"];
   const records: OcrRecord[] = seeds.map((s, idx) => {
-    const images: UploadedImage[] = docTypes.map((dt) => ({
-      id: `img-${idx}-${dt}`,
-      name: `${dt === "delivery_note" ? "delivery" : "shipping"}_sample_${idx + 1}.jpg`,
-      url: placeholderImg(
-        1920,
-        720,
-        dt === "delivery_note" ? "送货单示例" : "出货传票示例（参考）",
-      ),
-      docType: dt,
-      width: 1920,
-      height: 720,
-    }));
+    const isEmptyImage = s.status === "failed" && s.failedReason === "图片数据为空";
+    const images: UploadedImage[] = isEmptyImage
+      ? []
+      : docTypes.map((dt) => ({
+          id: `img-${idx}-${dt}`,
+          name: `${dt === "delivery_note" ? "delivery" : "shipping"}_sample_${idx + 1}.jpg`,
+          url: placeholderImg(
+            1920,
+            720,
+            dt === "delivery_note" ? "送货单示例" : "出货传票示例（参考）",
+          ),
+          docType: dt,
+          width: 1920,
+          height: 720,
+        }));
     // 只对送货单执行 OCR；识别失败/图片无法识别的任务无结果
     const isFailed = s.status === "failed";
     const isRecognitionException =
       s.aiExceptionReason === "图片无法识别" || s.aiExceptionReason === "图片质量过低";
-    const hasResults = !isFailed && !isRecognitionException;
+    const hasResults = !isFailed && !isRecognitionException && !isEmptyImage;
     const results: Partial<Record<DocType, DocPage[]>> = {};
     if (hasResults) {
       const dImg = images.find((i) => i.docType === "delivery_note")!;
@@ -1400,8 +1403,8 @@ function seedRecords(): OcrRecord[] {
       status: s.status,
       progress: 100,
       confidence: hasResults ? averageConfidence(allPages) : undefined,
-      deliveryCount: 1,
-      shippingCount: 1,
+      deliveryCount: isEmptyImage ? 0 : 1,
+      shippingCount: isEmptyImage ? 0 : 1,
       images,
       results,
       driver: who.driver,
@@ -1417,6 +1420,7 @@ function seedRecords(): OcrRecord[] {
     return { ...record, aiRejectionReason: hasResults ? makeAiRejectionReason(record) : undefined };
 
   });
+
 
   // 真实照片任务（大润发 商品收货单 + 京东 送货验收单）
   const realCreatedAt = now - 12 * 60_000;
