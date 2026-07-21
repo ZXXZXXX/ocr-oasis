@@ -259,7 +259,7 @@ interface OcrRecord {
   // 新增：任务级字段
   driver: string;
   plateNo: string;
-  signatureStatus: SignatureStatus;
+  signatureStatus?: SignatureStatus;
   aiVerdict?: AiVerdict; // 识别完成后由AI给出
   aiRejectionReason?: AiRejectionReason; // AI 不通过原因
   aiExceptionReason?: string; // AI 审核异常原因（如 "物料数据列无法匹配" / "物流签收数据缺失"）
@@ -1664,7 +1664,7 @@ function seedRecords(): OcrRecord[] {
     results: missingSignResults,
     driver: "周海明",
     plateNo: "沪C·39102",
-    signatureStatus: "partial",
+    signatureStatus: undefined,
     aiVerdict: "exception",
     aiExceptionReason: "物流签收数据缺失",
     shippingSlipNo: makeShippingSlipNo(missingSignCreatedAt, 4_100_001),
@@ -2497,7 +2497,8 @@ function AuditConclusionBadge({ status, aiVerdict }: { status: Status; aiVerdict
   );
 }
 
-function SignatureBadge({ value }: { value: SignatureStatus }) {
+function SignatureBadge({ value }: { value: SignatureStatus | undefined }) {
+  if (!value) return <EmptyBadge className="w-16" />;
   if (value === "perfect")
     return (
       <Badge variant="status" className="gap-1 border-0 bg-[color:var(--success)]/15 font-normal text-[color:var(--success)]">
@@ -2646,7 +2647,7 @@ function DetailView({
               <NeutralTag>
                 {STATUS_LABEL[record.status] ?? record.status}
               </NeutralTag>
-              <NeutralTag>{SIGNATURE_LABEL[record.signatureStatus]}</NeutralTag>
+              {record.signatureStatus && <NeutralTag>{SIGNATURE_LABEL[record.signatureStatus]}</NeutralTag>}
               {editing && (
                 <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
                   <Pencil className="size-3" /> 编辑中
@@ -2716,7 +2717,7 @@ function DetailView({
           <div className="flex-1 leading-relaxed">
             <span className="font-semibold">AI 预审异常原因：</span>
             {record.aiExceptionReason === "物流签收数据缺失"
-              ? "物流签收数据缺失，已上传图片中未识别到物流签收信息，请确认签收数据是否完整或联系承运方补充。"
+              ? "物流签收数据缺失"
               : record.aiExceptionReason === "图片无法识别"
               ? "图片无法识别，AI 无法从图片中提取有效单据信息，请确认图片内容是否完整或重新上传清晰图片。"
               : record.aiExceptionReason === "图片质量过低"
