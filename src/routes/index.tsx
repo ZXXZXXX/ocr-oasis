@@ -4151,8 +4151,9 @@ function FilteredTableView({
   lockedCells?: Set<string>;
   markEdited?: (rowIdx: number, colIdx: number) => void;
 }) {
-  const { recordId, aiRejectionReason, aiVerdict } = useContext(DetailRecordContext);
+  const { recordId, aiRejectionReason, aiExceptionReason, aiVerdict } = useContext(DetailRecordContext);
   const isException = aiVerdict === "exception";
+  const isColumnMismatchException = isException && (!aiExceptionReason || aiExceptionReason === "物料数据列无法匹配");
   const mismatchOpts = { hasRejection: !!aiRejectionReason, recordId, aiRejectionReason };
   const mismatchSourceLabel = aiRejectionReason
     ? REJECTION_SOURCE_LABEL[aiRejectionReason]
@@ -4174,12 +4175,12 @@ function FilteredTableView({
   const columns = PRODUCT_TABLE_COLUMNS.map((key) => {
     const overrideIdx = overrides[key];
     // 「审核异常」记录：固定的几列物料数量列视为未匹配（除非用户手动指定）
-    const autoIdx = isException && EXCEPTION_UNMATCHED_COLS.has(key)
+    const autoIdx = isColumnMismatchException && EXCEPTION_UNMATCHED_COLS.has(key)
       ? undefined
       : autoMap.get(key);
     const sourceIdx = overrideIdx !== undefined ? overrideIdx : autoIdx;
     const originalHeader = sourceIdx !== undefined ? headerCells[sourceIdx] : undefined;
-    const isExceptionCol = isException && EXCEPTION_UNMATCHED_COLS.has(key);
+    const isExceptionCol = isColumnMismatchException && EXCEPTION_UNMATCHED_COLS.has(key);
     return {
       key,
       sourceIdx,
